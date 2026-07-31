@@ -142,17 +142,17 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 - Consumes: Task 1 的 `docs/current-state.md`。
 - Produces: 新会话唯一入口、有限阅读顺序和问题域冲突裁决规则。
 
-- [ ] **Step 1: 为入口资产增加失败优先的机械断言**
+- [x] **Step 1: 为入口资产增加失败优先的机械断言**
 
   扩展 `checkProjectContextRecovery()`，逐个读取 `AGENTS.md`、`README.md`、`docs/README.md`，要求三者都能到达 `docs/current-state.md`；另外要求 `AGENTS.md` 同时包含 `OpenSpec`、`Comet` 和 `CodeGraph`。错误信息分别指出缺失文件和缺失入口，不使用笼统的“上下文无效”。
 
-- [ ] **Step 2: 运行门禁并确认入口断言失败**
+- [x] **Step 2: 运行门禁并确认入口断言失败**
 
   Run: `pnpm check:project`
 
   Expected: FAIL，明确指出尚未链接 `docs/current-state.md` 或缺少变更恢复/代码定位入口。
 
-- [ ] **Step 3: 更新 AGENTS.md 的一分钟冷启动协议**
+- [x] **Step 3: 更新 AGENTS.md 的一分钟冷启动协议**
 
   在工程质量底线之前增加固定顺序：
 
@@ -168,17 +168,17 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 
   同时增加事实冲突规则和维护触发器：用户验收更新 current-state；产品规则更新 product-contract；代码入口改变更新 implementation-inventory 与 CodeGraph；归档前同步状态和验证证据。
 
-- [ ] **Step 4: 收敛 README 和 docs/README.md**
+- [x] **Step 4: 收敛 README 和 docs/README.md**
 
   根 README 保留产品概览和开发命令，增加“当前状态”链接，不再把“服务器主线已验通”等进度断言留在产品介绍。`docs/README.md` 首屏展示问题域权威表，并明确默认只读 `current-state`，产品/架构/实现材料按任务读取；历史原型和 archived changes 仅供追溯。
 
-- [ ] **Step 5: 运行入口门禁和 Markdown 链接检查**
+- [x] **Step 5: 运行入口门禁和 Markdown 链接检查**
 
   Run: `pnpm check:project`
 
   Expected: PASS，且不包含失效链接、缺失状态入口或历史资产进入默认导航的错误。
 
-- [ ] **Step 6: 勾选 OpenSpec 1.2、1.3 并形成入口提交**
+- [x] **Step 6: 勾选 OpenSpec 1.2、1.3 并形成入口提交**
 
   提交前用 `git diff -- AGENTS.md README.md docs/README.md scripts/check-project-quality.mjs openspec/changes/organize-canonical-project-assets/tasks.md` 核对只含本 change 新 hunk。提交信息：
 

@@ -1,8 +1,8 @@
 ## 1. 建立唯一的当前事实入口
 
 - [x] 1.1 新增 `docs/current-state.md`，用 `VERIFIED`、`IMPLEMENTED_UNVERIFIED`、`NEXT`、`TARGET`、`OUT_OF_SCOPE` 记录能力状态、证据和更新时间
-- [ ] 1.2 更新 `AGENTS.md`，加入一分钟冷启动协议、固定阅读顺序和事实冲突处理规则
-- [ ] 1.3 更新根目录 `README.md` 与 `docs/README.md`，明确文档职责、权威层级和当前文档导航
+- [x] 1.2 更新 `AGENTS.md`，加入一分钟冷启动协议、固定阅读顺序和事实冲突处理规则
+- [x] 1.3 更新根目录 `README.md` 与 `docs/README.md`，明确文档职责、权威层级和当前文档导航
 
 ## 2. 消除文档资产中的事实冲突
 
