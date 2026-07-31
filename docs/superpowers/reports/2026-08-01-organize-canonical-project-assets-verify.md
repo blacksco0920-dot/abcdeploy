@@ -1,7 +1,7 @@
 # `organize-canonical-project-assets` 完整验证报告
 
-> 验证日期：2026-08-01（Asia/Shanghai）  
-> 验证模式：`full`  
+> 验证日期：2026-08-01（Asia/Shanghai）
+> 验证模式：`full`
 > 变更范围：`0a22f58e603f6bfb470ddfe390ceee928c982cfd...HEAD`
 
 ## 结论
