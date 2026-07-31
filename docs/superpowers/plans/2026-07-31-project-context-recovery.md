@@ -63,7 +63,7 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 - Consumes: `docs/product-contract.md` 的稳定目标、CodeGraph 查询结果、现有有效测试和用户已经确认的服务器正向 MVP 验收事实。
 - Produces: 后续入口统一引用的 `docs/current-state.md`，以及 `checkProjectContextRecovery()` 文档门禁。
 
-- [ ] **Step 1: 先扩展项目门禁，使缺失状态账本产生可复现失败**
+- [x] **Step 1: 先扩展项目门禁，使缺失状态账本产生可复现失败**
 
   在 `requiredFiles` 中加入 `docs/current-state.md`，并在主流程调用下列检查：
 
@@ -87,13 +87,13 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
   }
   ```
 
-- [ ] **Step 2: 运行门禁并确认 RED 来自状态账本缺失**
+- [x] **Step 2: 运行门禁并确认 RED 来自状态账本缺失**
 
   Run: `pnpm check:project`
 
   Expected: FAIL，且包含 `缺少开源项目必需文件：docs/current-state.md`；不得修复其他既有失败。
 
-- [ ] **Step 3: 创建当前状态账本并逐项附证据**
+- [x] **Step 3: 创建当前状态账本并逐项附证据**
 
   文件必须按以下固定章节组织：
 
@@ -113,13 +113,13 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 
   “关键用户能力”表至少覆盖四种来源/运行位置组合、服务器正向主线、完整待办、成功证据、更新部署、版本恢复和当前治理 change。只有用户明确验收过的服务器正向 MVP 可标记 `VERIFIED`；本机运行、仓库来源、更新和恢复若只有代码/测试证据，标记为 `IMPLEMENTED_UNVERIFIED` 或 `TARGET`，并引用精确文件、测试或 active change。
 
-- [ ] **Step 4: 验证状态枚举与文件入口变为 GREEN**
+- [x] **Step 4: 验证状态枚举与文件入口变为 GREEN**
 
   Run: `pnpm check:project`
 
   Expected: PASS，或只剩明确属于工作区其他改动的失败；若有后者，记录原始输出，不修改无关文件。
 
-- [ ] **Step 5: 勾选 OpenSpec 1.1 并精确暂存本任务新增内容**
+- [x] **Step 5: 勾选 OpenSpec 1.1 并精确暂存本任务新增内容**
 
   更新 `tasks.md` 的 1.1；使用 `git diff -- docs/current-state.md scripts/check-project-quality.mjs openspec/changes/organize-canonical-project-assets/tasks.md` 检查范围。提交时只暂存本任务的新文件/新 hunk，提交信息：
 
