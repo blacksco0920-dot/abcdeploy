@@ -6,10 +6,10 @@
 
 ## 2. 消除文档资产中的事实冲突
 
-- [ ] 2.1 调整 `docs/product-contract.md`，只保留稳定产品契约，并将实现进度统一指向 `docs/current-state.md`
-- [ ] 2.2 调整 `docs/architecture.md`，保留技术边界和代码入口，不再用目标设计冒充已验证能力
+- [x] 2.1 调整 `docs/product-contract.md`，只保留稳定产品契约，并将实现进度统一指向 `docs/current-state.md`
+- [x] 2.2 调整 `docs/architecture.md`，保留技术边界和代码入口，不再用目标设计冒充已验证能力
 - [ ] 2.3 更新 `docs/internal/implementation-inventory.md`，按代码证据列出已实现能力、未接通入口和主要模块
-- [ ] 2.4 修正“代码仓库地址已支持”和“产品原型已删除”等已发现的矛盾表述
+- [x] 2.4 修正“代码仓库地址已支持”和“产品原型已删除”等已发现的矛盾表述
 - [ ] 2.5 将 `docs/product-prototype/` 明确标记为历史讨论资产，并从当前文档主导航中移除其权威地位
 
 ## 3. 建立可持续的变更与代码导航机制
