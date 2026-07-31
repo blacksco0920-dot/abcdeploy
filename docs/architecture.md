@@ -132,7 +132,7 @@ dnsEvidence? + tlsEvidence? + requestEvidence?
 
 `Release`、`Artifact`、`Connection`、`Provider` 和内部阶段继续存在，但只服务上述用户对象。
 
-MVP 来源解析只接受至少包含一个 HTTP 可访问服务的项目。纯 CLI、Worker 和定时任务返回明确的“不受当前版本支持”，不进入无法产生访问证据的运行任务。
+MVP 来源解析只接受至少包含一个 HTTP 可访问服务的项目。纯 CLI、Worker 和定时任务返回明确的“不在当前产品范围内”，不进入无法产生访问证据的运行任务。
 
 ## 3. 状态机
 
@@ -218,7 +218,7 @@ MVP 用例固定为：
 
 ## 6. 前端目录边界
 
-当前结构：
+以下是前端的目标目录边界，不以目录是否已经落地判断产品可用性。当前代码入口和迁移边界见[内部实施清单](internal/implementation-inventory.md)，当前完成度与验收事实见[当前状态](current-state.md)。
 
 ```text
 apps/desktop/src/
@@ -250,7 +250,7 @@ apps/desktop/src/
 
 ## 7. Rust 目录边界
 
-目标结构：
+以下为 Rust 的目标结构；当前代码入口和迁移边界见[内部实施清单](internal/implementation-inventory.md)，不在本文记录完成度。
 
 ```text
 commands/         # 边界校验并调用应用服务
