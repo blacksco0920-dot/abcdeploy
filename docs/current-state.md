@@ -1,6 +1,6 @@
 # ABCDeploy 当前状态
 
-> 更新时间：2026-08-01。证据截止：本次 change 验证完成时。
+> 更新时间：2026-08-01。证据截止：2026-08-01 的无会话冷启动审计与本地治理门禁；自动验证不构成新增用户验收。
 
 本页是冷启动时判断“已经验收什么、代码做到什么、下一步做什么”的唯一入口，也是当前完成度与验收事实的唯一账本。产品应当做到什么仍以 [产品合同](product-contract.md) 为准；实现边界以 [工程架构](architecture.md) 为准；本页不把目标或测试覆盖写成用户验收，也不把现有实现反写为产品合同。
 
@@ -15,6 +15,15 @@
 | `NEXT` | 已确定、应在当前活跃变更中紧接着完成的工作。 |
 | `TARGET` | 产品合同或架构要求的目标；当前入口尚未实现或不能据现有证据称为可用。 |
 | `OUT_OF_SCOPE` | 当前本地快速迭代明确不做的工作，不应据此触发发布或扩张范围。 |
+
+## 无会话冷启动审计与治理门禁
+
+- 审计日期：2026-08-01。
+- 审计输入边界：仅读取 `AGENTS.md`、`docs/README.md`、本页、`docs/internal/implementation-inventory.md`、`docs/product-contract.md`、`docs/architecture.md`，并只列目录确认 `openspec/changes/` 的 active change；未读取 `docs/product-prototype/index.html` 或其他历史原型，未读取审计前的聊天上下文，也未以文件名猜测业务入口。
+- 五题结果：唯一 `VERIFIED` 是本地文件夹 → Linux 服务器正向 MVP 主线；本机运行、完整待办与门禁、成功证据、更新部署和版本恢复均为 `IMPLEMENTED_UNVERIFIED`；唯一当前 `NEXT` 是完成 `organize-canonical-project-assets` 的审计、一致性和最终门禁闭环；未获正式发布授权时的版本、标签、Release、全平台安装包与下载文件发布均为 `OUT_OF_SCOPE`，本轮也不得把历史资产、测试覆盖或业务代码改动当作治理结论；前端、Tauri/应用、仓储、Provider 与测试分别从 `docs/internal/implementation-inventory.md` 的稳定跨层起点和能力证据索引定位，目录边界见 `docs/architecture.md` §6–§7、§12。
+- 变更结构：`openspec validate organize-canonical-project-assets --strict` 于 2026-08-01 通过，确认该 change 的 proposal、design、delta spec 与 tasks 结构有效。
+- 项目门禁：`pnpm check:project` 于 2026-08-01 通过；`pnpm check:secrets` 于 2026-08-01 通过。
+- CodeGraph：`pnpm codegraph:index` 与 `pnpm codegraph:status` 于 2026-08-01 01:06 CST 通过；索引已同步且为最新状态。
 
 ## 关键用户能力
 
@@ -38,8 +47,8 @@
 ## 最近下一步
 
 1. `NEXT`：完成该治理 change 的无历史上下文冷启动审计、链接与状态一致性检查，以及最终项目门禁验证。
-2. `NEXT`：在任何声称仓库来源已可用之前，先接通 `resolveRepository` 的真实解析、身份锁定和受管目录流程，并取得自动测试与用户验收。
-3. `NEXT`：为本机运行、更新部署和版本恢复补充真实客户端验收记录；验收前保持 `IMPLEMENTED_UNVERIFIED`。
+2. `TARGET`：在任何声称仓库来源已可用之前，接通 `resolveRepository` 的真实解析、身份锁定和受管目录流程，并取得自动测试与用户验收。
+3. `TARGET`：为本机运行、更新部署和版本恢复补充真实客户端验收记录；验收前保持 `IMPLEMENTED_UNVERIFIED`。
 
 ## 明确禁区与非目标
 
@@ -51,7 +60,7 @@
 
 - `TARGET`：产品合同要求支持代码仓库地址，但当前 `resolveRepository` 明确未接入；后续文档必须同时保留产品目标与当前状态，不能写成“已支持”。
 - `IMPLEMENTED_UNVERIFIED`：自动测试证明的是代码行为，不是用户在真实客户端完成验收；除服务器正向 MVP 外，不能升级为 `VERIFIED`。
-- `NEXT`：当前部署详情与恢复相关代码存在，但其端到端真实验收证据尚未汇总到本页。
+- `IMPLEMENTED_UNVERIFIED`：当前部署详情与恢复相关代码存在，但其端到端真实验收证据尚未汇总到本页。
 
 ## 本页维护触发器
 
