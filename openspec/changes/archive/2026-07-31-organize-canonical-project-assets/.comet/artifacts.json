@@ -4,5 +4,6 @@
   "openspec_tasks": "openspec/changes/organize-canonical-project-assets/tasks.md",
   "openspec_delta_spec": "openspec/changes/organize-canonical-project-assets/specs/project-context-recovery/spec.md",
   "handoff_context": "openspec/changes/organize-canonical-project-assets/.comet/handoff/design-context.json",
-  "handoff_markdown": "openspec/changes/organize-canonical-project-assets/.comet/handoff/design-context.md"
+  "handoff_markdown": "openspec/changes/organize-canonical-project-assets/.comet/handoff/design-context.md",
+  "archive_directory": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets"
 }

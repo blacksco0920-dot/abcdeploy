@@ -2,6 +2,7 @@
 change: organize-canonical-project-assets
 design-doc: docs/superpowers/specs/2026-07-31-project-context-recovery-design.md
 base-ref: 0a22f58e603f6bfb470ddfe390ceee928c982cfd
+archived-with: 2026-07-31-organize-canonical-project-assets
 ---
 
 # ABCDeploy 项目上下文恢复实施计划

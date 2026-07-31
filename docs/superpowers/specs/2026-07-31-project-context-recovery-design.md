@@ -2,6 +2,8 @@
 comet_change: organize-canonical-project-assets
 role: technical-design
 canonical_spec: openspec
+archived-with: 2026-07-31-organize-canonical-project-assets
+status: final
 ---
 
 # ABCDeploy 项目上下文恢复设计
@@ -10,7 +12,7 @@ canonical_spec: openspec
 
 本设计把 ABCDeploy 的当前产品事实、稳定产品规则、技术边界、代码证据和变更历史拆分为职责明确的仓库资产，使没有历史聊天上下文的新 AI 会话也能在有限阅读量内准确接手项目。
 
-规范性需求以 `openspec/changes/organize-canonical-project-assets/specs/project-context-recovery/spec.md` 为准；本文只说明实现结构、维护协议和验证方法，不另建一套平行规范。
+规范性需求以 `openspec/specs/project-context-recovery/spec.md` 为准；本文只说明实现结构、维护协议和验证方法，不另建一套平行规范。
 
 ## 2. 范围与非目标
 
