@@ -147,12 +147,27 @@ function checkProjectContextRecovery() {
 
   if (existsSync("AGENTS.md")) {
     const agents = readFileSync("AGENTS.md", "utf8");
+    const coldStart = markdownSection(agents, "一分钟冷启动");
+    if (!coldStart) {
+      failures.push("AGENTS.md 缺少固定章节：## 一分钟冷启动");
+    } else {
+      const firstStep = coldStart.match(/^1\.\s+.*$/m)?.[0] ?? "";
+      const secondStep = coldStart.match(/^2\.\s+.*$/m)?.[0] ?? "";
+      if (!firstStep.includes("docs/README.md")) {
+        failures.push("AGENTS.md 的“一分钟冷启动”第 1 步必须先指向 docs/README.md");
+      }
+      if (!secondStep.includes(currentState)) {
+        failures.push(`AGENTS.md 的“一分钟冷启动”第 2 步必须再指向 ${currentState}`);
+      }
+    }
     for (const entry of ["OpenSpec", "Comet", "CodeGraph"]) {
       if (!agents.includes(entry)) {
         failures.push(`冷启动入口缺少 ${entry}：AGENTS.md`);
       }
     }
   }
+
+  checkHistoricalPrototypeNavigation();
 
   if (!existsSync(currentState)) return;
   const text = readFileSync(currentState, "utf8");
@@ -165,6 +180,48 @@ function checkProjectContextRecovery() {
   ];
   for (const status of statuses) {
     if (!text.includes(status)) failures.push(`${currentState} 缺少状态枚举：${status}`);
+  }
+}
+
+function markdownSection(text, heading) {
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`^## ${escapedHeading}\\s*$`, "m").exec(text);
+  if (!match) return null;
+  const sectionStart = match.index + match[0].length;
+  const remainder = text.slice(sectionStart);
+  const nextSection = remainder.search(/^##\s+/m);
+  return nextSection === -1 ? remainder : remainder.slice(0, nextSection);
+}
+
+function checkHistoricalPrototypeNavigation() {
+  const historicalPath = "product-prototype";
+  for (const file of ["AGENTS.md", "README.md"]) {
+    if (!existsSync(file)) continue;
+    if (readFileSync(file, "utf8").includes(historicalPath)) {
+      failures.push(`默认冷启动入口禁止链接历史原型：${file} 包含 ${historicalPath}`);
+    }
+  }
+
+  const docsIndex = "docs/README.md";
+  if (!existsSync(docsIndex)) return;
+  const text = readFileSync(docsIndex, "utf8");
+  const occurrences = [...text.matchAll(/product-prototype/g)];
+  if (!occurrences.length) return;
+  const historyHeading = text.match(/^## 历史追溯\s*$/m);
+  const historySection = markdownSection(text, "历史追溯");
+  if (!historyHeading || historySection === null) {
+    failures.push(`${docsIndex} 包含 ${historicalPath} 链接，但缺少“## 历史追溯”章节`);
+    return;
+  }
+  const sectionStart = historyHeading.index + historyHeading[0].length;
+  const sectionEnd = sectionStart + historySection.length;
+  for (const occurrence of occurrences) {
+    if (occurrence.index < sectionStart || occurrence.index >= sectionEnd) {
+      const line = text.slice(0, occurrence.index).split(/\r?\n/).length;
+      failures.push(
+        `${docsIndex} 的 ${historicalPath} 历史链接只能位于“## 历史追溯”章节内：第 ${line} 行`,
+      );
+    }
   }
 }
 
