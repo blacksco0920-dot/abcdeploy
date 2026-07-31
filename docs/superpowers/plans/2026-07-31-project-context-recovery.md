@@ -370,7 +370,7 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 
   Expected: change 显示 `completedTasks: 15`、`totalTasks: 15`；未勾选搜索无输出。
 
-- [ ] **Step 6: 按 review_mode 完成最终审查并提交治理资产**
+- [x] **Step 6: 按 review_mode 完成最终审查并提交治理资产**
 
   `standard` 模式下使用 `requesting-code-review` 对本 change 的治理文件做一次轻量审查，修复 CRITICAL 发现，记录接受的非 CRITICAL 发现。只暂存本 change 新增文件和精确 hunk；提交信息：
 
