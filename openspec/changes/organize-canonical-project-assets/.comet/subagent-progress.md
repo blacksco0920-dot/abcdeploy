@@ -1,16 +1,25 @@
 # Comet 子代理进度 — organize-canonical-project-assets
 
-- 当前计划任务：`Task 3: 分离稳定产品契约、当前状态与目标架构`
-- 映射 OpenSpec 任务：`2.1 调整 docs/product-contract.md，只保留稳定产品契约，并将实现进度统一指向 docs/current-state.md`；`2.2 调整 docs/architecture.md，保留技术边界和代码入口，不再用目标设计冒充已验证能力`；`2.4 修正“代码仓库地址已支持”和“产品原型已删除”等已发现的矛盾表述`
+- 当前计划任务：`Task 4: 建立代码证据导航并降级历史资产`
+- 映射 OpenSpec 任务：`2.3 更新 docs/internal/implementation-inventory.md，按代码证据列出已实现能力、未接通入口和主要模块`；`2.5 将 docs/product-prototype/ 明确标记为历史讨论资产，并从当前文档主导航中移除其权威地位`；`3.1 在文档中明确 OpenSpec/Comet 负责需求与决策历史，CodeGraph 负责代码定义、调用关系和影响范围`；`3.2 更新 CodeGraph 说明与当前代码入口索引，使后续会话能从业务能力快速定位到 Feature、应用服务、仓储和 Provider`；`3.3 记录本次治理的变更依据和维护规则，禁止后续文档重新混写目标、实现和验收状态`
 - 当前阶段：`done`
-- 实现者：`/root/context_recovery_task3`
-- 实现基线：`c1603ed0bd0f5babd90436de29e5f73d1e8bc736`
+- 实现者：`/root/context_recovery_task4`
+- 实现基线：`0081b810c10809018b003a248ab0f0981c3b8008`
 - review_mode：`standard`
-- 实现提交：`d80184a docs: separate product targets from current facts`
-- 变更文件：`docs/product-contract.md`、`docs/architecture.md`、`docs/current-state.md`
-- 测试证据：冲突搜索符合预期；`pnpm check:project` PASS；`pnpm check:secrets` PASS
-- 风险任务级 review：未触发；实现者自报无风险，协调者复核 16 行治理资产 diff，无风险信号
-- 审查-修复轮次：`0/1`
+- 实现提交：`688ecf7 docs: connect project facts to implementation evidence`
+- 变更文件：`docs/internal/implementation-inventory.md`、`docs/internal/codegraph.md`、`docs/product-prototype/index.html`、`docs/README.md`、`docs/current-state.md`
+- 测试证据：历史标识搜索 PASS；`pnpm check:project` PASS；`pnpm check:secrets` PASS
+- 风险任务级 review：已触发；命中跨模块、跨子系统协调、diff 243 行
+- reviewer：`/root/context_recovery_task4_review`
+- 审查结果：`Needs fixes`；0 Critical、2 Important、1 Minor、3 个需协调者核验项
+- 反馈裁决：OpenSpec 任务勾选由 Comet 协调者在审查通过后完成，reviewer 要求实现者勾选与更具体的 Comet 规则冲突，不作为实现缺口
+- 待修复：实现索引改用规范状态枚举；统一 README 中实现证据索引的名称和职责
+- 修复者：`/root/context_recovery_task4_fix1`
+- 修复提交：`41e193c docs: align implementation evidence statuses`
+- 定向复查者：`/root/context_recovery_task4_rereview`
+- 定向复查结果：`APPROVE`；2 项已解决、0 未解决、0 新 breakage
+- 协调者核验：CodeGraph 索引最新；关键符号可定位；`pnpm check:project` 与 `pnpm check:secrets` PASS；工作树范围符合预期
+- 审查-修复轮次：`1/1`
 - 未解决反馈：无
-- 勾选状态：计划 Task 3 的 5 个步骤与 OpenSpec 2.1、2.2、2.4 已勾选
-- 已完成前置：Task 1–2
+- 勾选状态：计划 Task 4 的 7 个步骤与 OpenSpec 2.3、2.5、3.1、3.2、3.3 已勾选
+- 已完成前置：Task 1–3

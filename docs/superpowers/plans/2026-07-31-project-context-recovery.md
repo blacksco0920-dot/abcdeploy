@@ -253,11 +253,11 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 - Consumes: CodeGraph 对当前工作树返回的符号、调用关系和测试入口。
 - Produces: 从用户能力到 Feature、Tauri、仓储、Provider、测试的稳定查询起点，以及历史资产非权威标识。
 
-- [ ] **Step 1: 用 CodeGraph 重新核对八类能力入口**
+- [x] **Step 1: 用 CodeGraph 重新核对八类能力入口**
 
   对本地文件夹、仓库地址、本机运行、服务器上线、待办、成功证据、更新、恢复分别运行 `codegraph_explore`；记录稳定符号名、调用链和测试文件。CodeGraph 未返回或提示过期的项，用 `rg` 和源码/测试复核，并在清单写明缺口，不凭文件名补全。
 
-- [ ] **Step 2: 重写实现清单为证据索引**
+- [x] **Step 2: 重写实现清单为证据索引**
 
   每项采用下列列定义：
 
@@ -267,11 +267,11 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 
   删除“HTML 产品原型已经删除”等与当前文件系统不一致的表述；保留 `api.ts`、`lib.rs`、`workspace.rs` 等架构债务及棘轮预算说明。
 
-- [ ] **Step 3: 明确 OpenSpec/Comet 与 CodeGraph 分工**
+- [x] **Step 3: 明确 OpenSpec/Comet 与 CodeGraph 分工**
 
   在实现清单和 CodeGraph 指南中固定：OpenSpec/Comet 保存 why/what/任务/验证和恢复状态；CodeGraph 只定位定义、调用者与影响范围；`current-state.md` 只链接二者，不复制全文。
 
-- [ ] **Step 4: 为仍保留的历史原型增加显著非权威提示**
+- [x] **Step 4: 为仍保留的历史原型增加显著非权威提示**
 
   在 `docs/product-prototype/index.html` 的首屏可见区域加入：
 
@@ -283,11 +283,11 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 
   复用现有样式或增加最小局部样式；不恢复已被用户删除的原型脚本、样式或截图。`docs/README.md` 只在“历史追溯”区链接该页面。
 
-- [ ] **Step 5: 更新状态账本的 active change 和代码入口**
+- [x] **Step 5: 更新状态账本的 active change 和代码入口**
 
   链接 `openspec/changes/organize-canonical-project-assets/`、Design Doc、实现清单与 CodeGraph 指南；“最近下一步”写为完成冷启动审计和验证，不复制 change 全文。
 
-- [ ] **Step 6: 运行历史标识和链接验证**
+- [x] **Step 6: 运行历史标识和链接验证**
 
   Run:
 
@@ -298,7 +298,7 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 
   Expected: 两处都存在非权威说明，当前导航不要求读取原型，项目门禁 PASS。
 
-- [ ] **Step 7: 勾选 OpenSpec 2.3、2.5、3.1、3.2、3.3 并精确提交**
+- [x] **Step 7: 勾选 OpenSpec 2.3、2.5、3.1、3.2、3.3 并精确提交**
 
   提交信息：
 
