@@ -24,5 +24,7 @@
 - 风险任务级 review：未触发；实现者自报无风险，协调者复核为 17 行单一治理文档 diff
 - 审查-修复轮次：`1/1`
 - 未解决反馈：无
+- 第一次 verify 结果：工程/OpenSpec/CodeGraph 门禁通过，但 plan `base-ref` 错把用户既有全量工作区基线计入本 change；已自动返回 build
+- verify 修复：将 `base-ref` 从 `fd5bacf` 修正为用户全量基线提交 `0a22f58`，使提交区间只覆盖治理资产
 - 勾选状态：计划 Task 5 的 Steps 1–5 与 OpenSpec 4.1–4.4 已勾选；OpenSpec `15/15`、未勾选项 0
 - 已完成前置：Task 1–4
