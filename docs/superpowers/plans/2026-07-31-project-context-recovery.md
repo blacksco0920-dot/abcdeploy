@@ -378,7 +378,7 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
   docs: verify context-independent project recovery
   ```
 
-- [ ] **Step 7: 推进 Comet build 守卫**
+- [x] **Step 7: 推进 Comet build 守卫**
 
   Run:
 
