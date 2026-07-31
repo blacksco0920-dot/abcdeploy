@@ -1,25 +1,20 @@
 # Comet 子代理进度 — organize-canonical-project-assets
 
-- 当前计划任务：`Task 4: 建立代码证据导航并降级历史资产`
-- 映射 OpenSpec 任务：`2.3 更新 docs/internal/implementation-inventory.md，按代码证据列出已实现能力、未接通入口和主要模块`；`2.5 将 docs/product-prototype/ 明确标记为历史讨论资产，并从当前文档主导航中移除其权威地位`；`3.1 在文档中明确 OpenSpec/Comet 负责需求与决策历史，CodeGraph 负责代码定义、调用关系和影响范围`；`3.2 更新 CodeGraph 说明与当前代码入口索引，使后续会话能从业务能力快速定位到 Feature、应用服务、仓储和 Provider`；`3.3 记录本次治理的变更依据和维护规则，禁止后续文档重新混写目标、实现和验收状态`
-- 当前阶段：`done`
-- 实现者：`/root/context_recovery_task4`
-- 实现基线：`0081b810c10809018b003a248ab0f0981c3b8008`
+- 当前计划任务：`Task 5: 执行无会话冷启动审计并闭合变更证据`
+- 映射 OpenSpec 任务：`4.1 模拟无历史上下文的新会话，验证其能准确回答已验证能力、未验证实现、下一步、禁止事项和代码入口五个问题`；`4.2 校验所有当前文档链接、状态枚举、权威引用和 OpenSpec 变更资产的一致性`；`4.3 运行 pnpm check:project、pnpm check:secrets 与受影响的文档检查，并同步 CodeGraph`；`4.4 将验证证据写回 docs/current-state.md 和本变更任务清单，确保结论可追溯`
+- 当前阶段：`final-review`
+- 实现者：`/root/context_recovery_task5`
+- 实现基线：`60c776c7b0cac1ab518bd486147dc461295bffc7`
+- 当前子阶段：`governance-verification`
 - review_mode：`standard`
-- 实现提交：`688ecf7 docs: connect project facts to implementation evidence`
-- 变更文件：`docs/internal/implementation-inventory.md`、`docs/internal/codegraph.md`、`docs/product-prototype/index.html`、`docs/README.md`、`docs/current-state.md`
-- 测试证据：历史标识搜索 PASS；`pnpm check:project` PASS；`pnpm check:secrets` PASS
-- 风险任务级 review：已触发；命中跨模块、跨子系统协调、diff 243 行
-- reviewer：`/root/context_recovery_task4_review`
-- 审查结果：`Needs fixes`；0 Critical、2 Important、1 Minor、3 个需协调者核验项
-- 反馈裁决：OpenSpec 任务勾选由 Comet 协调者在审查通过后完成，reviewer 要求实现者勾选与更具体的 Comet 规则冲突，不作为实现缺口
-- 待修复：实现索引改用规范状态枚举；统一 README 中实现证据索引的名称和职责
-- 修复者：`/root/context_recovery_task4_fix1`
-- 修复提交：`41e193c docs: align implementation evidence statuses`
-- 定向复查者：`/root/context_recovery_task4_rereview`
-- 定向复查结果：`APPROVE`；2 项已解决、0 未解决、0 新 breakage
-- 协调者核验：CodeGraph 索引最新；关键符号可定位；`pnpm check:project` 与 `pnpm check:secrets` PASS；工作树范围符合预期
-- 审查-修复轮次：`1/1`
+- 实现提交：`d697367 docs: verify context-independent project recovery`
+- 审计证据：待派发
+- 冷启动审计者：`/root/cold_start_audit`
+- 冷启动审计结果：`PASS`；五题均可回答；未读取历史原型；未猜测代码入口
+- 协调者核验：答案路径有效；需将两个非即时后续事项从 `NEXT` 收敛为 `TARGET`，确保最近唯一 NEXT 可机械识别
+- 测试证据：OpenSpec strict、`pnpm check:project`、`pnpm check:secrets`、`pnpm codegraph:index`、`pnpm codegraph:status` 均退出码 0
+- 风险任务级 review：未触发；实现者自报无风险，协调者复核为 17 行单一治理文档 diff
+- 审查-修复轮次：`0/1`
 - 未解决反馈：无
-- 勾选状态：计划 Task 4 的 7 个步骤与 OpenSpec 2.3、2.5、3.1、3.2、3.3 已勾选
-- 已完成前置：Task 1–3
+- 勾选状态：计划 Task 5 的 Steps 1–5 与 OpenSpec 4.1–4.4 已勾选；OpenSpec `15/15`、未勾选项 0
+- 已完成前置：Task 1–4

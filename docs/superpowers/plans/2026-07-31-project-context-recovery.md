@@ -320,7 +320,7 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 - Consumes: Tasks 1–4 的全部入口和证据资产。
 - Produces: 五个必答问题的无聊天上下文审计、完整门禁输出、同步后的 CodeGraph 和可进入 verify 的 Comet 状态。
 
-- [ ] **Step 1: 运行 OpenSpec 结构校验**
+- [x] **Step 1: 运行 OpenSpec 结构校验**
 
   Run:
 
@@ -330,7 +330,7 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 
   Expected: change、proposal、design、delta spec 和 tasks 结构全部通过；若当前 CLI 的参数顺序不同，先运行 `openspec validate --help`，只调整命令语法，不调整规范内容来绕过失败。
 
-- [ ] **Step 2: 派发无历史上下文的冷启动审计**
+- [x] **Step 2: 派发无历史上下文的冷启动审计**
 
   使用新鲜审计 agent，`fork_turns: none`，只给出仓库路径和以下指令：先读 `AGENTS.md`，严格按其默认路径阅读，然后回答：
 
@@ -342,7 +342,7 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 
   每个答案必须附仓库路径；审计 agent 若读取旧聊天、默认遍历历史原型、猜测代码入口或混淆状态，则本步骤失败并回到对应文档修复。
 
-- [ ] **Step 3: 运行项目治理门禁**
+- [x] **Step 3: 运行项目治理门禁**
 
   Run:
 
@@ -355,11 +355,11 @@ base-ref: fd5bacfd1d7116fee3d368da2e8e1de7b0359f97
 
   Expected: 全部退出码为 0。因为本 change 不修改运行逻辑，不生成 `.app`；若门禁因 change 外的业务改动失败，保存完整命令、退出码和归因，不删除断言或修改无关文件。
 
-- [ ] **Step 4: 把审计证据写回状态账本**
+- [x] **Step 4: 把审计证据写回状态账本**
 
   在 `docs/current-state.md` 记录审计日期、审计输入边界、五题结果摘要、四条门禁命令及结果、CodeGraph 同步时间。证据只记录路径和结论，不复制完整命令日志。
 
-- [ ] **Step 5: 勾选全部剩余 OpenSpec 4.1–4.4 并核对 15/15**
+- [x] **Step 5: 勾选全部剩余 OpenSpec 4.1–4.4 并核对 15/15**
 
   Run:
 
