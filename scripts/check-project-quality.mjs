@@ -14,6 +14,7 @@ const requiredFiles = [
   "docs/README.md",
   "docs/product-contract.md",
   "docs/architecture.md",
+  "docs/current-state.md",
   "docs/internal/README.md",
   "docs/internal/implementation-inventory.md",
   "docs/engineering-quality.md",
@@ -114,6 +115,7 @@ for (const file of frontendRuntime) {
 checkMarkdownLinks(files.filter((file) => file.endsWith(".md")));
 checkUserFacingDocumentationBoundaries();
 checkFrontendReachability(frontendRuntime);
+checkProjectContextRecovery();
 
 if (failures.length) {
   console.error("项目质量检查失败：\n");
@@ -128,6 +130,22 @@ console.log(
 function lineCount(file) {
   const text = readFileSync(file, "utf8");
   return text ? text.split(/\r?\n/).length : 0;
+}
+
+function checkProjectContextRecovery() {
+  const currentState = "docs/current-state.md";
+  if (!existsSync(currentState)) return;
+  const text = readFileSync(currentState, "utf8");
+  const statuses = [
+    "VERIFIED",
+    "IMPLEMENTED_UNVERIFIED",
+    "NEXT",
+    "TARGET",
+    "OUT_OF_SCOPE",
+  ];
+  for (const status of statuses) {
+    if (!text.includes(status)) failures.push(`${currentState} 缺少状态枚举：${status}`);
+  }
 }
 
 function checkUserFacingDocumentationBoundaries() {
