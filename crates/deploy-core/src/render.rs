@@ -2447,8 +2447,12 @@ fn append_custom_frontend_api_health_gate(
             shell_quote(&diagnostic)
         ),
         ServiceKind::Web => format!(
-            "node -e \"fetch('{probe_url}').then(r=>{{if(!r.ok)throw Error(r.status)}}).catch(()=>{{console.error({});process.exit(1)}})\"",
-            serde_json::to_string(&diagnostic).unwrap_or_else(|_| "\"AD-CTR-102\"".to_string())
+            "node -e {}",
+            shell_quote(&format!(
+                "fetch({}).then(r=>{{if(!r.ok)throw Error(r.status)}}).catch(()=>{{console.error({});process.exit(1)}})",
+                serde_json::to_string(&probe_url).unwrap_or_else(|_| "\"/api/health\"".to_string()),
+                serde_json::to_string(&diagnostic).unwrap_or_else(|_| "\"AD-CTR-102\"".to_string())
+            ))
         ),
         ServiceKind::Api | ServiceKind::Worker => return,
     };
@@ -2864,6 +2868,12 @@ mod tests {
             .expect("h5 health command");
         assert!(health.contains("http://127.0.0.1:80/api/health"));
         assert!(health.contains("AD-CTR-102"));
+        let mut web = first.services[1].clone();
+        web.kind = ServiceKind::Web;
+        let mut web_health = String::new();
+        append_custom_frontend_api_health_gate(&first, &web, &mut web_health);
+        assert!(web_health.contains("node -e 'fetch(\"http://127.0.0.1:80/api/health\")"));
+        assert!(web_health.contains("console.error(\"AD-CTR-102"));
     }
 
     #[test]

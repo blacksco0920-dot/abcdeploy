@@ -25,6 +25,7 @@ base64.workspace = true
 chrono.workspace = true
 deploy-core = { path = "../../../crates/deploy-core" }
 keyring.workspace = true
+reqwest.workspace = true
 rusqlite.workspace = true
 sha2.workspace = true
 tauri = { version = "2", features = [] }
@@ -32,6 +33,7 @@ tauri-plugin-clipboard-manager = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tokio.workspace = true
+url.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_yaml_ng.workspace = true

@@ -1,202 +1,117 @@
 # ABCDeploy 小白部署
 
-[![CI](https://github.com/blacksco0920-dot/abcdeploy/actions/workflows/ci.yml/badge.svg)](https://github.com/blacksco0920-dot/abcdeploy/actions/workflows/ci.yml)
-[![Release](https://github.com/blacksco0920-dot/abcdeploy/actions/workflows/release.yml/badge.svg)](https://github.com/blacksco0920-dot/abcdeploy/actions/workflows/release.yml)
-[![License](https://img.shields.io/badge/license-Apache--2.0-2563a6.svg)](LICENSE)
+ABCDeploy 是面向 vibe coding 用户的桌面部署工具。它只要求用户做两次选择：
 
-面向 vibe coding 用户的引导式容器化部署桌面客户端。选择代码目录后，ABCDeploy 会只读识别项目，并通过“在本机运行、管理版本、部署测试版、发布正式版”四个稳定场景，引导完成 CNB 构建、服务器部署、Caddy HTTPS、版本验证和生产发布。
-
-**[访问官网与国内下载](https://abcdeploy.finagent.cloud)** · **[开源仓库与备用下载](https://github.com/blacksco0920-dot/abcdeploy/releases)**
-
-![ABCDeploy 项目工作台](apps/site/public/abcdeploy-workspace.png)
-
-> 当前为 `0.2.0-preview.4`。适合试点和测试环境；正式业务上线前仍应确认数据库备份、域名归属和平台代码签名状态。
-
-## 为什么做这个项目
-
-传统部署工具往往先要求用户理解镜像、流水线、SSH、反向代理和环境隔离。ABCDeploy 把这些知识变成推荐默认值和可恢复步骤：系统能判断的自动完成，必须由用户授权的操作明确展示。
-
-- 重新打开应用会自动恢复项目与部署进度。
-- 持久侧边栏同时展示多个项目；切换项目不会中断其他构建任务。
-- CNB 账号、镜像仓库和服务器可以跨项目复用；配置中心只保存常用的“配置说明、配置名称、配置值”。
-- 只需本地开发时可独立生成项目 `.env`，无需配置 CNB、镜像仓库、服务器或域名。
-- 只填写服务器地址，自动发现或生成本机 SSH 身份。
-- 内部安全值自动生成，第三方配置按测试/生产分别保存。
-- 代码只构建一次；多个测试通过版本可以同时保留，正式发布时明确选择其中一个同一提交和镜像摘要。
-- DNS、HTTPS 或应用路由异常会给出对应处理方式，不重复构建镜像。
-- 回滚只切换上一健康镜像，不修改数据库、域名和运行配置。
-
-## 默认发布模型
-
-`main` 是稳定代码和发布候选来源，不等于“直接部署生产服务器”。默认流程只有一次构建：
-
-```mermaid
-flowchart LR
-  A[main 稳定提交] --> B[CNB 验证与构建]
-  B --> C[不可变镜像与完整提交 SHA]
-  C --> D[自动部署测试环境]
-  D --> E[容器与公网健康检查]
-  E --> F[创建候选版本 Tag]
-  F --> G{CNB 或客户端确认发布}
-  G --> H[同一提交晋级生产]
-  H --> I[同一镜像摘要]
+```text
+选择项目  →  选择运行位置  →  处理系统列出的待办  →  运行/上线  →  查看成功依据
 ```
 
-测试和生产只共享已验证的程序镜像。两套环境的域名、变量、数据库、容器网络和发布记录始终独立。
+项目可以来自电脑里的文件夹，也可以来自代码仓库地址；运行位置可以是这台电脑，也可以是某台 Linux 服务器。因此 MVP 覆盖四种组合：
 
-| 环境          | 默认位置 | 用途                     | 更新方式                |
-| ------------- | -------- | ------------------------ | ----------------------- |
-| `development` | 本机     | 编码、调试、本地依赖     | 用户自己的开发工具      |
-| `staging`     | 服务器   | 验证真实镜像、依赖和路由 | `main` 稳定提交自动部署 |
-| `production`  | 服务器   | 正式用户访问             | 测试健康后人工确认晋级  |
+- 本地文件夹 → 这台电脑；
+- 代码仓库 → 这台电脑；
+- 本地文件夹 → Linux 服务器；
+- 代码仓库 → Linux 服务器。
 
-## 支持能力
+用户不需要先理解构建、制品存储、远程连接、运行环境或路由。系统能够安全完成的工作自动完成；必须由用户授权、输入或在外部平台处理的事项，统一列成一张完整待办列表。
 
-- 识别 NestJS、Next.js、Vite、UniApp、Taro、Prisma、通用 Node.js 项目和多包工作区。
-- 生成 `deploy.yaml`、Docker Compose、Caddy 和 CNB 流水线；默认部署链路不依赖 GitHub。
-- 使用通用 OCI 镜像仓库契约，国内默认推荐腾讯云 TCR，也可使用 CNB Docker 制品库。
-- 使用内置纯 Rust SSH，支持 RSA/Ed25519 私钥和固定服务器指纹。
-- 为每个项目生成独立流水线身份，用户登录私钥不会上传到 CNB。
-- 使用操作系统钥匙串保存 Token、可复用连接凭据与开发、测试、生产三份完整运行配置文件。
-- 保留部署记录、完整提交 SHA、CNB 构建编号和回滚结果。
-- 失败时展示稳定错误码、处理步骤和可折叠技术详情。
-- 提供 Rust CLI `deployctl`，用于自动化、Schema 生成和排障。
+## 产品承诺
 
-## 安装
+ABCDeploy 不用“命令执行完成”或“内部阶段变绿”冒充成功。
 
-优先从 [ABCDeploy 官网](https://abcdeploy.finagent.cloud) 下载；无法访问时可使用 [GitHub Releases](https://github.com/blacksco0920-dot/abcdeploy/releases) 备用入口：
+一次可信结果至少回答：
 
-- macOS Apple Silicon / Intel：`.dmg`
-- Windows x64：预览版提供 NSIS `.exe`；稳定版再同时提供 `.msi`
-- Linux x64：`.AppImage` 或 `.deb`
+- 部署的是哪份代码；
+- 运行位置实际运行的是哪个版本或源码快照；
+- 必要服务和依赖是否仍然健康；
+- 用户视角的访问地址是否连续检查通过；
+- 证据来自哪里、何时检查、连续通过了几次。
 
-Alpha 安装包尚未配置商业代码签名证书时，系统可能显示来源提示。请只从本仓库 Release 下载，并核对发布页面资产。
+服务已经运行但公网地址尚未可用时，产品必须明确显示“服务已运行，访问地址仍需处理”，并把剩余问题放回待办，而不是显示上线成功。
 
-### 从源码运行
+## MVP 页面
 
-需要 Node.js 22、pnpm 11、Rust 1.97 和对应平台的 [Tauri 2 系统依赖](https://v2.tauri.app/start/prerequisites/)。
+首页只展示已保存的部署和“新建部署”。新建部署是一个自然纵向页面：
+
+1. 选择项目；
+2. 选择运行位置；
+3. 查看自动检查和完整待办；
+4. 执行当前唯一主操作；
+5. 查看运行结果和成功依据。
+
+项目选择、运行位置、待办、主操作和结果始终在同一个自然纵向页面完成。后台实现可以替换，不决定用户看到的页面结构。
+
+当前桌面客户端已经完成并由用户亲自验通服务器正向 MVP 主线。后续改动必须保持这条主线可运行；历史实现与具体 Provider 已隔离在 [内部实施资料](docs/internal/README.md)，只能用于迁移代码，不能用于补充产品需求。
+
+## 仓库结构
+
+| 路径 | 作用 |
+| --- | --- |
+| `apps/desktop` | React + Tauri 桌面客户端 |
+| `crates/deploy-core` | 项目识别、计划生成、Provider、安全和部署领域能力 |
+| `crates/deployctl` | 命令行入口与诊断工具 |
+| `apps/site` | 官网与下载页 |
+| `schemas` | `deploy.yaml` Schema |
+| `examples` / `fixtures` | 可运行示例和匿名化回归夹具 |
+| `docs` | 当前有效的产品、技术、前端和验收文档 |
+| `.codegraph` | 本机生成的 CodeGraph 索引，不提交仓库 |
+
+## 本地开发
+
+需要 Node.js 22、pnpm 11、Rust 1.97 和 Tauri 2 对应平台依赖。
 
 ```bash
-git clone https://github.com/blacksco0920-dot/abcdeploy.git
-cd abcdeploy
 pnpm install
 pnpm dev
 ```
 
-仅使用命令行：
+常用验证：
 
 ```bash
-cargo run -p deployctl -- preflight
-cargo run -p deployctl -- inspect /你的项目目录
-cargo run -p deployctl -- init /你的项目目录
+pnpm check
 ```
 
-`init` 默认只预览。写入部署文件必须显式追加 `--write`。
-
-## 首次部署
-
-### 1. 准备必要资源
-
-| 资源         | 最低要求                                             | 用途                          |
-| ------------ | ---------------------------------------------------- | ----------------------------- |
-| CNB 访问令牌 | 代码读写、构建记录、仓库管理、构建触发和创建仓库权限 | 保存代码、查看版本并触发构建  |
-| OCI 镜像仓库 | 国内试点默认腾讯云 TCR，也可使用 CNB 制品库          | 保存不可变项目版本            |
-| Linux 服务器 | 可通过 SSH 登录，并允许明确确认后的安装或配置操作    | 运行测试/生产容器和统一 Caddy |
-| 域名         | 可选，A/AAAA 记录指向服务器                          | Caddy 自动申请 HTTPS          |
-
-只做远程部署时，本机不强制安装 Docker Desktop 或项目运行时；它们只用于本机完整预览。项目代码仍需要 Git 作为版本来源。
-
-### 2. 在“管理版本”完成一次设置
-
-添加项目由侧边栏统一完成，不算部署步骤。首次准备上线只需处理当前真正缺少的一项：
-
-1. **连接代码平台**：复用或创建 CNB 代码仓库；没有 Git 时由系统安全建立 `main` 和首次提交。
-2. **保存项目版本**：验证并使用 TCR 或其他 OCI 镜像仓库；唯一已验证连接会自动复用。
-3. **准备测试环境**：连接 Linux 服务器，保存独立测试配置，准备测试地址或本机安全预览。
-4. **开启自动部署**：在 CNB 网页完成一次安全保存。
-
-完成后，把准备上线的代码合并到项目主分支即可自动生成版本并更新测试版。客户端主要用于确认测试结果、处理异常，以及从测试通过的版本中发布正式版。
-
-### 3. 按需完成 CNB 网页安全保存
-
-ABCDeploy 可以通过 API 创建普通私有代码仓库，但 CNB 密钥仓库当前仍需在 Web 页面创建和编辑：
-
-1. 应用先打开 CNB 创建或编辑页，并明确显示需要保存的文件名。
-2. 应用只在内存中生成当前项目和环境的完整安全配置。
-3. 用户复制内容、粘贴并保存，再回到应用明确确认结果。
-4. 停点会跨重启恢复；确认保存后，如果剪贴板仍是刚才的安全配置，客户端会主动清空。
-
-安全配置包含 ABCDeploy 为该项目创建的流水线私钥、已确认的服务器公钥和对应环境的完整运行配置文件。内容只在用户点击复制时交给前端，不写入 SQLite、项目目录或日志。
-
-CNB 密钥仓库说明见 [官方文档](https://docs.cnb.cool/zh/repo/secret.html)。
-
-## 生成文件
-
-```text
-deploy.yaml                                      项目部署协议
-.cnb.yml                                        构建、测试、生产晋级与部署
-.deploydesk/generated/<environment>/
-  docker-compose.yml                            环境独立 Compose
-  Caddyfile                                     项目路由片段
-  .env.example                                  变量名与非敏感默认值
-  secret.example.yml                            CNB 密钥字段示例
-```
-
-`.deploydesk` 是早期版本延续下来的内部兼容协议目录。当前实现继续使用它，避免升级时破坏已部署项目；它不属于用户需要维护的配置入口。
-
-## 安全设计
-
-- Token、流水线私钥和分环境运行配置文件通过操作系统钥匙串保存。
-- 服务器首次连接必须人工确认 SHA-256 指纹，后续指纹变化立即停止。
-- 流水线使用项目专属 Ed25519 身份，只把公钥幂等写入服务器。
-- 只允许自动提交 ABCDeploy 拥有的部署文件；发现业务代码未提交时停止同步。
-- 生产发布必须引用测试通过记录中的完整提交 SHA 和不可变镜像摘要，不接受 `latest`，也不重新构建。
-- 回滚保留 `.runtime.env`、数据库与 Caddy，只切换 `.release.env` 中的镜像摘要。
-- 外部错误在进入 UI 和持久化层前统一脱敏。
-
-更完整的边界和漏洞报告方式见 [SECURITY.md](SECURITY.md)。
-面向用户的故障编号见 [错误码说明](docs/archive/v1/error-codes.md)。
-
-## 本地开发
+也可以按层运行：
 
 ```bash
-pnpm install
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
 pnpm --filter @abcdeploy/desktop test
 pnpm --filter @abcdeploy/desktop build
-pnpm --filter @abcdeploy/site build
+pnpm check:project
+pnpm check:secrets
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-构建桌面安装包：
+日常 macOS Apple Silicon 验收包：
 
 ```bash
-pnpm tauri:build
+pnpm tauri:build:app
 ```
 
-可运行示例位于 [`examples/hello-fullstack`](examples/hello-fullstack)，Ecat 匿名化扫描回归样本位于 [`fixtures/ecat-energy`](fixtures/ecat-energy)。
+该命令只生成签名 `.app`，不升级版本、不生成 DMG、不触发远端发布。
 
-## 文档
+## CodeGraph
 
-- [产品与实现文档入口](docs/README.md)
-- [产品需求文档](docs/product-requirements.md)
-- [整体产品工作流](docs/product-workflow.md)
-- [用户旅程与信息架构](docs/user-journeys.md)
-- [前端页面设计规范](docs/frontend-design-guidelines.md)
-- [配置中心与三环境运行模型](docs/configuration-and-runtime.md)
-- [当前实现与验收基线](docs/implementation-acceptance.md)
-- [历史文档归档](docs/archive/README.md)
-- [安全策略](SECURITY.md)
-- [贡献指南](CONTRIBUTING.md)
+本项目使用 CodeGraph 为 AI 提供符号、调用关系和影响范围索引：
 
-## 当前边界
+```bash
+pnpm codegraph:index
+pnpm codegraph:status
+```
 
-- CNB Token 仍需要用户在 CNB Web 创建并粘贴一次，等待适合桌面公共客户端的 OAuth/Device Flow 能力。
-- CNB 密钥仓库创建与文件保存仍需用户在 Web 页面完成，应用不会模拟浏览器点击或读取登录 Cookie。
-- 数据库迁移会被识别，但 Alpha 不会在缺少可验证备份 Provider 时自动执行生产迁移。
-- 已有可识别的统一 Caddy 会复用；Nginx、Traefik、未知进程或未知容器占用 80/443 时会停止并解释冲突，不静默替换现有代理。
-- macOS、Windows 安装包签名取决于维护者是否配置平台证书。
+使用方式和推荐查询见 [CodeGraph 指南](docs/internal/codegraph.md)。
+
+## 当前技术边界
+
+- 首版后台只接入一组受支持的代码构建、不可变版本存储、Linux 服务器和受管路由适配器；具体 Provider 不进入用户信息架构。
+- 首版项目必须至少包含一个 HTTP 可访问服务；纯 CLI、Worker 和定时任务暂不进入成功门禁。
+- 服务器适配器在任何写入前验证系统、架构、权限和网络是否受支持；具体支持范围由适配器能力声明和自动检查结果决定。
+- 产品默认不接 AI 服务，不能依赖 AI 才能完成检查或证明成功。
+- 数据库备份和迁移不属于通用自动承诺；只有项目明确声明持久数据风险时才生成对应待办。
+
+## 文档入口
+
+AI 和开发者从 [docs/README.md](docs/README.md) 开始。产品冲突只以 [产品合同](docs/product-contract.md) 为准，工程承载方式以 [工程架构](docs/architecture.md) 为准，长期维护要求以 [工程质量规范](docs/engineering-quality.md) 为准，实施完成以 [验收标准](docs/implementation-acceptance.md) 为准。
 
 ## 许可证
 

@@ -1,5 +1,16 @@
 # ABCDeploy 开发约定
 
+## 工程质量底线
+
+- 开始修改前阅读 `docs/README.md`、`docs/product-contract.md` 和 `docs/architecture.md`。
+- 优先通过 CodeGraph 查询定义、调用者和影响范围，不凭文件名猜测。
+- 新代码按 Feature、应用服务、仓储和 Provider 边界归位，不继续向 `App.tsx`、`api.ts`、Tauri `lib.rs` 或 `workspace.rs` 堆积。
+- 生产 TypeScript/TSX 和 Rust 文件默认不超过 800/1200 行；现有例外只能缩小。
+- 修复问题先增加能复现的测试；不得删除有效断言换取通过。
+- 用户可见成功必须来自可验证事实；错误必须说明发生了什么、保留了什么和下一步。
+- 新增依赖前证明标准库、现有 UI 基础组件或既有模块无法覆盖，并清理不再使用的依赖。
+- 完成修改后至少运行 `pnpm check:project`、`pnpm check:secrets` 和受影响测试；跨层修改运行完整门禁并同步 CodeGraph。
+
 ## 当前阶段：本地快速迭代
 
 除非用户明确提出“正式发布”，否则默认执行以下规则：
@@ -8,7 +19,7 @@
 - 不创建或推送 Git 标签。
 - 不触发 GitHub Release，不生成全平台安装包。
 - 不发布或替换官网的下载文件和 `latest.json`。
-- 不等待与当前开发任务无关的远端 CI、CNB 构建或安装包任务。
+- 不等待与当前开发任务无关的远端 CI、构建或安装包任务。
 - 只运行与改动相关的本地测试；桌面运行时改动优先验证当前 macOS Apple Silicon 开发机。
 - 每次功能完成并通过本地验收后，生成当前 macOS Apple Silicon 的 `.app` 测试包，方便用户立即接续验收。
 - `.app` 测试包属于本地验收产物，不修改版本号、不生成 DMG，也不触发远端构建或正式发布流程。

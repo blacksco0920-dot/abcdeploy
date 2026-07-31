@@ -98,6 +98,7 @@ mod tests {
             "PASSWORD: another-value\n",
             "Authorization: Bearer abc.def.ghi\n",
             "https://user:password@example.com/path\n",
+            // secret-scan: allow-fixture — verifies that PEM-shaped content is redacted.
             "-----BEGIN PRIVATE KEY-----\nsecret\n-----END PRIVATE KEY-----\n",
         );
         let output = redact_text(input);

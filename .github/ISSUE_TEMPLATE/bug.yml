@@ -1,0 +1,43 @@
+name: 缺陷报告
+description: 报告可复现的产品或工程问题；请勿提交任何真实凭据
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 请先移除 Token、私钥、服务器地址和日志中的敏感内容。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题描述
+      description: 发生了什么？你原本期望什么？
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 最小复现步骤
+      placeholder: |
+        1. 添加项目……
+        2. 打开节点……
+        3. 点击……
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: ABCDeploy 版本与操作系统
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 已脱敏证据
+      description: 可附截图、稳定错误码或脱敏日志。
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 安全确认
+      options:
+        - label: 我确认内容不包含 Token、密码、私钥或可识别的服务器信息
+          required: true

@@ -83,81 +83,6 @@
   }
 }
 
-/*
- * ABCDeploy owns the product semantics; Semi consumes the same tokens.
- * Keeping this bridge in the global entry prevents individual Semi controls
- * from falling back to a second colour system, including in dark mode.
- */
-body {
-  --semi-color-primary: var(--primary);
-  --semi-color-primary-hover: var(--primary-hover);
-  --semi-color-primary-active: var(--primary-hover);
-  --semi-color-primary-disabled: color-mix(
-    in srgb,
-    var(--primary) 36%,
-    var(--surface)
-  );
-  --semi-color-primary-light-default: var(--accent-soft);
-  --semi-color-primary-light-hover: color-mix(
-    in srgb,
-    var(--accent) 14%,
-    var(--surface)
-  );
-  --semi-color-primary-light-active: color-mix(
-    in srgb,
-    var(--accent) 20%,
-    var(--surface)
-  );
-  --semi-color-secondary: var(--accent);
-  --semi-color-secondary-hover: var(--accent-hover);
-  --semi-color-secondary-active: var(--accent-hover);
-  --semi-color-secondary-light-default: var(--accent-soft);
-  --semi-color-info: var(--accent);
-  --semi-color-info-hover: var(--accent-hover);
-  --semi-color-info-active: var(--accent-hover);
-  --semi-color-info-light-default: var(--info-soft);
-  --semi-color-success: var(--success);
-  --semi-color-success-hover: var(--success);
-  --semi-color-success-active: var(--success);
-  --semi-color-success-light-default: var(--success-soft);
-  --semi-color-warning: var(--warning);
-  --semi-color-warning-hover: var(--warning);
-  --semi-color-warning-active: var(--warning);
-  --semi-color-warning-light-default: var(--warning-soft);
-  --semi-color-danger: var(--destructive);
-  --semi-color-danger-hover: var(--destructive-hover);
-  --semi-color-danger-active: var(--destructive-hover);
-  --semi-color-danger-light-default: var(--destructive-soft);
-  --semi-color-focus-border: var(--accent);
-  --semi-color-link: var(--accent);
-  --semi-color-link-hover: var(--accent-hover);
-  --semi-color-link-active: var(--accent-hover);
-  --semi-color-link-visited: var(--accent);
-  --semi-color-border: var(--border);
-  --semi-color-nav-bg: var(--surface);
-  --semi-color-fill-0: color-mix(in srgb, var(--muted) 62%, transparent);
-  --semi-color-fill-1: var(--muted);
-  --semi-color-fill-2: var(--selection-muted);
-  --semi-color-bg-0: var(--background);
-  --semi-color-bg-1: var(--surface);
-  --semi-color-bg-2: var(--surface-raised);
-  --semi-color-bg-3: var(--surface-raised);
-  --semi-color-bg-4: var(--surface-raised);
-  --semi-color-text-0: var(--foreground);
-  --semi-color-text-1: var(--foreground);
-  --semi-color-text-2: var(--muted-foreground);
-  --semi-color-text-3: var(--subtle-foreground);
-  --semi-color-disabled-text: var(--subtle-foreground);
-  --semi-color-disabled-border: var(--border);
-  --semi-color-disabled-bg: var(--muted);
-  --semi-color-disabled-fill: var(--muted);
-  --semi-color-shadow: rgb(25 28 42 / 6%);
-  --semi-shadow-elevated: var(--shadow-md);
-  --semi-border-radius-small: 8px;
-  --semi-border-radius-medium: 8px;
-  --semi-border-radius-large: 12px;
-}
-
 @media (prefers-contrast: more) {
   :root {
     --muted-foreground: #494946;
@@ -306,29 +231,6 @@ select {
   border: 3px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
-}
-
-/*
- * FlowGram exposes pan/zoom controls in the canvas. Its legacy edge
- * scrollbars duplicate those controls and visually clash with the Coze-style
- * floating toolbar, so keep the interaction model canvas-native.
- */
-.deployment-workflow-canvas .gedit-playground-scroll-bottom,
-.deployment-workflow-canvas .gedit-playground-scroll-right,
-.deployment-workflow-canvas .gedit-playground-scroll-bottom-block,
-.deployment-workflow-canvas .gedit-playground-scroll-right-block {
-  display: none !important;
-}
-
-.deployment-workflow-canvas,
-.deployment-workflow-canvas * {
-  scrollbar-width: none;
-}
-
-.deployment-workflow-canvas *::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
 }
 
 @keyframes spin {

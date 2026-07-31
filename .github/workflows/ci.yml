@@ -68,6 +68,16 @@ jobs:
       - name: 安装前端依赖
         run: pnpm install --frozen-lockfile
 
+      - name: 项目架构与文档检查
+        run: pnpm check:project
+
+      - name: 跟踪文件密钥检查
+        run: pnpm check:secrets
+
+      - name: 交互原型回归
+        if: runner.os == 'Linux'
+        run: pnpm test:prototype
+
       - name: 检查 Rust 格式
         if: runner.os == 'Linux'
         run: cargo fmt --all -- --check

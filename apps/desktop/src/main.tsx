@@ -1,5 +1,3 @@
-import "@douyinfe/semi-ui/react19-adapter";
-import "@douyinfe/semi-ui/lib/es/_base/base.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -42,12 +40,9 @@ class AppErrorBoundary extends React.Component<
 }
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  // FlowGram 1.0.12 initializes its Inversify container inside a useMemo
-  // calculator. React's development StrictMode invokes that calculator twice,
-  // which loads FlowRendererContainerModule twice and makes
-  // FlowRendererRegistry ambiguous. Keep the application root non-strict until
-  // FlowGram moves container initialization to an idempotent lifecycle.
-  <AppErrorBoundary>
-    <App />
-  </AppErrorBoundary>,
+  <React.StrictMode>
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
+  </React.StrictMode>,
 );

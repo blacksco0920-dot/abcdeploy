@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { RecentProject } from "../types";
+import type { DeploymentRun, RecentProject } from "../types";
 import { ProjectGallery } from "./ProjectGallery";
 
 function project(overrides: Partial<RecentProject> = {}): RecentProject {
@@ -8,9 +8,9 @@ function project(overrides: Partial<RecentProject> = {}): RecentProject {
     activeRunCount: 0,
     currentStep: "workspace",
     id: "sample",
-    lastOpenedAt: new Date().toISOString(),
+    lastOpenedAt: "2026-07-24T04:00:00.000Z",
     latestEnvironment: "deployment",
-    latestMessage: "上线完成",
+    latestMessage: "https://message-is-not-an-address.example",
     latestStatus: "success",
     manifestExists: true,
     name: "示例商城",
@@ -21,167 +21,403 @@ function project(overrides: Partial<RecentProject> = {}): RecentProject {
   };
 }
 
-function renderGallery(projects: RecentProject[] = [project()]) {
+function deploymentRun(overrides: Partial<DeploymentRun> = {}): DeploymentRun {
+  return {
+    actionKind: null,
+    actionUrl: null,
+    artifacts: [],
+    branch: "main",
+    buildSerial: null,
+    candidateTag: null,
+    commitSha: null,
+    completedSteps: [],
+    currentStage: "deploy",
+    environment: "deployment",
+    id: "run-sample",
+    issueCode: null,
+    message: "",
+    projectName: "示例商城",
+    projectPath: "/projects/sample",
+    repository: "team/sample",
+    sourceRunId: null,
+    startedAt: "2026-07-24T04:00:00.000Z",
+    status: "running",
+    updatedAt: "2026-07-24T04:01:00.000Z",
+    ...overrides,
+  };
+}
+
+function renderGallery({
+  currentRuns = [],
+  loading = false,
+  projects = [project()],
+  selectingProject = false,
+  selectionIssue = null,
+  taskRuns = [],
+}: {
+  currentRuns?: DeploymentRun[];
+  loading?: boolean;
+  projects?: RecentProject[];
+  selectingProject?: boolean;
+  selectionIssue?: { message: string; title: string } | null;
+  taskRuns?: DeploymentRun[];
+} = {}) {
   const onForget = vi.fn();
   const onOpen = vi.fn();
   const onSelect = vi.fn();
-  render(
+  const view = render(
     <ProjectGallery
-      loading={false}
+      currentRuns={currentRuns}
+      loading={loading}
       onForget={onForget}
       onOpen={onOpen}
       onSelect={onSelect}
       projects={projects}
-      taskRuns={[]}
+      selectingProject={selectingProject}
+      selectionIssue={selectionIssue}
+      taskRuns={taskRuns}
     />,
   );
-  return { onForget, onOpen, onSelect };
+  return { ...view, onForget, onOpen, onSelect };
 }
 
-describe("ProjectGallery", () => {
-  it("首页只呈现项目入口，不重复展示项目级运行记录和本机提示", () => {
+describe("ProjectGallery deployment-list adapter", () => {
+  it("把旧项目精确适配为我的部署，并保留新建和打开回调", () => {
     const current = project();
-    const { onOpen } = renderGallery([current]);
+    const { onOpen, onSelect } = renderGallery({ projects: [current] });
 
     expect(
-      screen.getByRole("heading", { name: "所有项目" }),
+      screen.getByRole("heading", { level: 1, name: "我的部署" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "添加项目" }),
-    ).toBeInTheDocument();
-    const pageHeader = screen.getByRole("banner");
-    expect(pageHeader).toContainElement(
-      screen.getByRole("heading", { name: "所有项目" }),
+    expect(screen.getByText("示例商城")).toBeInTheDocument();
+    expect(screen.getByText("服务器")).toBeInTheDocument();
+    expect(screen.getByText("上次验证通过 · 待复查")).toHaveAttribute(
+      "data-result-tone",
+      "neutral",
     );
-    expect(pageHeader).toContainElement(
-      screen.getByRole("textbox", { name: "搜索项目" }),
-    );
-    expect(
-      screen.getByRole("button", { name: /示例商城，已经上线/ }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("3 个服务")).toBeInTheDocument();
-    expect(screen.getByText("打开工作流 ›")).toBeInTheDocument();
-    expect(screen.queryByText("运行记录")).not.toBeInTheDocument();
-    expect(screen.queryByText(/本机环境/)).not.toBeInTheDocument();
+    expect(screen.getByText("最近验证：未记录")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /示例商城，已经上线/ }));
+    fireEvent.click(screen.getByRole("button", { name: "新建部署" }));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开 示例商城（服务器）" }),
+    );
     expect(onOpen).toHaveBeenCalledWith(current);
   });
 
-  it("项目卡片直接给出与当前状态一致的下一步", () => {
-    renderGallery([
-      project(),
-      project({
-        id: "attention",
-        latestStatus: "failed",
-        name: "需要处理的项目",
-        path: "/projects/attention",
-      }),
-      project({
-        id: "setup",
-        latestEnvironment: null,
-        latestStatus: null,
-        name: "待设置项目",
-        path: "/projects/setup",
-      }),
-    ]);
+  it("把部署记录移除操作映射回对应项目", () => {
+    const current = project();
+    const { onForget } = renderGallery({ projects: [current] });
 
-    expect(screen.getByText("打开工作流 ›")).toBeInTheDocument();
-    expect(screen.getByText("继续处理 ›")).toBeInTheDocument();
-    expect(screen.getByText("继续设置 ›")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "更多操作：示例商城" }));
+    fireEvent.click(screen.getByRole("button", { name: "移除部署记录" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认移除部署记录" }));
+    expect(onForget).toHaveBeenCalledWith(current);
   });
 
-  it("只有真实上线成功的项目使用绿色成功状态，未开始项目保持中性", () => {
-    renderGallery([
-      project(),
+  it("保守投影旧状态，活跃任务优先且旧 success 永不直接变绿", () => {
+    const projects = [
+      project({ id: "stale", name: "旧成功", path: "/projects/stale" }),
       project({
-        id: "not-started",
+        id: "failed",
+        latestStatus: "failed",
+        name: "失败项目",
+        path: "/projects/failed",
+      }),
+      project({
+        id: "needs-action",
+        latestStatus: "needs_action",
+        name: "待处理项目",
+        path: "/projects/needs-action",
+      }),
+      project({
+        activeRunCount: 1,
+        id: "active",
+        name: "运行中项目",
+        path: "/projects/active",
+      }),
+      project({
+        id: "new",
         latestEnvironment: null,
         latestStatus: null,
-        name: "尚未开始项目",
-        path: "/projects/not-started",
+        name: "未运行项目",
+        path: "/projects/new",
       }),
-    ]);
+    ];
+    renderGallery({
+      projects,
+      taskRuns: [
+        deploymentRun({
+          id: "run-active",
+          projectName: "运行中项目",
+          projectPath: "/projects/active",
+        }),
+      ],
+    });
 
-    const onlineCard = screen
-      .getByRole("button", { name: /示例商城，已经上线/ })
-      .closest("article");
-    const notStartedCard = screen
-      .getByRole("button", { name: /尚未开始项目，尚未开始上线/ })
-      .closest("article");
+    expect(screen.getByText("上次验证通过 · 待复查")).toHaveAttribute(
+      "data-result-tone",
+      "neutral",
+    );
+    expect(screen.getByText("上次运行没有完成")).toHaveAttribute(
+      "data-result-tone",
+      "danger",
+    );
+    expect(screen.getByText("需要处理")).toHaveAttribute(
+      "data-result-tone",
+      "warning",
+    );
+    expect(screen.getByText("正在上线")).toHaveAttribute(
+      "data-result-tone",
+      "processing",
+    );
+    expect(screen.getByText("尚未运行")).toHaveAttribute(
+      "data-result-tone",
+      "neutral",
+    );
+    expect(document.querySelector('[data-result-tone="success"]')).toBeNull();
+  });
 
-    expect(onlineCard?.querySelector("[data-project-status-tone]")).toHaveAttribute(
-      "data-project-status-tone",
+  it("运行位置和地址只使用已有结构化事实", () => {
+    const currentRun = deploymentRun({
+      id: "run-active",
+      projectName: "有地址项目",
+      projectPath: "/projects/active",
+      status: "success",
+      routeChecks: [
+        {
+          host: "app.example.com",
+          httpStatus: 200,
+          message: "ok",
+          phase: "ready",
+          reachable: true,
+          url: "https://app.example.com",
+        },
+        {
+          host: "admin.example.com",
+          httpStatus: 200,
+          message: "ok",
+          phase: "ready",
+          reachable: true,
+          url: "https://admin.example.com",
+        },
+        {
+          host: "failed.example.com",
+          httpStatus: null,
+          message: "failed",
+          phase: "http",
+          reachable: false,
+          url: "https://failed.example.com",
+        },
+      ],
+    });
+    renderGallery({
+      currentRuns: [currentRun],
+      projects: [
+        project({
+          id: "active",
+          latestEnvironment: null,
+          name: "有地址项目",
+          path: "/projects/active",
+        }),
+        project({
+          id: "unknown",
+          latestEnvironment: null,
+          name: "未知位置项目",
+          path: "/projects/unknown",
+        }),
+      ],
+      taskRuns: [currentRun],
+    });
+
+    const rows = screen.getAllByRole("listitem");
+    expect(within(rows[0]).getByText("服务器")).toBeInTheDocument();
+    expect(
+      within(rows[0]).getByText("https://app.example.com"),
+    ).toBeInTheDocument();
+    expect(within(rows[0]).getByText("另有 1 个地址")).toBeInTheDocument();
+    expect(screen.queryByText("https://failed.example.com")).toBeNull();
+    expect(
+      screen.queryByText("https://message-is-not-an-address.example"),
+    ).toBeNull();
+    expect(within(rows[1]).getByText("运行位置未记录")).toBeInTheDocument();
+  });
+
+  it("使用部署线路明确指向的当前版本，并优先展示网页地址", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-25T02:04:00.000Z"));
+    const currentRun = deploymentRun({
+      status: "success",
+      startedAt: "2026-07-25T02:00:00.000Z",
+      updatedAt: "2026-07-25T02:03:00.000Z",
+      routeChecks: [
+        {
+          host: "api.example.com",
+          httpStatus: 200,
+          message: "ok",
+          phase: "ready",
+          reachable: true,
+          url: "https://api.example.com",
+        },
+        {
+          host: "h5.example.com",
+          httpStatus: 200,
+          message: "ok",
+          phase: "ready",
+          reachable: true,
+          url: "https://h5.example.com",
+        },
+      ],
+    });
+    renderGallery({
+      currentRuns: [currentRun],
+      projects: [project({ latestStatus: "success" })],
+      taskRuns: [currentRun],
+    });
+
+    expect(screen.getByText("运行正常")).toHaveAttribute(
+      "data-result-tone",
       "success",
     );
-    expect(
-      notStartedCard?.querySelector("[data-project-status-tone]"),
-    ).toHaveAttribute("data-project-status-tone", "neutral");
-    expect(notStartedCard?.querySelector(".lucide-check-circle-2")).toBeNull();
-    expect(notStartedCard?.querySelector(".lucide-circle")).not.toBeNull();
+    expect(screen.getByText("https://h5.example.com")).toBeInTheDocument();
+    expect(screen.getByText("最近验证：10:03")).toBeInTheDocument();
+    vi.useRealTimers();
   });
 
-  it("搜索和状态筛选只改变项目卡片，不引入额外一级页面", () => {
-    renderGallery([
-      project(),
-      project({
-        id: "attention",
-        latestEnvironment: "deployment",
-        latestStatus: "failed",
-        name: "客户门户",
-        path: "/projects/customer",
-      }),
-    ]);
-
-    fireEvent.change(screen.getByRole("textbox", { name: "搜索项目" }), {
-      target: { value: "客户" },
+  it("较旧的失败记录不会覆盖较新的成功结果", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-25T02:04:00.000Z"));
+    const latestSuccess = deploymentRun({
+      id: "latest-success",
+      status: "success",
+      updatedAt: "2026-07-25T02:03:00.000Z",
     });
-    expect(
-      screen.getByRole("button", { name: /客户门户，上次上线没有完成/ }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /示例商城，已经上线/ }),
-    ).not.toBeInTheDocument();
-
-    fireEvent.change(screen.getByRole("textbox", { name: "搜索项目" }), {
-      target: { value: "" },
+    renderGallery({
+      currentRuns: [latestSuccess],
+      projects: [project({ latestStatus: "failed" })],
+      taskRuns: [
+        deploymentRun({
+          id: "old-failure",
+          status: "failed",
+          updatedAt: "2026-07-25T02:00:00.000Z",
+        }),
+        latestSuccess,
+      ],
     });
-    fireEvent.click(screen.getByRole("button", { name: "需要处理" }));
-    expect(
-      screen.getByRole("button", { name: /客户门户，上次上线没有完成/ }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /示例商城，已经上线/ }),
-    ).not.toBeInTheDocument();
+
+    expect(screen.getByText("运行正常")).toHaveAttribute(
+      "data-result-tone",
+      "success",
+    );
+    expect(screen.queryByText("服务仍在线 · 更新失败")).toBeNull();
+    vi.useRealTimers();
   });
 
-  it("隐藏项目需要通过真实菜单二次确认且明确只移除入口", async () => {
-    const current = project();
-    const { onForget } = renderGallery([current]);
+  it("更新失败时保留当前线上版本和地址，只把失败作为待处理提示", () => {
+    const currentRun = deploymentRun({
+      id: "online-version",
+      status: "success",
+      updatedAt: "2026-07-25T02:03:00.000Z",
+      routeChecks: [
+        {
+          host: "online.example.com",
+          httpStatus: 200,
+          message: "ok",
+          phase: "ready",
+          reachable: true,
+          url: "https://online.example.com",
+        },
+      ],
+    });
+    const failedUpdate = deploymentRun({
+      id: "failed-update",
+      status: "failed",
+      updatedAt: "2026-07-25T02:05:00.000Z",
+    });
 
-    fireEvent.click(screen.getByRole("button", { name: "项目操作：示例商城" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "从列表隐藏" }));
-    const dialog = screen.getByRole("dialog");
-    expect(
-      within(dialog).getByRole("heading", {
-        name: "从列表隐藏 示例商城？",
-      }),
-    ).toBeInTheDocument();
-    expect(dialog).toHaveTextContent("项目代码、连接、线路和上线记录都会保留");
-    fireEvent.click(within(dialog).getByRole("button", { name: "从列表隐藏" }));
-    expect(onForget).toHaveBeenCalledWith(current);
-    // Semi Dropdown defers its final position cleanup to a short timer.
-    await new Promise((resolve) => window.setTimeout(resolve, 250));
+    renderGallery({
+      currentRuns: [currentRun],
+      taskRuns: [failedUpdate, currentRun],
+    });
+
+    expect(screen.getByText("服务仍在线 · 更新失败")).toHaveAttribute(
+      "data-result-tone",
+      "warning",
+    );
+    expect(screen.getByText("https://online.example.com")).toBeInTheDocument();
   });
 
-  it("没有项目时给出唯一的添加动作", () => {
-    const { onSelect } = renderGallery([]);
+  it("回退后首页以部署线路当前指针为准，不把更新的成功记录误当线上版本", () => {
+    const restoredRun = deploymentRun({
+      id: "restored-old-version",
+      status: "success",
+      updatedAt: "2026-07-25T02:00:00.000Z",
+      routeChecks: [
+        {
+          host: "restored.example.com",
+          httpStatus: 200,
+          message: "ok",
+          phase: "ready",
+          reachable: true,
+          url: "https://restored.example.com",
+        },
+      ],
+    });
+    const newerSuccessfulAttempt = deploymentRun({
+      id: "newer-successful-attempt",
+      status: "success",
+      updatedAt: "2026-07-25T02:05:00.000Z",
+      routeChecks: [
+        {
+          host: "newer.example.com",
+          httpStatus: 200,
+          message: "ok",
+          phase: "ready",
+          reachable: true,
+          url: "https://newer.example.com",
+        },
+      ],
+    });
+
+    renderGallery({
+      currentRuns: [restoredRun],
+      taskRuns: [newerSuccessfulAttempt, restoredRun],
+    });
+
     expect(
-      screen.getByRole("heading", { name: "添加第一个项目" }),
+      screen.getByText("https://restored.example.com"),
     ).toBeInTheDocument();
-    const addButtons = screen.getAllByRole("button", { name: "添加项目" });
-    expect(addButtons).toHaveLength(2);
-    fireEvent.click(addButtons[1]);
-    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("https://newer.example.com")).toBeNull();
+  });
+
+  it("移除旧首页的搜索、筛选、隐藏和旧业务信息", () => {
+    renderGallery();
+
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
+    expect(screen.queryByText(/全部|已经上线|从列表隐藏/)).toBeNull();
+    expect(screen.queryByText(/个服务|工作流|\/projects\//)).toBeNull();
+  });
+
+  it("初始加载和选择失败都给出简洁、可恢复的页面提示", () => {
+    const loadingView = renderGallery({ loading: true, projects: [] });
+    expect(
+      screen.getByRole("heading", { name: "我的部署" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "正在读取已保存的部署",
+    );
+    expect(screen.queryByText("还没有部署")).toBeNull();
+    loadingView.unmount();
+
+    const issue = {
+      message: "没有识别到可以运行的服务。",
+      title: "无法读取这个项目",
+    };
+    renderGallery({ projects: [project()], selectionIssue: issue });
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent(issue.title);
+    expect(alert).toHaveTextContent(issue.message);
+    expect(alert).toHaveTextContent("点击“新建部署”重新选择");
   });
 });

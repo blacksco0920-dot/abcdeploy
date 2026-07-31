@@ -4,6 +4,7 @@ pub mod health;
 pub mod journal;
 pub mod manifest;
 pub mod model;
+pub mod mvp;
 pub mod plan;
 pub mod preflight;
 pub mod providers;

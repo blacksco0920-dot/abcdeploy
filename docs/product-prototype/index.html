@@ -3,15 +3,1158 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="ABCDeploy 结果导向发布工作流低保真可点击原型"
-    />
-    <title>ABCDeploy · 结果导向发布原型</title>
-    <link rel="stylesheet" href="./styles.css" />
-    <script defer src="./app.js"></script>
+    <title>ABCDeploy · 更新与版本记录原型</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: #1d1c23;
+        background: #f5f6fa;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        --background: #f5f6fa;
+        --surface: #ffffff;
+        --foreground: #1d1c23;
+        --muted-foreground: #646676;
+        --subtle-foreground: #9294a1;
+        --muted: #f0f1f5;
+        --border: #e4e6ed;
+        --primary: #5b5ceb;
+        --primary-hover: #4b4dd8;
+        --accent-soft: #f0f0ff;
+        --success: #16a36a;
+        --success-soft: #eaf6ef;
+        --warning: #c27612;
+        --warning-soft: #fff4df;
+        --danger: #d94b4b;
+        --danger-soft: #fdf0ef;
+        --shadow-sm: 0 1px 4px rgb(25 28 42 / 6%);
+        --shadow-md: 0 16px 44px rgb(25 28 42 / 16%);
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--background); }
+      button, select { font: inherit; }
+      button { cursor: pointer; }
+      button:focus-visible, select:focus-visible { outline: 3px solid rgb(91 92 235 / 24%); outline-offset: 2px; }
+      .hidden { display: none !important; }
+
+      .app-bar {
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+      }
+      .brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 650; }
+      .brand-mark {
+        width: 30px; height: 30px; display: grid; place-items: center;
+        border-radius: 9px; color: white; background: var(--primary); font-weight: 750;
+      }
+      .prototype-note { font-size: 12px; color: var(--subtle-foreground); }
+      .page { width: min(1040px, calc(100% - 40px)); margin: 0 auto; padding: 34px 0 64px; }
+      .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+      h1 { margin: 0; font-size: 24px; line-height: 32px; letter-spacing: -0.02em; }
+      h2 { margin: 0; font-size: 17px; line-height: 25px; }
+      h3 { margin: 0; font-size: 15px; line-height: 22px; }
+      p { color: var(--muted-foreground); }
+      .page-lead { margin: 5px 0 0; font-size: 14px; line-height: 23px; }
+      .button-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .button {
+        min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+        border: 1px solid transparent; border-radius: 9px; padding: 0 14px;
+        background: var(--primary); color: white; font-size: 14px; font-weight: 600;
+        transition: 140ms ease;
+      }
+      .button:hover { background: var(--primary-hover); }
+      .button.secondary { border-color: var(--border); background: var(--surface); color: var(--foreground); }
+      .button.secondary:hover { background: var(--muted); }
+      .button.ghost { background: transparent; color: var(--muted-foreground); }
+      .button.ghost:hover { background: var(--muted); color: var(--foreground); }
+      .button.danger { background: var(--danger); }
+      .button.small { min-height: 32px; padding: 0 11px; font-size: 13px; }
+      .icon-button { width: 36px; padding: 0; }
+      .back-button { margin: -3px 0 20px; }
+
+      .deployment-list { margin-top: 28px; display: grid; gap: 12px; }
+      .deployment-row {
+        display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px;
+        padding: 18px 20px; border: 1px solid var(--border); border-radius: 14px;
+        background: var(--surface); box-shadow: var(--shadow-sm);
+      }
+      .title-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .badge {
+        display: inline-flex; align-items: center; gap: 6px; min-height: 24px;
+        padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      }
+      .badge.success { color: var(--success); background: var(--success-soft); }
+      .badge.warning { color: var(--warning); background: var(--warning-soft); }
+      .badge.processing { color: var(--primary); background: var(--accent-soft); }
+      .badge.neutral { color: var(--muted-foreground); background: var(--muted); }
+      .meta-line { display: flex; align-items: center; gap: 8px 18px; flex-wrap: wrap; margin-top: 11px; color: var(--muted-foreground); font-size: 12px; line-height: 20px; }
+      .meta-item { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+      .meta-item strong { color: var(--foreground); font-weight: 600; }
+      .row-actions { display: flex; align-items: center; gap: 8px; }
+
+      .detail-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+      .eyebrow { margin-bottom: 4px; color: var(--muted-foreground); font-size: 12px; }
+      .section { margin-top: 22px; }
+      .card { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-sm); }
+      .current-card { padding: 20px; }
+      .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+      .current-title { display: flex; align-items: center; gap: 10px; }
+      .address-list { display: grid; gap: 8px; margin-top: 16px; }
+      .address-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 13px; border-radius: 9px; background: var(--muted); font-size: 13px; }
+      .current-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 18px; padding-top: 17px; border-top: 1px solid var(--border); }
+      .fact-label { color: var(--subtle-foreground); font-size: 12px; }
+      .fact-value { margin-top: 5px; color: var(--foreground); font-size: 13px; font-weight: 600; line-height: 20px; }
+
+      .history-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+      .history-heading p { margin: 3px 0 0; font-size: 13px; }
+      .history-list { overflow: hidden; }
+      .history-row { display: grid; grid-template-columns: 116px minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 16px 18px; border-top: 1px solid var(--border); }
+      .history-row:first-child { border-top: 0; }
+      .history-time { color: var(--muted-foreground); font-size: 12px; line-height: 19px; }
+      .history-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; font-weight: 650; }
+      .history-desc { margin-top: 4px; color: var(--muted-foreground); font-size: 12px; line-height: 19px; }
+      .history-desc code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--foreground); }
+
+      .progress-card { margin-top: 22px; padding: 20px; }
+      .progress-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+      .progress-track { height: 5px; margin: 17px 0 16px; border-radius: 999px; background: var(--muted); overflow: hidden; }
+      .progress-bar { height: 100%; width: 25%; border-radius: inherit; background: var(--primary); transition: width 350ms ease; }
+      .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+      .step { display: flex; align-items: flex-start; gap: 8px; color: var(--subtle-foreground); font-size: 12px; }
+      .step-dot { width: 18px; height: 18px; flex: 0 0 auto; display: grid; place-items: center; border: 1.5px solid var(--border); border-radius: 50%; font-size: 10px; }
+      .step.active { color: var(--primary); font-weight: 600; }
+      .step.active .step-dot { border-color: var(--primary); }
+      .step.done { color: var(--success); }
+      .step.done .step-dot { border-color: var(--success); background: var(--success-soft); }
+      .guardrail { margin-top: 16px; padding: 11px 13px; border-radius: 9px; background: var(--accent-soft); color: var(--muted-foreground); font-size: 12px; line-height: 19px; }
+      .failure-card { margin-top: 12px; padding: 14px; border: 1px solid #f2c5c0; border-radius: 10px; background: var(--danger-soft); }
+      .failure-card strong { color: var(--danger); font-size: 13px; }
+      .failure-card p { margin: 5px 0 0; font-size: 12px; line-height: 20px; }
+
+      .menu-wrap { position: relative; }
+      .more-button { width: 36px; padding: 0; font-size: 18px; letter-spacing: 1px; }
+      .action-menu {
+        position: absolute; z-index: 12; top: 43px; right: 0; width: 224px;
+        padding: 6px; border: 1px solid var(--border); border-radius: 11px;
+        background: var(--surface); box-shadow: var(--shadow-md);
+      }
+      .menu-item {
+        width: 100%; display: grid; gap: 2px; padding: 10px 11px; border: 0;
+        border-radius: 8px; background: transparent; color: var(--foreground);
+        text-align: left; font-size: 13px; font-weight: 650;
+      }
+      .menu-item:hover { background: var(--muted); }
+      .menu-item span { color: var(--muted-foreground); font-size: 11px; font-weight: 400; }
+
+      .drawer-backdrop { position: fixed; inset: 0; z-index: 18; background: rgb(17 18 25 / 34%); }
+      .drawer {
+        position: absolute; top: 0; right: 0; width: min(560px, 100%); height: 100%;
+        display: flex; flex-direction: column; background: var(--surface); box-shadow: var(--shadow-md);
+      }
+      .drawer-header {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
+        padding: 22px 24px 17px; border-bottom: 1px solid var(--border);
+      }
+      .drawer-heading { display: grid; gap: 5px; }
+      .drawer-mode-label {
+        width: fit-content; padding: 3px 8px; border-radius: 999px;
+        background: var(--accent-soft); color: var(--primary); font-size: 11px; font-weight: 650;
+      }
+      .drawer-header p { margin: 5px 0 0; font-size: 13px; line-height: 21px; }
+      .drawer-body { flex: 1; min-height: 0; overflow: auto; padding: 20px 24px 28px; }
+      .drawer-footer {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 14px 24px; border-top: 1px solid var(--border); background: var(--surface);
+      }
+      .drawer-footer span { color: var(--muted-foreground); font-size: 11px; line-height: 18px; }
+      .drawer-footer .button-row { flex: 0 0 auto; }
+      .settings-intro {
+        margin-bottom: 15px; padding: 12px 14px; border-radius: 10px;
+        background: var(--muted); color: var(--muted-foreground); font-size: 12px; line-height: 20px;
+      }
+      .settings-route-summary {
+        display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        margin: -3px 0 12px; color: var(--muted-foreground); font-size: 11px; line-height: 18px;
+      }
+      .settings-route-summary strong { color: var(--success); font-size: 11px; }
+      .settings-stepper {
+        display: grid; grid-template-columns: max-content 1fr max-content; align-items: center; gap: 10px;
+        margin: 0 0 14px; color: var(--muted-foreground); font-size: 11px; font-weight: 650;
+      }
+      .settings-stepper span { display: inline-flex; align-items: center; gap: 6px; }
+      .settings-stepper b {
+        width: 20px; height: 20px; display: grid; place-items: center; border-radius: 999px;
+        background: var(--muted); color: var(--muted-foreground); font-size: 10px;
+      }
+      .settings-stepper i { height: 1px; background: var(--border); }
+      .settings-stepper span.active { color: var(--primary); }
+      .settings-stepper span.active b { background: var(--primary); color: white; }
+      .settings-stepper span.done { color: var(--success); }
+      .settings-stepper span.done b { background: var(--success-soft); color: var(--success); }
+      .settings-prepared-summary {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        margin-bottom: 12px; padding: 11px 13px; border-radius: 10px;
+        background: var(--success-soft); color: #14754f; font-size: 11px; line-height: 18px;
+      }
+      .settings-prepared-summary strong { font-size: 12px; }
+      .settings-list-heading {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        margin: 2px 0 8px; color: var(--muted-foreground); font-size: 11px;
+      }
+      .settings-list-heading strong { color: var(--foreground); font-size: 12px; }
+      .drawer:not(.is-initial) .settings-prepared-summary { display: none; }
+      .drawer.is-initial [data-auto-ready] { display: none; }
+      .drawer.is-summary .settings-stepper,
+      .drawer.is-summary [data-edit-setting],
+      .drawer.is-summary #settingsPrimaryAction,
+      .drawer.is-summary #settingsBackAction { display: none; }
+      .drawer.is-summary .setting-card {
+        padding: 11px 13px; border-color: var(--border); background: var(--surface);
+      }
+      .drawer.is-summary .setting-card small { display: none; }
+      .settings-list { display: grid; gap: 10px; }
+      .setting-card {
+        display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 12px;
+        align-items: center; padding: 14px; border: 1px solid var(--border);
+        border-radius: 11px; background: var(--surface);
+      }
+      .setting-card.needs-action { border-color: #efc17d; background: var(--warning-soft); }
+      .setting-card.is-ready { border-color: #b8e3d1; background: var(--success-soft); }
+      .setting-icon {
+        width: 38px; height: 38px; display: grid; place-items: center;
+        border-radius: 10px; background: var(--accent-soft); color: var(--primary); font-weight: 700;
+      }
+      .setting-copy strong { display: block; font-size: 14px; }
+      .setting-copy span { display: block; margin-top: 3px; color: var(--muted-foreground); font-size: 12px; line-height: 19px; }
+      .setting-copy small { display: block; margin-top: 2px; color: var(--subtle-foreground); font-size: 11px; line-height: 18px; }
+      .maintenance-editor {
+        margin-top: 16px; padding: 16px; border: 1px solid #cfd0ff;
+        border-radius: 12px; background: #fafaff;
+      }
+      .editor-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+      .editor-heading p { margin: 3px 0 0; font-size: 12px; line-height: 19px; }
+      .choice-list { display: grid; gap: 8px; }
+      .choice-row {
+        display: flex; align-items: center; gap: 9px; padding: 11px 12px;
+        border: 1px solid var(--border); border-radius: 9px; background: var(--surface); font-size: 13px; cursor: pointer;
+      }
+      .choice-row input { accent-color: var(--primary); }
+      .choice-copy { display: grid; gap: 2px; min-width: 0; }
+      .choice-copy strong { font-size: 13px; }
+      .choice-copy span { color: var(--muted-foreground); font-size: 11px; line-height: 17px; }
+      .new-connection-fields { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+      .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 11px; }
+      .field { display: grid; gap: 6px; color: var(--muted-foreground); font-size: 12px; }
+      .field.full { grid-column: 1 / -1; }
+      .field input, .field select {
+        width: 100%; height: 38px; border: 1px solid var(--border); border-radius: 8px;
+        padding: 0 10px; background: var(--surface); color: var(--foreground); font: inherit;
+      }
+      .editor-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+      .next-update-note {
+        margin-top: 16px; padding: 12px 14px; border-radius: 10px;
+        background: var(--success-soft); color: #14754f; font-size: 12px; line-height: 20px;
+      }
+      .button:disabled { cursor: not-allowed; opacity: .45; }
+
+      .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgb(17 18 25 / 46%); }
+      .modal { width: min(600px, 100%); max-height: calc(100vh - 40px); overflow: auto; border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-md); }
+      .modal-header { display: flex; justify-content: space-between; gap: 20px; padding: 21px 22px 15px; }
+      .modal-header p { margin: 5px 0 0; font-size: 13px; line-height: 21px; }
+      .modal-body { padding: 0 22px 20px; }
+      .version-compare { display: grid; grid-template-columns: 1fr 34px 1fr; align-items: stretch; gap: 9px; }
+      .version-box { padding: 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); }
+      .version-box.target { border-color: #c8c9ff; background: var(--accent-soft); }
+      .version-arrow { display: grid; place-items: center; color: var(--subtle-foreground); }
+      .reuse-list { margin: 16px 0 0; padding: 14px; border-radius: 10px; background: var(--muted); font-size: 13px; line-height: 22px; }
+      .reuse-list ul { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin: 9px 0 0; padding: 0; list-style: none; color: var(--muted-foreground); }
+      .safety-note { margin-top: 12px; padding: 11px 13px; border-radius: 9px; background: var(--success-soft); color: #14754f; font-size: 12px; line-height: 19px; }
+      .prototype-controls { margin-top: 13px; padding-top: 12px; border-top: 1px dashed var(--border); }
+      .prototype-controls summary { cursor: pointer; color: var(--subtle-foreground); font-size: 12px; }
+      .prototype-controls .button-row { margin-top: 10px; }
+      .modal-footer { display: flex; justify-content: flex-end; gap: 9px; padding: 16px 22px; border-top: 1px solid var(--border); }
+      .toast { position: fixed; z-index: 30; left: 50%; bottom: 28px; translate: -50% 0; padding: 11px 15px; border-radius: 10px; background: #27272e; color: white; box-shadow: var(--shadow-md); font-size: 13px; opacity: 0; pointer-events: none; transition: 180ms ease; }
+      .toast.show { opacity: 1; transform: translateY(-4px); }
+
+      @media (max-width: 720px) {
+        .page { width: min(100% - 28px, 1040px); padding-top: 24px; }
+        .page-header, .detail-header, .card-top { align-items: stretch; flex-direction: column; }
+        .deployment-row { grid-template-columns: 1fr; }
+        .row-actions .button { flex: 1; }
+        .current-grid { grid-template-columns: 1fr; gap: 12px; }
+        .history-row { grid-template-columns: 1fr; gap: 7px; }
+        .history-row .button { justify-self: start; }
+        .steps { grid-template-columns: 1fr 1fr; }
+        .version-compare { grid-template-columns: 1fr; }
+        .version-arrow { transform: rotate(90deg); }
+        .reuse-list ul { grid-template-columns: 1fr; }
+        .field-grid { grid-template-columns: 1fr; }
+        .field.full { grid-column: auto; }
+        .prototype-note { display: none; }
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <header class="app-bar">
+      <div class="brand"><span class="brand-mark">A</span><span>ABCDeploy 小白部署</span></div>
+      <span class="prototype-note">交互原型 · 假数据 · 不执行真实上线</span>
+    </header>
+
+    <main id="homeView" class="page">
+      <header class="page-header">
+        <div>
+          <h1>我的部署</h1>
+          <p class="page-lead">每一条代表一个项目在一台服务器上的当前运行结果。</p>
+        </div>
+        <button class="button" id="openInitialSetup" type="button">＋ 新建部署</button>
+      </header>
+
+      <section class="deployment-list" aria-label="部署列表">
+        <article class="deployment-row">
+          <div>
+            <div class="title-line">
+              <h2>finagent</h2>
+              <span id="homeBadge" class="badge success">✓ 运行正常</span>
+            </div>
+            <div class="meta-line">
+              <span class="meta-item">⌖ <strong>运行服务器</strong> · 119.91.112.80</span>
+              <span class="meta-item">↗ https://h5.finagent.cloud</span>
+              <span class="meta-item">◷ 当前版本：<span id="homeVersion">7月26日 10:31 · a0c21498</span></span>
+            </div>
+          </div>
+          <div class="row-actions">
+            <button class="button secondary small open-detail" type="button">查看详情</button>
+            <button class="button small update-trigger" type="button">更新上线</button>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <main id="detailView" class="page hidden">
+      <button class="button ghost back-button" id="backHome" type="button">← 返回我的部署</button>
+      <header class="detail-header">
+        <div>
+          <div class="eyebrow">finagent · 运行服务器 119.91.112.80</div>
+          <h1>部署详情</h1>
+          <p class="page-lead">先看现在运行什么，再决定更新或恢复历史版本。</p>
+        </div>
+        <div class="button-row">
+          <button class="button secondary" type="button" data-open-main>↗ 打开网页</button>
+          <button class="button update-trigger" type="button">更新上线</button>
+          <div class="menu-wrap">
+            <button class="button secondary more-button" id="detailMore" type="button" aria-label="更多操作" aria-expanded="false">···</button>
+            <div class="action-menu hidden" id="detailActionMenu">
+              <button class="menu-item" id="openDeploymentSettings" type="button">
+                部署设置
+                <span>与首次上线使用同一套设置；修改后下次更新生效</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="section card current-card">
+        <div class="card-top">
+          <div>
+            <div class="current-title"><h2>当前在线</h2><span id="detailBadge" class="badge success">✓ 运行正常</span></div>
+            <p class="page-lead">这是服务器正在使用、且最近验证通过的结果。</p>
+          </div>
+          <span class="badge neutral">3 个服务</span>
+        </div>
+        <div class="address-list">
+          <div class="address-row"><span>https://h5.finagent.cloud</span><button class="button ghost small" type="button" data-open-main>打开 ↗</button></div>
+          <div class="address-row"><span>另有 2 个服务地址</span><button class="button ghost small" type="button" data-toast="API 与 OCR 地址保持为辅助地址，不作为默认打开目标">查看</button></div>
+        </div>
+        <div class="current-grid">
+          <div><div class="fact-label">源码版本</div><div class="fact-value" id="currentCommit">Commit a0c214983fe6</div></div>
+          <div><div class="fact-label">运行版本</div><div class="fact-value" id="runtimeVersion">3 个服务镜像已核验</div></div>
+          <div><div class="fact-label">最近上线</div><div class="fact-value" id="currentTime">7月26日 10:31</div></div>
+        </div>
+      </section>
+
+      <section id="progressCard" class="card progress-card hidden" aria-live="polite">
+        <div class="progress-header">
+          <div><h2 id="progressTitle">正在更新</h2><p class="page-lead" id="progressMessage">正在读取本机最新代码。</p></div>
+          <span class="badge processing" id="progressBadge">处理中</span>
+        </div>
+        <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="steps">
+          <div class="step active" data-step="0"><span class="step-dot">1</span><span>读取源码</span></div>
+          <div class="step" data-step="1"><span class="step-dot">2</span><span>生成版本</span></div>
+          <div class="step" data-step="2"><span class="step-dot">3</span><span>更新服务</span></div>
+          <div class="step" data-step="3"><span class="step-dot">4</span><span>验证结果</span></div>
+        </div>
+        <div class="guardrail" id="progressGuardrail">更新期间，当前版本继续对外服务；只有新版本验证通过后才替换当前版本。</div>
+        <div id="failureCard" class="failure-card hidden">
+          <strong>本次更新没有完成，当前版本仍在正常运行</strong>
+          <p>失败记录已经保留。你可以查看原因后再次更新，不需要恢复旧版本。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="history-heading">
+          <div><h2>上线记录</h2><p>每次更新或恢复都会留下记录；成功记录可以再次恢复。</p></div>
+          <span class="badge neutral">项目 + 服务器</span>
+        </div>
+        <div class="card history-list" id="historyList">
+          <article class="history-row" data-current-row data-commit="a0c214983fe6" data-time="7月26日 10:31">
+            <div class="history-time">7月26日<br />10:31</div>
+            <div>
+              <div class="history-title">首次上线成功 <span class="badge success">当前版本</span></div>
+              <div class="history-desc">源码 <code>a0c21498</code> · 3 个服务验证通过</div>
+            </div>
+            <button class="button secondary small" type="button" disabled style="opacity:.45;cursor:default">正在运行</button>
+          </article>
+          <article class="history-row">
+            <div class="history-time">7月25日<br />18:42</div>
+            <div>
+              <div class="history-title">更新没有完成 <span class="badge warning">未影响线上</span></div>
+              <div class="history-desc">源码 <code>b71e6d20</code> · 运行配置缺少一项，旧版本继续服务</div>
+            </div>
+            <button class="button secondary small" type="button" data-toast="原型说明：实际产品会展示本次失败原因与处理入口">查看原因</button>
+          </article>
+          <article class="history-row" data-restorable data-commit="3111dcaa1abf" data-time="7月24日 09:18">
+            <div class="history-time">7月24日<br />09:18</div>
+            <div>
+              <div class="history-title">上线成功</div>
+              <div class="history-desc">源码 <code>3111dcaa</code> · 3 个服务验证通过</div>
+            </div>
+            <button class="button secondary small restore-trigger" type="button">恢复此版本</button>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <div id="settingsDrawerBackdrop" class="drawer-backdrop hidden">
+      <aside class="drawer" id="settingsDrawer" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <header class="drawer-header">
+          <div class="drawer-heading">
+            <span class="drawer-mode-label" id="settingsModeLabel">日常维护</span>
+            <h2 id="settingsTitle">部署设置</h2>
+            <p id="settingsSubtitle">首次配置完成后，仍在这里查看和修改。</p>
+          </div>
+          <button class="button ghost icon-button" id="closeSettings" type="button" aria-label="关闭">×</button>
+        </header>
+        <div class="drawer-body">
+          <div class="settings-intro" id="settingsIntro">这是首次上线时使用的同一个面板。现在先展示已保存的设置；需要调整时，再按“部署资源 → 访问地址”两步修改。</div>
+          <div class="settings-stepper" id="settingsStepper" aria-label="部署设置步骤">
+            <span data-settings-step-indicator="resources"><b>1</b>部署资源</span>
+            <i aria-hidden="true"></i>
+            <span data-settings-step-indicator="addresses"><b>2</b>访问地址</span>
+          </div>
+          <div class="settings-route-summary" aria-live="polite">
+            <span id="settingsRouteText">代码 → 构建服务 → 版本仓库 → 运行服务器</span>
+            <strong id="settingsReadyCount">4/4 已就绪</strong>
+          </div>
+          <div class="settings-prepared-summary" id="settingsPreparedSummary">
+            <strong id="settingsPreparedTitle">首次配置已保存</strong>
+            <span>本地项目、运行服务器、3 个访问地址</span>
+          </div>
+          <div class="settings-list-heading">
+            <strong id="settingsListHeading">当前部署线路</strong>
+            <div class="button-row">
+              <span id="settingsRemainingCount">4 项</span>
+              <button class="button secondary small hidden" id="beginSettingsEdit" type="button">修改部署设置</button>
+            </div>
+          </div>
+          <div class="settings-list">
+            <article class="setting-card" data-setting-card="build" data-settings-section="resources">
+              <div class="setting-icon">构</div>
+              <div class="setting-copy"><strong>构建服务</strong><span id="buildSettingValue">CNB · 马成龙</span><small>负责把项目代码生成可运行版本</small></div>
+              <button class="button secondary small" type="button" data-edit-setting="build">修改</button>
+            </article>
+            <article class="setting-card" data-setting-card="registry" data-settings-section="resources">
+              <div class="setting-icon">版</div>
+              <div class="setting-copy"><strong>版本仓库</strong><span id="registrySettingValue">腾讯云 TCR · finagent</span><small>保存每次上线生成的运行版本</small></div>
+              <button class="button secondary small" type="button" data-edit-setting="registry">修改</button>
+            </article>
+            <article class="setting-card" data-setting-card="server" data-settings-section="resources" data-auto-ready>
+              <div class="setting-icon">服</div>
+              <div class="setting-copy"><strong>运行服务器</strong><span>119.91.112.80 · ubuntu</span><small>当前在线服务所在的服务器</small></div>
+              <button class="button secondary small" type="button" data-edit-setting="server">修改</button>
+            </article>
+            <article class="setting-card" data-setting-card="addresses" data-settings-section="addresses" data-auto-ready>
+              <div class="setting-icon">址</div>
+              <div class="setting-copy"><strong>访问地址</strong><span>3 个地址 · h5.finagent.cloud 为主要网页</span><small>用户访问项目时使用的域名</small></div>
+              <button class="button secondary small" type="button" data-edit-setting="addresses">管理</button>
+            </article>
+          </div>
+          <section class="maintenance-editor hidden" id="maintenanceEditor" aria-live="polite"></section>
+          <div class="next-update-note" id="nextUpdateNote">✓ 当前在线版本继续运行；保存后的设置会在下一次“更新上线”时使用并重新验证。</div>
+        </div>
+        <footer class="drawer-footer">
+          <span id="settingsImpactText">保存后返回部署详情；不会创建上线任务，不会构建、部署或重启服务，当前在线版本不变。</span>
+          <div class="button-row">
+            <button class="button secondary" id="cancelSettings" type="button">取消</button>
+            <button class="button secondary hidden" id="settingsBackAction" type="button">上一步</button>
+            <button class="button" id="settingsPrimaryAction" type="button">保存为下次上线设置</button>
+          </div>
+        </footer>
+      </aside>
+    </div>
+
+    <div id="updateModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="updateTitle">
+      <section class="modal">
+        <header class="modal-header">
+          <div><h2 id="updateTitle">更新 finagent</h2><p>系统只读取本机最新代码，其余上线设置全部复用。</p></div>
+          <button class="button ghost icon-button" type="button" data-close-modal aria-label="关闭">×</button>
+        </header>
+        <div class="modal-body">
+          <div class="version-compare">
+            <div class="version-box"><div class="fact-label">服务器当前版本</div><div class="fact-value" id="compareCurrent">a0c21498</div></div>
+            <div class="version-arrow">→</div>
+            <div class="version-box target"><div class="fact-label">本机准备更新为</div><div class="fact-value">c8427e1a · 刚刚</div></div>
+          </div>
+          <div class="reuse-list">
+            <strong>本次自动复用</strong>
+            <ul><li>✓ 运行服务器</li><li>✓ 构建服务与版本仓库</li><li>✓ 已保存的运行配置</li><li>✓ 3 个访问地址</li></ul>
+          </div>
+          <div class="safety-note">即使更新失败，当前在线版本也不会被替换，用户访问不受影响。</div>
+          <details class="prototype-controls">
+            <summary>原型验收：查看其他结果（实际产品不显示）</summary>
+            <div class="button-row">
+              <button class="button secondary small" type="button" data-update-mode="unchanged">演示代码未变化</button>
+              <button class="button secondary small" type="button" data-update-mode="failed">演示更新失败</button>
+            </div>
+          </details>
+        </div>
+        <footer class="modal-footer">
+          <button class="button secondary" type="button" data-close-modal>取消</button>
+          <button class="button" id="startUpdate" type="button">开始更新</button>
+        </footer>
+      </section>
+    </div>
+
+    <div id="restoreModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="restoreTitle">
+      <section class="modal">
+        <header class="modal-header">
+          <div><h2 id="restoreTitle">恢复到 7月24日的版本？</h2><p>使用当时验证通过并保存的运行版本，不重新构建源码。</p></div>
+          <button class="button ghost icon-button" type="button" data-close-modal aria-label="关闭">×</button>
+        </header>
+        <div class="modal-body">
+          <div class="version-compare">
+            <div class="version-box"><div class="fact-label">当前在线</div><div class="fact-value" id="restoreCurrent">a0c21498</div></div>
+            <div class="version-arrow">→</div>
+            <div class="version-box target"><div class="fact-label">准备恢复到</div><div class="fact-value" id="restoreTarget">3111dcaa · 7月24日 09:18</div></div>
+          </div>
+          <div class="reuse-list"><strong>恢复会做什么</strong><ul><li>✓ 使用当时的 3 个镜像</li><li>✓ 保留服务器与访问地址</li><li>✓ 新增一条恢复记录</li><li>✓ 当前版本仍保留在历史中</li></ul></div>
+          <div class="safety-note">恢复失败时，当前在线版本同样不会被替换。</div>
+        </div>
+        <footer class="modal-footer">
+          <button class="button secondary" type="button" data-close-modal>取消</button>
+          <button class="button" id="startRestore" type="button">确认恢复</button>
+        </footer>
+      </section>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <script>
+      const state = {
+        currentCommit: "a0c21498",
+        currentCommitFull: "a0c214983fe6",
+        currentTime: "7月26日 10:31",
+        mode: "success",
+        settingsMode: "settings",
+        settingsStep: "resources",
+        settingsEditing: false,
+        activeSettingKind: null,
+        initialSelections: new Set(),
+        pendingRestore: {
+          commit: "3111dcaa",
+          fullCommit: "3111dcaa1abf",
+          time: "7月24日 09:18",
+        },
+      };
+
+      const homeView = document.querySelector("#homeView");
+      const detailView = document.querySelector("#detailView");
+      const updateModal = document.querySelector("#updateModal");
+      const restoreModal = document.querySelector("#restoreModal");
+      const progressCard = document.querySelector("#progressCard");
+      const historyList = document.querySelector("#historyList");
+      const toast = document.querySelector("#toast");
+      const detailMore = document.querySelector("#detailMore");
+      const detailActionMenu = document.querySelector("#detailActionMenu");
+      const settingsDrawerBackdrop = document.querySelector("#settingsDrawerBackdrop");
+      const settingsDrawer = document.querySelector("#settingsDrawer");
+      const maintenanceEditor = document.querySelector("#maintenanceEditor");
+      let toastTimer;
+      let runTimers = [];
+
+      function showToast(message) {
+        clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.classList.add("show");
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2400);
+      }
+
+      function showHome() {
+        closeActionMenu();
+        closeSettings();
+        detailView.classList.add("hidden");
+        homeView.classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }
+
+      function showDetail() {
+        homeView.classList.add("hidden");
+        detailView.classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }
+
+      function openModal(modal) {
+        modal.classList.remove("hidden");
+        modal.querySelector("button")?.focus();
+      }
+
+      function closeModals() {
+        updateModal.classList.add("hidden");
+        restoreModal.classList.add("hidden");
+      }
+
+      function closeActionMenu() {
+        detailActionMenu.classList.add("hidden");
+        detailMore.setAttribute("aria-expanded", "false");
+      }
+
+      function toggleActionMenu() {
+        const willOpen = detailActionMenu.classList.contains("hidden");
+        detailActionMenu.classList.toggle("hidden", !willOpen);
+        detailMore.setAttribute("aria-expanded", String(willOpen));
+      }
+
+      function setSettingCardState(kind, status) {
+        const card = document.querySelector(`[data-setting-card="${kind}"]`);
+        if (!card) return;
+        card.classList.toggle("needs-action", status === "missing");
+        card.classList.toggle("is-ready", status === "ready");
+        const button = card.querySelector("[data-edit-setting]");
+        const value = card.querySelector(".setting-copy span");
+        const values = {
+          build: state.settingsMode === "initial" ? "CNB · 我的账号" : "CNB · 马成龙",
+          registry: "腾讯云 TCR · finagent",
+          server: "119.91.112.80 · ubuntu",
+          addresses: "3 个地址 · h5.finagent.cloud 为主要网页",
+        };
+        const isMissing = status === "missing";
+        button.textContent = isMissing ? "选择" : (kind === "addresses" ? "管理" : "修改");
+        value.textContent = isMissing ? "尚未选择 · 可复用已有连接" : values[kind];
+      }
+
+      function updateSettingsProgress() {
+        const isInitial = state.settingsMode === "initial";
+        const completed = isInitial ? 2 + state.initialSelections.size : 4;
+        const remaining = 4 - completed;
+        document.querySelector("#settingsReadyCount").textContent = `${completed}/4 已就绪`;
+        document.querySelector("#settingsRemainingCount").textContent = isInitial
+          ? (remaining ? `${remaining} 项待确认` : "可以继续")
+          : "4 项";
+        document.querySelector("#settingsListHeading").textContent = isInitial
+          ? (remaining ? "本次只需确认" : "本次设置已齐全")
+          : "当前部署线路";
+      }
+
+      function renderSettingsSummary() {
+        state.settingsEditing = false;
+        state.settingsStep = "resources";
+        state.activeSettingKind = null;
+        settingsDrawer.classList.add("is-summary");
+        maintenanceEditor.classList.add("hidden");
+        maintenanceEditor.replaceChildren();
+        document.querySelector("#settingsStepper").classList.add("hidden");
+        document.querySelectorAll("[data-settings-section]").forEach((card) => card.classList.remove("hidden"));
+        document.querySelector("#settingsModeLabel").textContent = "日常维护";
+        document.querySelector("#settingsSubtitle").textContent = "首次配置完成后，仍在这里查看和修改。";
+        document.querySelector("#settingsIntro").textContent = "这是首次上线时使用的同一个面板。现在先展示已保存的设置；需要调整时，再按“部署资源 → 访问地址”两步修改。";
+        document.querySelector("#settingsRouteText").textContent = "代码 → 构建服务 → 版本仓库 → 运行服务器";
+        document.querySelector("#settingsReadyCount").textContent = "4/4 已就绪";
+        document.querySelector("#settingsListHeading").textContent = "当前部署设置";
+        document.querySelector("#settingsRemainingCount").textContent = "4 项已就绪";
+        document.querySelector("#beginSettingsEdit").classList.remove("hidden");
+        document.querySelector("#nextUpdateNote").textContent = "✓ 当前在线版本继续运行；只有下一次点击“更新上线”时，才会使用并重新验证这些设置。";
+        document.querySelector("#settingsImpactText").textContent = "当前在线版本不变。修改后的设置只会留给下一次更新上线使用。";
+        document.querySelector("#cancelSettings").textContent = "关闭";
+        document.querySelector("#settingsBackAction").classList.add("hidden");
+        const primary = document.querySelector("#settingsPrimaryAction");
+        primary.textContent = "保存为下次上线设置";
+        primary.disabled = false;
+        primary.classList.add("hidden");
+      }
+
+      function enterSettingsEdit() {
+        state.settingsEditing = true;
+        settingsDrawer.classList.remove("is-summary");
+        document.querySelector("#beginSettingsEdit").classList.add("hidden");
+        document.querySelector("#settingsPrimaryAction").classList.remove("hidden");
+        document.querySelector("#cancelSettings").textContent = "取消修改";
+        renderSettingsStep("resources");
+      }
+
+      function renderSettingsStep(step) {
+        state.settingsStep = step;
+        state.activeSettingKind = null;
+        maintenanceEditor.classList.add("hidden");
+        maintenanceEditor.replaceChildren();
+        document.querySelector("#beginSettingsEdit").classList.add("hidden");
+
+        document.querySelector("#settingsStepper").classList.remove("hidden");
+        document.querySelectorAll("[data-settings-step-indicator]").forEach((indicator) => {
+          indicator.classList.remove("done");
+          indicator.classList.toggle("active", indicator.dataset.settingsStepIndicator === step);
+          if (state.settingsMode === "initial" && indicator.dataset.settingsStepIndicator === "addresses") {
+            indicator.classList.add("done");
+          }
+        });
+        document.querySelectorAll("[data-settings-section]").forEach((card) => {
+          card.classList.toggle("hidden", card.dataset.settingsSection !== step);
+        });
+
+        const primary = document.querySelector("#settingsPrimaryAction");
+        const back = document.querySelector("#settingsBackAction");
+        primary.classList.remove("hidden");
+        if (state.settingsMode === "initial") {
+          document.querySelector("#settingsModeLabel").textContent = "首次配置";
+          document.querySelector("#settingsSubtitle").textContent = "只补齐本次上线还缺少的设置。";
+          document.querySelector("#settingsIntro").textContent = "这里与部署成功后的“部署设置”是同一个面板。已经准备好的内容不会重复询问；完成后继续本次上线。";
+          document.querySelector("#settingsRouteText").textContent = "本次只需：构建服务 → 版本仓库";
+          document.querySelector("#settingsImpactText").textContent = "保存后回到本次上线，系统会重新检查并继续；已完成的步骤不会丢失。";
+          document.querySelector("#cancelSettings").textContent = "稍后处理";
+          document.querySelector("#nextUpdateNote").textContent = "只需设置一次。验证成功后会保存为可复用连接，并继续当前首次上线任务。";
+          primary.textContent = "准备并继续";
+          primary.disabled = state.initialSelections.size < 2;
+          back.classList.add("hidden");
+          updateSettingsProgress();
+          return;
+        }
+        if (step === "resources") {
+          document.querySelector("#settingsSubtitle").textContent = "修改下一次上线要使用的部署设置。";
+          document.querySelector("#settingsIntro").textContent = "这与首次配置使用相同的表单。先调整构建服务、版本仓库或运行服务器；当前在线版本不会改变。";
+          document.querySelector("#settingsRouteText").textContent = "构建服务 → 版本仓库 → 运行服务器";
+          document.querySelector("#settingsReadyCount").textContent = "3/3 已就绪";
+          document.querySelector("#settingsListHeading").textContent = "部署资源";
+          document.querySelector("#settingsRemainingCount").textContent = "第 1 步";
+          document.querySelector("#settingsImpactText").textContent = "下一步只确认访问地址；不会启动构建、部署或重启服务。";
+          primary.textContent = "下一步：确认访问地址";
+          back.classList.add("hidden");
+        } else {
+          document.querySelector("#settingsSubtitle").textContent = "确认用户访问地址。";
+          document.querySelector("#settingsIntro").textContent = "保存只影响下次更新，当前在线版本不会改变。";
+          document.querySelector("#settingsRouteText").textContent = "主要网页和其他公开服务地址";
+          document.querySelector("#settingsReadyCount").textContent = "第 2 步";
+          document.querySelector("#settingsListHeading").textContent = "访问地址";
+          document.querySelector("#settingsRemainingCount").textContent = "最后确认";
+          document.querySelector("#settingsImpactText").textContent = "保存只影响下次更新上线；不会启动构建、部署或重启服务，当前在线版本不变。";
+          primary.textContent = "保存为下次上线设置";
+          back.classList.remove("hidden");
+          document.querySelector('[data-setting-card="addresses"]').classList.add("hidden");
+          renderMaintenanceEditor("addresses");
+        }
+        primary.disabled = false;
+      }
+
+      function openSettings(mode = "settings") {
+        closeActionMenu();
+        state.settingsMode = mode;
+        state.settingsStep = "resources";
+        state.settingsEditing = mode === "initial";
+        state.activeSettingKind = null;
+        state.initialSelections = new Set();
+        document.querySelector("#beginSettingsEdit").classList.add("hidden");
+        settingsDrawer.classList.toggle("is-initial", mode === "initial");
+        settingsDrawer.classList.remove("is-summary");
+        const isInitial = mode === "initial";
+        document.querySelector("#settingsModeLabel").textContent = isInitial ? "首次配置" : "日常维护";
+        document.querySelector("#settingsTitle").textContent = "部署设置";
+        document.querySelector("#settingsStepper").classList.remove("hidden");
+        document.querySelectorAll("[data-settings-step-indicator]").forEach((indicator) => {
+          const indicatorStep = indicator.dataset.settingsStepIndicator;
+          indicator.classList.toggle("active", indicatorStep === "resources");
+          indicator.classList.toggle("done", isInitial && indicatorStep === "addresses");
+        });
+        document.querySelector("#settingsBackAction").classList.add("hidden");
+        document.querySelectorAll("[data-settings-section]").forEach((card) => card.classList.remove("hidden"));
+        document.querySelector("#settingsSubtitle").textContent = isInitial
+          ? "只补齐本次上线还缺少的设置。"
+          : "首次配置完成后，仍在这里查看和修改。";
+        document.querySelector("#settingsIntro").textContent = isInitial
+          ? "这里与部署成功后的“部署设置”是同一个面板。已经准备好的内容不会重复询问；完成后继续本次上线。"
+          : "这是首次上线时使用的同一个面板。现在先展示已保存的设置；需要调整时，再按“部署资源 → 访问地址”两步修改。";
+        document.querySelector("#settingsRouteText").textContent = isInitial
+          ? "已准备：本地项目、运行服务器和访问地址"
+          : "代码 → 构建服务 → 版本仓库 → 运行服务器";
+        document.querySelector("#settingsPreparedTitle").textContent = isInitial ? "系统已准备" : "首次配置已保存";
+        document.querySelector("#settingsPreparedSummary span").textContent = isInitial
+          ? "本地项目、运行服务器、3 个访问地址均已准备，无需重复填写"
+          : "本地项目、运行服务器、3 个访问地址";
+        document.querySelector("#nextUpdateNote").textContent = isInitial
+          ? "只需设置一次。验证成功后会保存为可复用连接，并继续当前首次上线任务。"
+          : "✓ 当前在线版本继续运行；保存后的设置会在下一次“更新上线”时使用并重新验证。";
+        document.querySelector("#settingsImpactText").textContent = isInitial
+          ? "保存后回到本次上线，系统会重新检查并继续；已完成的步骤不会丢失。"
+          : "保存后返回部署详情；不会创建上线任务，不会构建、部署或重启服务，当前在线版本不变。";
+        const primary = document.querySelector("#settingsPrimaryAction");
+        primary.classList.remove("hidden");
+        primary.textContent = isInitial ? "准备并继续" : "保存为下次上线设置";
+        primary.disabled = isInitial;
+        document.querySelector("#cancelSettings").textContent = isInitial ? "稍后处理" : "取消修改";
+        setSettingCardState("build", isInitial ? "missing" : "ready");
+        setSettingCardState("registry", isInitial ? "missing" : "ready");
+        setSettingCardState("server", "ready");
+        setSettingCardState("addresses", "ready");
+        updateSettingsProgress();
+        if (isInitial) renderSettingsStep("resources");
+        else renderSettingsSummary();
+        settingsDrawerBackdrop.classList.remove("hidden");
+        settingsDrawerBackdrop.querySelector("#closeSettings")?.focus();
+      }
+
+      function closeSettings() {
+        settingsDrawerBackdrop.classList.add("hidden");
+        state.activeSettingKind = null;
+        maintenanceEditor.classList.add("hidden");
+        maintenanceEditor.replaceChildren();
+      }
+
+      function choice(name, value, title, description, checked = false, isNew = false) {
+        return `
+          <label class="choice-row">
+            <input type="radio" name="${name}" value="${value}" ${checked ? "checked" : ""} ${isNew ? "data-new-connection" : ""} />
+            <span class="choice-copy"><strong>${title}</strong><span>${description}</span></span>
+          </label>`;
+      }
+
+      function renderMaintenanceEditor(kind) {
+        state.activeSettingKind = kind;
+        const initial = state.settingsMode === "initial";
+        const isAddressStep = state.settingsMode === "settings" && state.settingsStep === "addresses" && kind === "addresses";
+        const editors = {
+          build: {
+            title: initial ? "选择构建服务" : "更换构建服务",
+            description: initial ? "复用已验证的 CNB 连接最省事，也可以连接新账号。" : "选择一个已经验证过的 CNB 连接，或连接新的账号。",
+            choices: [
+              choice("build-connection", "current", "我的 CNB 账号", initial ? "马成龙 · 可复用 · 已验证" : "马成龙 · 当前使用", true),
+              choice("build-connection", "team", "团队 CNB 账号", "小白部署 · 已验证"),
+              choice("build-connection", "new", "连接新的 CNB", "填写账号和访问令牌", false, true),
+            ].join(""),
+            fields: `
+              <div class="field-grid">
+                <label class="field"><span>CNB 用户名</span><input placeholder="例如 machenglong" /></label>
+                <label class="field"><span>访问令牌</span><input type="password" placeholder="仅用于验证并安全保存" /></label>
+              </div>`,
+          },
+          registry: {
+            title: initial ? "选择版本仓库" : "更换版本仓库",
+            description: initial ? "选择保存本项目运行版本的位置。" : "选择保存运行版本的位置，现有在线版本不会移动。",
+            choices: [
+              choice("registry-connection", "current", "腾讯云 TCR · finagent", initial ? "可复用 · 已验证" : "当前使用 · 已验证", true),
+              choice("registry-connection", "deploydesk", "腾讯云 TCR · deploydesk", "已保存连接"),
+              choice("registry-connection", "new", "连接新的版本仓库", "填写命名空间和登录信息", false, true),
+            ].join(""),
+            fields: `
+              <div class="field-grid">
+                <label class="field full"><span>命名空间</span><input placeholder="例如 finagent" /></label>
+                <label class="field"><span>登录用户名</span><input placeholder="腾讯云账号 ID" /></label>
+                <label class="field"><span>访问密码</span><input type="password" placeholder="TCR 登录密码" /></label>
+              </div>`,
+          },
+          server: {
+            title: "更换运行服务器",
+            description: "选择已经验证过的服务器；新服务器会先验证连接和运行环境。",
+            choices: [
+              choice("server-connection", "current", "运行服务器", "119.91.112.80 · ubuntu · 当前使用", true),
+              choice("server-connection", "staging", "测试服务器", "42.193.229.35 · ubuntu · 已验证"),
+              choice("server-connection", "new", "连接新的服务器", "只需填写地址、用户和登录密码", false, true),
+            ].join(""),
+            fields: `
+              <div class="field-grid">
+                <label class="field full"><span>服务器地址</span><input placeholder="例如 119.91.112.80" /></label>
+                <label class="field"><span>登录用户</span><input placeholder="例如 ubuntu" /></label>
+                <label class="field"><span>登录密码</span><input type="password" placeholder="首次连接后不再需要" /></label>
+              </div>`,
+          },
+          addresses: {
+            title: "管理访问地址",
+            description: "维护用户实际访问的域名，并指定点击“打开网页”时使用的主要网页。",
+            directFields: `
+              <div class="field-grid">
+                <label class="field full"><span>主要网页</span><input value="h5.finagent.cloud" /></label>
+                <label class="field"><span>API 地址</span><input value="api.finagent.cloud" /></label>
+                <label class="field"><span>OCR 地址</span><input value="ocr.finagent.cloud" /></label>
+              </div>`,
+          },
+        };
+        const editor = editors[kind];
+        if (!editor) return;
+        maintenanceEditor.innerHTML = `
+          <div class="editor-heading">
+            <div><h3>${editor.title}</h3><p>${editor.description}</p></div>
+            ${isAddressStep ? "" : '<button class="button ghost icon-button" type="button" data-cancel-setting aria-label="收起配置">×</button>'}
+          </div>
+          ${editor.choices ? `<div class="choice-list">${editor.choices}</div>` : ""}
+          ${editor.directFields || ""}
+          ${editor.fields ? `<div class="new-connection-fields hidden" data-new-connection-fields>${editor.fields}</div>` : ""}
+          <div class="editor-actions ${isAddressStep ? "hidden" : ""}">
+            <button class="button secondary small" type="button" data-cancel-setting>取消</button>
+            <button class="button small" type="button" data-save-setting>${initial ? "确认选择" : "应用修改"}</button>
+          </div>`;
+        maintenanceEditor.classList.remove("hidden");
+        if (!isAddressStep) maintenanceEditor.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      function saveMaintenanceSetting(button) {
+        button.disabled = true;
+        button.textContent = state.settingsMode === "initial" ? "正在确认…" : "正在验证…";
+        setTimeout(() => {
+          const kind = state.activeSettingKind;
+          maintenanceEditor.classList.add("hidden");
+          maintenanceEditor.replaceChildren();
+          state.activeSettingKind = null;
+          if (state.settingsMode === "initial" && (kind === "build" || kind === "registry")) {
+            state.initialSelections.add(kind);
+            setSettingCardState(kind, "ready");
+            updateSettingsProgress();
+            document.querySelector("#settingsPrimaryAction").disabled = state.initialSelections.size < 2;
+            showToast(state.initialSelections.size < 2 ? "已选择，请再完成另一项" : "上线服务已经准备好，可以继续");
+            return;
+          }
+          showToast("修改已暂存，点击“保存为下次上线设置”后留给下一次上线使用");
+        }, 700);
+      }
+
+      function finishSettings() {
+        if (state.settingsMode === "initial") {
+          if (state.initialSelections.size < 2) return;
+          closeSettings();
+          showToast("首次上线设置已保存，正在返回本次上线重新检查");
+          return;
+        }
+        if (!state.settingsEditing) {
+          enterSettingsEdit();
+          return;
+        }
+        if (state.settingsStep === "resources") {
+          renderSettingsStep("addresses");
+          return;
+        }
+        renderSettingsSummary();
+        showToast("部署设置已保存；将在下一次更新时使用，当前在线版本没有改变");
+      }
+
+      function cancelSettingsAction() {
+        if (state.settingsMode === "settings" && state.settingsEditing) {
+          renderSettingsSummary();
+          showToast("本次修改已取消，当前部署设置没有改变");
+          return;
+        }
+        closeSettings();
+      }
+
+      function prepareRestore(row) {
+        const fullCommit = row.dataset.commit;
+        const time = row.dataset.time;
+        if (!fullCommit || !time) return;
+        state.pendingRestore = {
+          commit: fullCommit.slice(0, 8),
+          fullCommit,
+          time,
+        };
+        document.querySelector("#restoreTitle").textContent = `恢复到 ${time} 的版本？`;
+        document.querySelector("#restoreCurrent").textContent = state.currentCommit;
+        document.querySelector("#restoreTarget").textContent = `${state.pendingRestore.commit} · ${time}`;
+        openModal(restoreModal);
+      }
+
+      function setCurrentVersion(commit, fullCommit, time, actionLabel) {
+        state.currentCommit = commit;
+        state.currentCommitFull = fullCommit;
+        state.currentTime = time;
+        document.querySelector("#homeVersion").textContent = `${time} · ${commit}`;
+        document.querySelector("#currentCommit").textContent = `Commit ${fullCommit}`;
+        document.querySelector("#currentTime").textContent = time;
+        document.querySelector("#compareCurrent").textContent = commit;
+        document.querySelector("#restoreCurrent").textContent = commit;
+        document.querySelector("#homeBadge").className = "badge success";
+        document.querySelector("#homeBadge").textContent = "✓ 运行正常";
+        document.querySelector("#detailBadge").className = "badge success";
+        document.querySelector("#detailBadge").textContent = "✓ 运行正常";
+
+        historyList.querySelectorAll("[data-current-row] .badge.success").forEach((badge) => badge.remove());
+        historyList.querySelectorAll("[data-current-row] button").forEach((button) => {
+          button.disabled = false;
+          button.style.opacity = "";
+          button.style.cursor = "";
+          button.textContent = "恢复此版本";
+          button.classList.add("restore-trigger");
+        });
+        historyList.querySelectorAll("[data-current-row]").forEach((row) => {
+          row.removeAttribute("data-current-row");
+          row.dataset.restorable = "";
+        });
+
+        const row = document.createElement("article");
+        row.className = "history-row";
+        row.dataset.currentRow = "";
+        row.dataset.commit = fullCommit;
+        row.dataset.time = time;
+        row.innerHTML = `
+          <div class="history-time">刚刚</div>
+          <div>
+            <div class="history-title">${actionLabel} <span class="badge success">当前版本</span></div>
+            <div class="history-desc">源码 <code>${commit}</code> · 3 个服务验证通过</div>
+          </div>
+          <button class="button secondary small" type="button" disabled style="opacity:.45;cursor:default">正在运行</button>`;
+        historyList.prepend(row);
+      }
+
+      function resetProgress() {
+        runTimers.forEach(clearTimeout);
+        runTimers = [];
+        progressCard.classList.remove("hidden");
+        document.querySelector("#failureCard").classList.add("hidden");
+        document.querySelector("#progressTitle").textContent = "正在更新";
+        document.querySelector("#progressMessage").textContent = "正在读取本机最新代码。";
+        document.querySelector("#progressBadge").className = "badge processing";
+        document.querySelector("#progressBadge").textContent = "处理中";
+        document.querySelector("#progressBar").style.width = "25%";
+        document.querySelectorAll(".step").forEach((step, index) => {
+          step.className = index === 0 ? "step active" : "step";
+          step.querySelector(".step-dot").textContent = String(index + 1);
+        });
+      }
+
+      function advanceProgress(activeIndex, message) {
+        document.querySelector("#progressMessage").textContent = message;
+        document.querySelector("#progressBar").style.width = `${(activeIndex + 1) * 25}%`;
+        document.querySelectorAll(".step").forEach((step, index) => {
+          step.className = index < activeIndex ? "step done" : index === activeIndex ? "step active" : "step";
+          step.querySelector(".step-dot").textContent = index < activeIndex ? "✓" : String(index + 1);
+        });
+      }
+
+      function finishSuccess(actionLabel, commit, fullCommit) {
+        document.querySelectorAll(".step").forEach((step) => {
+          step.className = "step done";
+          step.querySelector(".step-dot").textContent = "✓";
+        });
+        document.querySelector("#progressBar").style.width = "100%";
+        document.querySelector("#progressTitle").textContent = `${actionLabel}完成`;
+        document.querySelector("#progressMessage").textContent = "新版本已经连续通过关键检查并成为当前在线版本。";
+        document.querySelector("#progressBadge").className = "badge success";
+        document.querySelector("#progressBadge").textContent = "运行正常";
+        document.querySelector("#progressGuardrail").textContent = "本次结果已保存为新的上线记录；需要时仍可恢复到更早的成功版本。";
+        setCurrentVersion(commit, fullCommit, "刚刚", actionLabel);
+        showToast(`${actionLabel}完成，当前版本已更新`);
+      }
+
+      function runUpdate(mode = "success") {
+        closeModals();
+        showDetail();
+        resetProgress();
+        progressCard.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        if (mode === "unchanged") {
+          runTimers.push(setTimeout(() => {
+            progressCard.classList.add("hidden");
+            showToast("服务器运行的已经是当前版本，无需更新");
+          }, 900));
+          return;
+        }
+
+        runTimers.push(setTimeout(() => advanceProgress(1, "构建服务正在生成新的运行版本。"), 700));
+        runTimers.push(setTimeout(() => advanceProgress(2, "新版本已生成，正在更新服务器服务。"), 1450));
+
+        if (mode === "failed") {
+          runTimers.push(setTimeout(() => {
+            document.querySelector("#progressTitle").textContent = "更新没有完成";
+            document.querySelector("#progressMessage").textContent = "服务器仍在运行原来的版本。";
+            document.querySelector("#progressBadge").className = "badge warning";
+            document.querySelector("#progressBadge").textContent = "未影响线上";
+            document.querySelector("#failureCard").classList.remove("hidden");
+            document.querySelector("#homeBadge").className = "badge warning";
+            document.querySelector("#homeBadge").textContent = "服务仍在线 · 更新失败";
+          }, 2200));
+          return;
+        }
+
+        runTimers.push(setTimeout(() => advanceProgress(3, "服务已经更新，正在连续验证访问结果。"), 2200));
+        runTimers.push(setTimeout(() => finishSuccess("更新上线", "c8427e1a", "c8427e1a92d4"), 3050));
+      }
+
+      function runRestore() {
+        const target = state.pendingRestore;
+        closeModals();
+        showDetail();
+        resetProgress();
+        document.querySelector("#progressTitle").textContent = "正在恢复版本";
+        document.querySelector("#progressMessage").textContent = "正在读取历史记录中保存的 3 个运行镜像。";
+        document.querySelector("#progressGuardrail").textContent = "恢复不重新构建源码；当前版本会一直服务到历史版本验证通过。";
+        progressCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        runTimers.push(setTimeout(() => advanceProgress(1, "已找到历史运行版本，无需重新构建。"), 650));
+        runTimers.push(setTimeout(() => advanceProgress(2, "正在将服务器切换到历史运行版本。"), 1200));
+        runTimers.push(setTimeout(() => advanceProgress(3, "切换完成，正在连续验证访问结果。"), 1850));
+        runTimers.push(setTimeout(() => finishSuccess("恢复版本", target.commit, target.fullCommit), 2600));
+      }
+
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".menu-wrap")) closeActionMenu();
+        const target = event.target.closest("button");
+        if (!target) return;
+        if (target.matches(".open-detail")) showDetail();
+        if (target.matches("#backHome")) showHome();
+        if (target.matches("#detailMore")) toggleActionMenu();
+        if (target.matches("#openInitialSetup")) openSettings("initial");
+        if (target.matches("#openDeploymentSettings")) openSettings("settings");
+        if (target.matches("#closeSettings")) closeSettings();
+        if (target.matches("#cancelSettings")) cancelSettingsAction();
+        if (target.matches("#beginSettingsEdit")) enterSettingsEdit();
+        if (target.matches("#settingsPrimaryAction")) finishSettings();
+        if (target.matches("#settingsBackAction")) renderSettingsStep("resources");
+        if (target.matches("[data-edit-setting]")) renderMaintenanceEditor(target.dataset.editSetting);
+        if (target.matches("[data-cancel-setting]")) {
+          maintenanceEditor.classList.add("hidden");
+          maintenanceEditor.replaceChildren();
+        }
+        if (target.matches("[data-save-setting]")) saveMaintenanceSetting(target);
+        if (target.matches(".update-trigger")) openModal(updateModal);
+        if (target.matches(".restore-trigger")) prepareRestore(target.closest(".history-row"));
+        if (target.matches("[data-close-modal]")) closeModals();
+        if (target.matches("#startUpdate")) runUpdate("success");
+        if (target.matches("#startRestore")) runRestore();
+        if (target.matches("[data-update-mode]")) runUpdate(target.dataset.updateMode);
+        if (target.matches("[data-open-main]")) showToast("实际客户端将打开主要网页：https://h5.finagent.cloud");
+        if (target.dataset.toast) showToast(target.dataset.toast);
+      });
+
+      [updateModal, restoreModal].forEach((modal) => {
+        modal.addEventListener("click", (event) => {
+          if (event.target === modal) closeModals();
+        });
+      });
+      settingsDrawerBackdrop.addEventListener("click", (event) => {
+        if (event.target === settingsDrawerBackdrop) closeSettings();
+      });
+      maintenanceEditor.addEventListener("change", (event) => {
+        const input = event.target.closest('input[type="radio"]');
+        if (!input) return;
+        const fields = maintenanceEditor.querySelector("[data-new-connection-fields]");
+        fields?.classList.toggle("hidden", !input.matches("[data-new-connection]"));
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeModals();
+          closeActionMenu();
+          closeSettings();
+        }
+      });
+    </script>
   </body>
 </html>

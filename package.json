@@ -2,9 +2,24 @@
   "name": "abcdeploy",
   "version": "0.2.0-preview.4",
   "private": true,
+  "description": "A local-first deployment tool that helps beginners run a local folder or repository on their computer or a Linux server.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blacksco0920-dot/abcdeploy.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "packageManager": "pnpm@11.5.0",
   "scripts": {
     "build": "pnpm --filter @abcdeploy/desktop build",
+    "check": "pnpm check:project && pnpm check:secrets && cargo fmt --all -- --check && pnpm lint && pnpm test && pnpm build && pnpm site:build",
+    "check:project": "node scripts/check-project-quality.mjs",
+    "check:secrets": "node scripts/check-tracked-secrets.mjs",
+    "codegraph:index": "node scripts/index-codegraph-worktree.mjs",
+    "codegraph:status": "codegraph status .",
+    "codegraph:sync": "codegraph sync .",
     "dev": "pnpm --filter @abcdeploy/desktop tauri dev",
     "desktop": "pnpm --filter @abcdeploy/desktop",
     "format": "cargo fmt --all && pnpm --filter @abcdeploy/desktop format",

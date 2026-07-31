@@ -2,6 +2,13 @@
   "name": "@abcdeploy/site",
   "private": true,
   "version": "0.2.0-preview.4",
+  "description": "ABCDeploy public website",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blacksco0920-dot/abcdeploy.git",
+    "directory": "apps/site"
+  },
   "type": "module",
   "scripts": {
     "build": "vite build",

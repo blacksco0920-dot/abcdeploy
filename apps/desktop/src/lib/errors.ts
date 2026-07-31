@@ -87,7 +87,7 @@ function messageForCode(code: string | undefined, original: string) {
       "系统暂时没有从代码平台取得最新进度，当前任务和已完成步骤仍然保留。",
     "AD-BLD-201":
       "代码平台没有生成可部署的项目版本，服务器上的现有版本没有变化。",
-    "AD-DEP-201": "项目版本已经生成，但服务器没有完成本次更新。",
+    "AD-DEP-201": "系统暂时无法确认本次版本是否已经在服务器正常运行。",
     "AD-REL-101": "应用已经部署到服务器，但系统还没有核对出本次实际版本。",
     "AD-REL-201": "测试服务可以运行，但系统还没有取得用于安全发布的版本证据。",
     "AD-CTR-201": "项目已经部署到服务器，但至少一个服务没有通过启动检查。",
@@ -127,11 +127,19 @@ function messageForCode(code: string | undefined, original: string) {
     "AD-INF-202": "服务器暂时无法下载项目运行所需的基础组件。",
     "AD-INF-203": "服务器数据库没有正常运行。",
     "AD-INF-204": "服务器缓存服务没有正常运行。",
+    "AD-ENV-202": "系统暂时无法连接这台服务器。",
+    "AD-ENV-203": "已保存的服务器连接信息已经失效。",
+    "AD-ENV-205": "服务器身份与上次记录不同，系统已经停止连接。",
+    "AD-ENV-207": "服务器已经连接，但运行项目所需的环境还没有准备好。",
+    "AD-ENV-209": "这台服务器的系统暂不受当前版本支持。",
+    "AD-ADOPT-101": "这个项目已有上线设置，需要先确认继续管理还是重新设置。",
   };
   return (code && messages[code]) || original;
 }
 
 function nextStepsForCode(code?: string, message = ""): string[] {
+  if (code === "AD-ADOPT-101")
+    return ["选择“继续管理已有部署”读取原有线路，或选择“重新设置部署”从头设置"];
   if (code === "AD-GIT-101")
     return ["让编程工具把当前改动加入代码版本，或选择“部署已提交版本”"];
   if (code === "AD-GIT-102")
@@ -184,20 +192,22 @@ function nextStepsForCode(code?: string, message = ""): string[] {
   if (code === "AD-CNB-203" || code === "AD-CNB-204")
     return ["检查 CNB 网络和构建记录读取权限；返回客户端后系统会自动确认进度"];
   if (code === "AD-BLD-201")
-    return ["复制脱敏后的构建原因交给编程工具修复，提交代码后重新部署测试版"];
+    return ["复制脱敏后的构建原因交给编程工具修复，提交代码后重新上线"];
   if (code === "AD-PKG-201")
     return ["点击“检查后重新部署”；系统会自动补齐依赖锁定文件并继续"];
   if (code === "AD-PKG-202")
     return ["确认电脑可以访问依赖源，然后重试；无需手动修改部署文件"];
   if (code === "AD-DEP-201")
-    return ["查看失败阶段；修复服务器连接或运行配置后从当前版本重试"];
+    return [
+      "核对服务器上正在运行的服务和本次镜像版本；已运行时跳过重复部署并继续配置访问地址",
+    ];
   if (code === "AD-REL-201")
     return ["重新验证目标服务器连接；返回部署页面后系统会自动核对版本"];
   if (code === "AD-REL-101")
     return ["重新检查服务器上的实际版本；无需重新生成项目版本"];
   if (code === "AD-REL-204")
-    return ["先部署并验证包含新增服务的测试版本，再重新发布正式版"];
-  if (code === "AD-REL-301") return ["重新部署测试环境，再发布新的已验证候选"];
+    return ["先部署并验证包含新增服务的版本，再重新上线"];
+  if (code === "AD-REL-301") return ["重新部署并验证当前版本，再继续上线"];
   if (code === "AD-CTR-201")
     return ["让 ABCDeploy 检查服务启动日志，再按提示处理端口、依赖或健康检查"];
   if (code === "AD-CTR-202" || code === "AD-WEB-201")
@@ -205,7 +215,7 @@ function nextStepsForCode(code?: string, message = ""): string[] {
   if (code === "AD-APP-201")
     return ["把提示的缺失依赖交给编程工具补齐，提交代码后重新部署"];
   if (code === "AD-APP-202")
-    return ["让编程工具调整项目监听端口，保存后重新部署测试版"];
+    return ["让编程工具调整项目监听端口，保存后重新上线"];
   if (code === "AD-CFG-201")
     return ["按提示在当前环境的安全配置中补齐字段，保存后从当前步骤重试"];
   if (code === "AD-DB-201")
@@ -227,7 +237,7 @@ function nextStepsForCode(code?: string, message = ""): string[] {
   if (code === "AD-SSH-106")
     return ["确认服务器登录用户可以保存安全身份，然后重试"];
   if (code === "AD-SSH-201")
-    return ["返回上线设置重新连接服务器，并更新测试环境的安全登录信息"];
+    return ["返回上线设置重新连接服务器，并更新运行环境的安全登录信息"];
   if (code === "AD-SRV-208")
     return ["清理目标服务器磁盘空间，确认服务器运行环境可用后从当前步骤重试"];
   if (code === "AD-SRV-203")
@@ -340,9 +350,9 @@ function titleForCode(code?: string, message = ""): string | undefined {
   if (code === "AD-BLD-201") return "项目版本没有生成成功";
   if (code === "AD-PKG-201") return "项目依赖版本还没有锁定";
   if (code === "AD-PKG-202") return "依赖版本没有准备完成";
-  if (code === "AD-DEP-201") return "服务器没有完成部署";
+  if (code === "AD-DEP-201") return "服务器状态还没有确认完成";
   if (code === "AD-REL-101") return "服务器版本还没有核对完成";
-  if (code === "AD-REL-204") return "正式版还缺少新服务";
+  if (code === "AD-REL-204") return "上线版本还缺少新服务";
   if (code === "AD-CTR-201") return "服务没有正常启动";
   if (code === "AD-CTR-202" || code === "AD-WEB-201") return "部署文件需要更新";
   if (code === "AD-APP-201") return "项目缺少运行依赖";

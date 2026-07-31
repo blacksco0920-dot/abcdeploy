@@ -1,417 +1,247 @@
-import {
-  AlertCircle,
-  CheckCircle2,
-  Circle,
-  Clock3,
-  FolderOpen,
-  LoaderCircle,
-  MoreHorizontal,
-  Plus,
-  Search,
-  Trash2,
-} from "lucide-react";
-import SemiDropdown from "@douyinfe/semi-ui/lib/es/dropdown";
-import { useMemo, useState } from "react";
+import { AlertCircle, LoaderCircle } from "lucide-react";
 import type { DeploymentRun, RecentProject } from "../types";
-import {
-  isFirstDeployTask,
-  preferredProjectTask,
-  recentProjectStatus,
-  type ProjectSetupTask,
-  type ProjectVerificationTask,
-} from "../lib/projects";
-import { projectListState, type ProjectListState } from "./ProjectHome";
-import { Button } from "./ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
-import { Input } from "./ui/input";
-
-type ProjectFilter = "all" | "attention" | "online";
+import { DeploymentListPage } from "../features/deployment-list/DeploymentListPage";
+import type {
+  DeploymentListItem,
+  DeploymentListResult,
+} from "../features/deployment-list/model";
+import { orderedPublicAddresses } from "../features/deployment-editor/public-address";
 
 interface ProjectGalleryProps {
+  currentRuns: DeploymentRun[];
   loading: boolean;
   onForget: (project: RecentProject) => void;
   onOpen: (project: RecentProject) => void;
   onSelect: () => void;
   projects: RecentProject[];
-  releaseReadyPaths?: string[];
   selectingProject?: boolean;
   selectionIssue?: { message: string; title: string } | null;
-  setupTasks?: ProjectSetupTask[];
   taskRuns: DeploymentRun[];
-  verificationTasks?: ProjectVerificationTask[];
 }
 
-export function ProjectGallery({
-  loading,
-  onForget,
-  onOpen,
-  onSelect,
-  projects,
-  releaseReadyPaths = [],
-  selectingProject = false,
-  selectionIssue,
-  setupTasks = [],
-  taskRuns,
-  verificationTasks = [],
-}: ProjectGalleryProps) {
-  const [filter, setFilter] = useState<ProjectFilter>("all");
-  const [query, setQuery] = useState("");
-  const [pendingRemoval, setPendingRemoval] = useState<RecentProject | null>(
-    null,
+export function ProjectGallery(props: ProjectGalleryProps) {
+  if (props.loading && props.projects.length === 0) {
+    return <DeploymentListLoading />;
+  }
+
+  const projections = props.projects.map((project) =>
+    projectProjection(project, props.taskRuns, props.currentRuns),
   );
-  const releaseReady = useMemo(
-    () => new Set(releaseReadyPaths),
-    [releaseReadyPaths],
+  const projectByItem = new Map(
+    projections.map(({ item, project }) => [item, project]),
   );
-  const projectCards = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase();
-    return projects
-      .map((project) => {
-        const task = preferredProjectTask(taskRuns, project.path);
-        const setupTask = setupTasks.find(
-          (candidate) =>
-            candidate.projectPath === project.path &&
-            (!isFirstDeployTask(candidate) || project.latestStatus === null),
-        );
-        const verificationTask = verificationTasks.find(
-          (candidate) =>
-            candidate.projectPath === project.path &&
-            candidate.runId === project.latestRunId,
-        );
-        const state = projectListState(
-          project,
-          task,
-          setupTask,
-          verificationTask,
-        );
-        return {
-          action: projectCardAction(
-            project,
-            state,
-            releaseReady.has(project.path),
-          ),
-          project,
-          state,
-          status: recentProjectStatus(
-            project,
-            task,
-            setupTask,
-            verificationTask,
-            releaseReady.has(project.path),
-          ),
-        };
-      })
-      .filter(({ project, state }) => {
-        if (
-          normalized &&
-          !project.name.toLocaleLowerCase().includes(normalized) &&
-          !project.path.toLocaleLowerCase().includes(normalized)
-        ) {
-          return false;
-        }
-        if (filter === "attention") return state === "user-action";
-        if (filter === "online") {
-          return project.latestStatus === "success" && state === "normal";
-        }
-        return true;
-      })
-      .sort((left, right) =>
-        right.project.lastOpenedAt.localeCompare(left.project.lastOpenedAt),
-      );
-  }, [
-    filter,
-    projects,
-    query,
-    releaseReady,
-    setupTasks,
-    taskRuns,
-    verificationTasks,
-  ]);
-  const recovering = loading && projects.length === 0;
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--background)]">
-      <header
-        className="h-[52px] shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-6"
-        data-tauri-drag-region
-      >
-        <div className="mx-auto flex h-full w-full max-w-[1440px] items-center justify-between gap-6">
-          <div className="min-w-0">
-            <h1 className="m-0 truncate text-base font-semibold leading-5">
-              所有项目
-            </h1>
-            <p className="m-0 mt-0.5 truncate text-xs leading-4 text-[var(--muted-foreground)]">
-              选择一个项目继续上线，或从电脑添加新的项目。
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <label className="relative block w-56">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--subtle-foreground)]" />
-              <Input
-                aria-label="搜索项目"
-                className="pl-9"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜索项目"
-                value={query}
-              />
-            </label>
-            <Button disabled={selectingProject} onClick={onSelect}>
-              {selectingProject ? (
-                <LoaderCircle className="animate-spin-slow" />
-              ) : (
-                <Plus />
-              )}
-              添加项目
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="min-h-0 flex-1 overflow-auto px-6 pb-6 pt-4">
-        <div className="mx-auto w-full max-w-[1440px]">
-          <div className="flex items-center gap-2">
-            {(
-              [
-                ["all", "全部"],
-                ["attention", "需要处理"],
-                ["online", "已经上线"],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                aria-pressed={filter === value}
-                className={`rounded-lg px-4 py-2 text-sm ${filter === value ? "bg-[var(--muted)] font-medium" : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]/60"}`}
-                key={value}
-                onClick={() => setFilter(value)}
-                type="button"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {selectionIssue ? (
-            <div
-              className="mt-5 flex items-start justify-between gap-4 rounded-xl border border-[var(--warning)]/30 bg-[var(--warning-soft)] px-4 py-3"
-              role="alert"
-            >
-              <div className="flex gap-3">
-                <AlertCircle className="mt-0.5 size-4 shrink-0 text-[var(--warning)]" />
-                <div>
-                  <strong className="text-sm">{selectionIssue.title}</strong>
-                  <p className="mb-0 mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
-                    {selectionIssue.message}
-                  </p>
-                </div>
-              </div>
-              <Button onClick={onSelect} size="sm" variant="secondary">
-                重新选择
-              </Button>
-            </div>
-          ) : null}
-
-          {recovering ? (
-            <div className="grid min-h-[320px] place-items-center">
-              <div className="text-center text-sm text-[var(--muted-foreground)]">
-                <LoaderCircle className="mx-auto mb-3 size-5 animate-spin-slow text-[var(--accent)]" />
-                正在读取项目
-              </div>
-            </div>
-          ) : projectCards.length ? (
-            <section
-              aria-label="项目列表"
-              className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-            >
-              {projectCards.map(({ action, project, state, status }) => (
-                <article
-                  className="group relative min-h-[164px] rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm transition-shadow hover:shadow-md"
-                  key={project.id}
-                >
-                  <button
-                    aria-label={`${project.name}，${status}`}
-                    className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
-                    onClick={() => onOpen(project)}
-                    type="button"
-                  />
-                  <div className="relative pointer-events-none flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h2 className="m-0 truncate text-sm font-semibold leading-5">
-                        {project.name}
-                      </h2>
-                      <p className="mt-1 truncate text-xs text-[var(--muted-foreground)]">
-                        {project.path}
-                      </p>
-                    </div>
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                      <FolderOpen className="size-5" />
-                    </span>
-                  </div>
-                  <div className="relative pointer-events-none mt-6 flex items-center gap-2 text-xs">
-                    <ProjectStatusIcon project={project} state={state} />
-                    <span>{status}</span>
-                  </div>
-                  <div className="relative pointer-events-none mt-4 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3 text-xs">
-                    <span className="inline-flex min-w-0 items-center gap-2 text-[var(--subtle-foreground)]">
-                      <span className="shrink-0">
-                        {project.serviceCount} 个服务
-                      </span>
-                      <span className="inline-flex min-w-0 items-center gap-1 truncate">
-                        <Clock3 className="size-3" />
-                        {formatRelativeTime(project.lastOpenedAt)}
-                      </span>
-                    </span>
-                    <span className="shrink-0 font-medium text-[var(--accent)] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0">
-                      {action} ›
-                    </span>
-                  </div>
-                  <SemiDropdown
-                    position="bottomRight"
-                    render={
-                      <SemiDropdown.Menu>
-                        <SemiDropdown.Item
-                          icon={<Trash2 className="size-3.5" />}
-                          onClick={() => setPendingRemoval(project)}
-                          type="danger"
-                        >
-                          从列表隐藏
-                        </SemiDropdown.Item>
-                      </SemiDropdown.Menu>
-                    }
-                    trigger="click"
-                  >
-                    <Button
-                      aria-label={`项目操作：${project.name}`}
-                      className="absolute bottom-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-                      size="icon"
-                      variant="ghost"
-                    >
-                      <MoreHorizontal />
-                    </Button>
-                  </SemiDropdown>
-                </article>
-              ))}
-            </section>
-          ) : (
-            <section className="mt-5 flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] text-center">
-              <FolderOpen className="size-6 text-[var(--subtle-foreground)]" />
-              <h2 className="mb-0 mt-4 text-sm font-semibold">
-                {projects.length ? "没有匹配的项目" : "添加第一个项目"}
-              </h2>
-              <p className="mb-5 mt-2 text-sm text-[var(--muted-foreground)]">
-                选择包含前端、后端等完整代码的最外层文件夹。
-              </p>
-              {!projects.length ? (
-                <Button onClick={onSelect}>
-                  <Plus />
-                  添加项目
-                </Button>
-              ) : null}
-            </section>
-          )}
-        </div>
-      </main>
-
-      <Dialog
-        onOpenChange={(open) => !open && setPendingRemoval(null)}
-        open={Boolean(pendingRemoval)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              从列表隐藏 {pendingRemoval?.name ?? "这个项目"}？
-            </DialogTitle>
-            <DialogDescription>
-              只会隐藏入口，项目代码、连接、线路和上线记录都会保留。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setPendingRemoval(null)} variant="secondary">
-              取消
-            </Button>
-            <Button
-              onClick={() => {
-                if (pendingRemoval) onForget(pendingRemoval);
-                setPendingRemoval(null);
-              }}
-              variant="destructive"
-            >
-              <Trash2 />
-              从列表隐藏
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ProjectGalleryNotice
+        loading={props.loading}
+        selectingProject={props.selectingProject ?? false}
+        selectionIssue={props.selectionIssue}
+      />
+      <div className="min-h-0 flex-1">
+        <DeploymentListPage
+          items={projections.map(({ item }) => item)}
+          onCreate={() => {
+            if (!props.selectingProject) props.onSelect();
+          }}
+          onOpen={(item) => {
+            const project = projectByItem.get(item);
+            if (project) props.onOpen(project);
+          }}
+          onRemove={(item) => {
+            const project = projectByItem.get(item);
+            if (project) props.onForget(project);
+          }}
+        />
+      </div>
     </div>
   );
 }
 
-function projectCardAction(
+function projectProjection(
   project: RecentProject,
-  state: ProjectListState,
-  releaseReady: boolean,
+  taskRuns: DeploymentRun[],
+  currentRuns: DeploymentRun[],
 ) {
-  if (state === "automatic") return "查看进度";
-  if (state === "user-action") return "继续处理";
-  if (releaseReady) return "开始上线";
-  if (project.latestStatus === "success") return "打开工作流";
-  return "继续设置";
+  const tasks = taskRuns
+    .filter((run) => run.projectPath === project.path)
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  const activeTask = tasks.find((run) =>
+    ["queued", "running"].includes(run.status),
+  );
+  const needsActionTask = tasks.find((run) => run.status === "needs_action");
+  const failedTask = tasks.find((run) => run.status === "failed");
+  const currentTask = currentRuns
+    .filter((run) => run.projectPath === project.path)
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
+  const newerNeedsActionTask = newerThanCurrent(needsActionTask, currentTask);
+  const newerFailedTask = newerThanCurrent(failedTask, currentTask);
+  const displayedTask =
+    activeTask ?? newerNeedsActionTask ?? newerFailedTask ?? currentTask;
+  const addresses = orderedPublicAddresses(
+    currentTask?.routeChecks ?? [],
+  ).addresses;
+  const item: DeploymentListItem = {
+    currentResult: currentResult(project, {
+      activeTask,
+      failedTask: newerFailedTask,
+      currentTask,
+      hasTaskHistory: tasks.length > 0 || Boolean(currentTask),
+      needsActionTask: newerNeedsActionTask,
+    }),
+    environmentName: environmentName(project, displayedTask),
+    id: project.id,
+    // RecentProject has no success-evidence timestamp. lastOpenedAt and
+    // latestUpdatedAt are deliberately not presented as verification facts.
+    lastVerifiedLabel: currentTask
+      ? verifiedTimeLabel(currentTask.updatedAt)
+      : "未记录",
+    projectName: project.name,
+  };
+  if (addresses[0]) item.primaryAddress = addresses[0];
+  if (addresses.length > 1) item.additionalAddressCount = addresses.length - 1;
+  return { item, project };
 }
 
-function ProjectStatusIcon({
-  project,
-  state,
-}: {
-  project: RecentProject;
-  state: ProjectListState;
-}) {
-  let tone: "neutral" | "processing" | "success" | "warning" = "neutral";
-  if (state === "automatic") tone = "processing";
-  else if (state === "user-action") tone = "warning";
-  else if (project.latestStatus === "success") tone = "success";
+function newerThanCurrent(
+  candidate: DeploymentRun | undefined,
+  current: DeploymentRun | undefined,
+) {
+  if (!candidate || !current) return candidate;
+  return candidate.updatedAt > current.updatedAt ? candidate : undefined;
+}
 
-  if (state === "automatic") {
+function currentResult(
+  project: RecentProject,
+  tasks: {
+    activeTask?: DeploymentRun;
+    currentTask?: DeploymentRun;
+    failedTask?: DeploymentRun;
+    hasTaskHistory: boolean;
+    needsActionTask?: DeploymentRun;
+  },
+): DeploymentListResult {
+  if (!project.pathExists) {
+    return { kind: "needs_action", label: "需要重新选择项目文件夹" };
+  }
+  if (
+    tasks.activeTask ||
+    project.activeRunCount > 0 ||
+    (!tasks.hasTaskHistory &&
+      (project.latestStatus === "queued" || project.latestStatus === "running"))
+  ) {
+    return { kind: "in_progress", label: "正在上线" };
+  }
+  if (
+    tasks.needsActionTask ||
+    (!tasks.hasTaskHistory && project.latestStatus === "needs_action")
+  ) {
+    return { kind: "needs_action", label: "需要处理" };
+  }
+  if (
+    tasks.failedTask ||
+    (!tasks.hasTaskHistory && project.latestStatus === "failed")
+  ) {
+    if (tasks.currentTask) {
+      return { kind: "needs_action", label: "服务仍在线 · 更新失败" };
+    }
+    return { kind: "failed", label: "上次运行没有完成" };
+  }
+  if (!tasks.hasTaskHistory && project.latestStatus === "cancelled") {
+    return { kind: "failed", label: "上次运行已取消" };
+  }
+  if (tasks.currentTask) {
+    const fresh =
+      Date.now() - Date.parse(tasks.currentTask.updatedAt) <= 5 * 60 * 1_000;
+    return fresh
+      ? { kind: "success", label: "运行正常" }
+      : { kind: "stale", label: "上次验证通过 · 待复查" };
+  }
+  if (!tasks.hasTaskHistory && project.latestStatus === "success") {
+    return { kind: "stale", label: "上次验证通过 · 待复查" };
+  }
+  return { kind: "not_started", label: "尚未运行" };
+}
+
+function environmentName(
+  project: RecentProject,
+  task: DeploymentRun | undefined,
+) {
+  if (task?.environment || project.latestEnvironment) return "服务器";
+  if (task || project.latestStatus) return "运行位置未记录";
+  return "尚未选择运行位置";
+}
+
+function verifiedTimeLabel(value: string) {
+  return new Date(value).toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+function ProjectGalleryNotice({
+  loading,
+  selectingProject,
+  selectionIssue,
+}: {
+  loading: boolean;
+  selectingProject: boolean;
+  selectionIssue?: { message: string; title: string } | null;
+}) {
+  if (selectionIssue) {
     return (
-      <span aria-hidden="true" data-project-status-tone={tone}>
-        <LoaderCircle className="size-3.5 animate-spin-slow text-[var(--accent)]" />
-      </span>
+      <div
+        className="flex shrink-0 items-start gap-3 border-b border-[var(--warning)]/30 bg-[var(--warning-soft)] px-6 py-3 text-sm"
+        role="alert"
+      >
+        <AlertCircle
+          aria-hidden="true"
+          className="mt-0.5 size-4 shrink-0 text-[var(--warning)]"
+        />
+        <div>
+          <strong>{selectionIssue.title}</strong>
+          <p className="mb-0 mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
+            {selectionIssue.message} 点击“新建部署”重新选择。
+          </p>
+        </div>
+      </div>
     );
   }
-  if (state === "user-action") {
-    return (
-      <span aria-hidden="true" data-project-status-tone={tone}>
-        <AlertCircle className="size-3.5 text-[var(--warning)]" />
-      </span>
-    );
-  }
-  if (tone === "success") {
-    return (
-      <span aria-hidden="true" data-project-status-tone={tone}>
-        <CheckCircle2 className="size-3.5 text-[var(--success)]" />
-      </span>
-    );
-  }
+  if (!selectingProject && !loading) return null;
   return (
-    <span aria-hidden="true" data-project-status-tone={tone}>
-      <Circle className="size-3.5 text-[var(--subtle-foreground)]" />
-    </span>
+    <div
+      className="inline-flex shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)] px-6 py-2 text-xs text-[var(--muted-foreground)]"
+      role="status"
+    >
+      <LoaderCircle
+        aria-hidden="true"
+        className="size-3.5 animate-spin-slow text-[var(--accent)]"
+      />
+      {selectingProject ? "正在打开项目选择器" : "正在刷新部署列表"}
+    </div>
   );
 }
 
-function formatRelativeTime(value: string) {
-  const elapsed = Date.now() - new Date(value).getTime();
-  if (!Number.isFinite(elapsed) || elapsed < 60_000) return "刚刚";
-  const minutes = Math.floor(elapsed / 60_000);
-  if (minutes < 60) return `${minutes} 分钟前`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} 小时前`;
-  const days = Math.floor(hours / 24);
-  return days < 30
-    ? `${days} 天前`
-    : new Date(value).toLocaleDateString("zh-CN");
+function DeploymentListLoading() {
+  return (
+    <main className="h-full min-h-0 overflow-auto bg-[var(--background)] text-[var(--foreground)]">
+      <div className="mx-auto w-full max-w-[1040px] px-6 py-8 max-[560px]:px-4 max-[560px]:py-6">
+        <h1 className="m-0 text-xl font-semibold leading-7">我的部署</h1>
+        <div
+          className="mt-7 flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-6 text-center"
+          role="status"
+        >
+          <LoaderCircle
+            aria-hidden="true"
+            className="size-5 animate-spin-slow text-[var(--accent)]"
+          />
+          <strong className="mt-4 text-sm">正在读取已保存的部署</strong>
+          <span className="mt-2 text-xs text-[var(--muted-foreground)]">
+            完成后会显示项目、运行位置和最近验证结果。
+          </span>
+        </div>
+      </div>
+    </main>
+  );
 }

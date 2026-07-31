@@ -132,6 +132,78 @@ export interface WorkspacePreview {
   adoption: WorkspaceAdoption;
 }
 
+export interface ManagedSourceSnapshot {
+  sourcePath: string;
+  managedPath: string;
+  snapshotId: string;
+  projectName: string;
+  serviceCount: number;
+  httpServiceCount: number;
+}
+
+export interface ManagedLocalRunWorkspace {
+  runId: string;
+  snapshotId: string;
+  workspacePath: string;
+}
+
+export interface ManagedLocalServiceEvidence {
+  id: string;
+  running: boolean;
+  url: string | null;
+  reachable: boolean;
+  httpStatus: number | null;
+}
+
+export interface ManagedLocalEvidenceRound {
+  runId: string;
+  snapshotId: string;
+  checkedAtMs: number;
+  services: ManagedLocalServiceEvidence[];
+}
+
+export interface ManagedServerEnvironment {
+  id: string;
+  version: string;
+  connectionId: string;
+  name: string;
+  host: string;
+  user: string;
+  port: number;
+  platform: string;
+  architecture: string;
+  dockerVersion: string;
+  composeVersion: string;
+  verifiedAtMs: number;
+}
+
+export interface PreparedManagedServerDeployment {
+  environment: ManagedServerEnvironment;
+  deploymentPath: DeploymentPath;
+  run: DeploymentRun;
+}
+
+export interface ManagedEvidenceProjection {
+  status:
+    | "verifying"
+    | "verified_current"
+    | "verified_stale"
+    | "offline_historical"
+    | "service_running_public_access_blocked"
+    | "verification_failed";
+  canShowCurrentSuccess: boolean;
+  continuation: "none" | "verification" | "investigation";
+  preserveEstablishedRuntime: boolean;
+  consecutivePassCount: number;
+  stabilityWindowMs: number;
+  verifiedAtMs: number | null;
+  freshUntilMs: number | null;
+  establishedCheckIds: string[];
+  failedCheckIds: string[];
+  missingCheckIds: string[];
+  missingRequirementKinds: string[];
+}
+
 export interface WorkspaceAdoption {
   mode: "pending" | "managed" | "fresh";
   detected: boolean;
@@ -275,6 +347,7 @@ export interface DeploymentPath {
   routes: DeploymentPathRoute[];
   state: DeploymentPathState;
   lastRunId: string | null;
+  currentRunId: string | null;
   lastSuccessfulRevision: string | null;
   createdAt: string;
   updatedAt: string;
@@ -292,6 +365,7 @@ export interface DeploymentPathInput {
   routes: DeploymentPathRoute[];
   state?: DeploymentPathState;
   lastRunId?: string | null;
+  currentRunId?: string | null;
   lastSuccessfulRevision?: string | null;
 }
 
@@ -517,6 +591,21 @@ export interface ServerResource extends ServerForm {
   lastCheckedAt: string;
 }
 
+export interface ManagedServerEnvironment {
+  id: string;
+  version: string;
+  connectionId: string;
+  name: string;
+  host: string;
+  user: string;
+  port: number;
+  platform: string;
+  architecture: string;
+  dockerVersion: string;
+  composeVersion: string;
+  verifiedAtMs: number;
+}
+
 export interface RouteConflictCheck {
   conflicts: Array<{
     host: string;
@@ -648,3 +737,28 @@ export interface ProjectVersion {
   createdAt: string;
   updatedAt: string;
 }
+
+export type {
+  ActionChecklistCheck,
+  ActionChecklistCheckStatus,
+  ActionChecklistItem,
+  ActionChecklistItemStatus,
+  ActionChecklistPhase,
+  ActionChecklistProjection,
+  ActionChecklistRevision,
+  ActionChecklistRevisionInputs,
+  ActionChecklistSnapshot,
+  ActionChecklistState,
+  DeploymentStartGate,
+  DeploymentStartGateReason,
+} from "./features/action-checklist/model";
+export type {
+  DeploymentEvidenceCheck,
+  DeploymentEvidenceCheckKind,
+  DeploymentEvidenceContinuation,
+  DeploymentEvidenceProjection,
+  DeploymentEvidenceRequirement,
+  DeploymentEvidenceRound,
+  DeploymentEvidenceSnapshot,
+  DeploymentEvidenceStatus,
+} from "./features/deployment-evidence/model";

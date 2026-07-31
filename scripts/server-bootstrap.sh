@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if ! declare -F abcdeploy_detect_cloud_provider >/dev/null 2>&1; then
+  # Keep this script directly runnable from the repository. The packaged app
+  # prepends the same helper before sending the combined script over SSH.
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # shellcheck source=server-runtime-sources.sh
+  source "$SCRIPT_DIR/server-runtime-sources.sh"
+fi
+
 ROOT_DIR="${DEPLOYDESK_ROOT:-$HOME/.deploydesk}"
 CADDY_DIR="$ROOT_DIR/caddy"
 
@@ -56,40 +64,87 @@ install_docker() {
   fi
 
   printf 'ABCDEPLOY_DOCKER_SETUP=installing\n'
-  "${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get update -y || fail_setup \
-    "AD-SRV-106" \
-    "服务器软件源暂时不可用" \
-    "检查服务器网络后重试，系统会从安装 Docker 这一步继续"
-  "${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl || fail_setup \
-    "AD-SRV-106" \
-    "服务器无法安装 Docker 所需的基础组件" \
-    "检查服务器软件源后重试，已完成的连接配置会保留"
+  if ! command -v curl >/dev/null 2>&1 || [[ ! -r /etc/ssl/certs/ca-certificates.crt ]]; then
+    if ! "${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      ca-certificates curl >/dev/null 2>&1; then
+      "${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get update -y || fail_setup \
+        "AD-SRV-106" \
+        "服务器系统软件源暂时不可用" \
+        "请确认服务器可以访问外网和解析域名，然后点击重试；已完成的连接配置会保留"
+      "${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        ca-certificates curl || fail_setup \
+          "AD-SRV-106" \
+          "服务器无法安装网络连接组件" \
+          "请检查服务器系统软件源后重试；ABCDeploy 尚未修改 Docker 配置"
+    fi
+  fi
 
-  local keyring="/etc/apt/keyrings/docker.asc"
-  local repository="/etc/apt/sources.list.d/docker.list"
-  local temporary_key
+  local provider provider_label
+  provider="$(abcdeploy_detect_cloud_provider)"
+  provider_label="$(abcdeploy_cloud_provider_label "$provider")"
+  printf 'ABCDEPLOY_CLOUD_PROVIDER=%s\n' "$provider"
+
+  local keyring="/etc/apt/keyrings/abcdeploy-docker.asc"
+  local repository="/etc/apt/sources.list.d/abcdeploy-docker.list"
+  local temporary_key temporary_release setup_log
   temporary_key="$(mktemp)"
-  curl --connect-timeout 15 --max-time 60 --retry 2 -fsSL \
-    "https://download.docker.com/linux/$distribution/gpg" \
-    -o "$temporary_key" || fail_setup \
-      "AD-SRV-106" \
-      "服务器暂时无法连接 Docker 软件源" \
-      "检查服务器外网访问后重试，系统会自动继续初始化"
+  temporary_release="$(mktemp)"
+  setup_log="$(mktemp)"
+  local source_id source_url source_label selected_source=""
+  local architecture
+  architecture="$(dpkg --print-architecture)"
   "${SUDO[@]}" install -d -m 0755 /etc/apt/keyrings
-  "${SUDO[@]}" install -m 0644 "$temporary_key" "$keyring"
-  rm -f "$temporary_key"
-  printf 'deb [arch=%s signed-by=%s] https://download.docker.com/linux/%s %s stable\n' \
-    "$(dpkg --print-architecture)" "$keyring" "$distribution" "$codename" |
-    "${SUDO[@]}" tee "$repository" >/dev/null
-  "${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get update -y || fail_setup \
-    "AD-SRV-106" \
-    "Docker 软件源暂时不可用" \
-    "检查服务器网络后重试，系统会从安装 Docker 这一步继续"
-  "${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || fail_setup \
+
+  while IFS='|' read -r source_id source_url; do
+    [[ -n "$source_id" && -n "$source_url" ]] || continue
+    source_label="$(abcdeploy_docker_source_label "$source_id")"
+    printf 'ABCDEPLOY_DOCKER_SOURCE_TRY=%s\n' "$source_id"
+
+    if ! curl --connect-timeout 5 --max-time 25 --retry 1 -fsS \
+      "$source_url/gpg" -o "$temporary_key"; then
+      continue
+    fi
+    if ! curl --connect-timeout 5 --max-time 25 --retry 1 -fsS \
+      "$source_url/dists/$codename/InRelease" -o "$temporary_release"; then
+      continue
+    fi
+
+    "${SUDO[@]}" install -m 0644 "$temporary_key" "$keyring"
+    printf 'deb [arch=%s signed-by=%s] %s %s stable\n' \
+      "$architecture" "$keyring" "$source_url" "$codename" |
+      "${SUDO[@]}" tee "$repository" >/dev/null
+
+    if ! "${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get update \
+      -o "Dir::Etc::sourcelist=$repository" \
+      -o 'Dir::Etc::sourceparts=-' \
+      -o 'APT::Get::List-Cleanup=0' >"$setup_log" 2>&1; then
+      continue
+    fi
+    if ! apt-cache show docker-ce >/dev/null 2>&1 ||
+      ! apt-cache show docker-compose-plugin >/dev/null 2>&1; then
+      continue
+    fi
+    if "${SUDO[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
+      >"$setup_log" 2>&1; then
+      selected_source="$source_id"
+      printf 'ABCDEPLOY_DOCKER_SOURCE=%s\n' "$selected_source"
+      printf 'ABCDeploy 已选择%s（检测结果：%s）\n' "$source_label" "$provider_label"
+      break
+    fi
+  done < <(abcdeploy_docker_source_plan "$provider" "$distribution")
+
+  rm -f "$temporary_key" "$temporary_release"
+  if [[ -z "$selected_source" ]]; then
+    tail -8 "$setup_log" >&2 2>/dev/null || true
+    rm -f "$setup_log"
+    "${SUDO[@]}" rm -f "$repository" "$keyring"
+    fail_setup \
       "AD-SRV-106" \
-      "Docker 安装没有完成" \
-      "检查服务器软件源后重试，系统会自动继续初始化"
+      "服务器暂时无法访问可用的 Docker 软件源" \
+      "系统已按${provider_label}优先并自动尝试多个国内源和官方源；请确认服务器可以访问外网 HTTPS、DNS 和软件仓库后重试"
+  fi
+  rm -f "$setup_log"
 
   if command -v systemctl >/dev/null 2>&1; then
     "${SUDO[@]}" systemctl enable --now docker || fail_setup \

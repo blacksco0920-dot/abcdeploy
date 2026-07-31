@@ -10,6 +10,7 @@ dependencies = [
  "chrono",
  "deploy-core",
  "keyring",
+ "reqwest",
  "rusqlite",
  "security-framework",
  "serde",
@@ -24,6 +25,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tempfile",
  "tokio",
+ "url",
  "zeroize",
 ]
 

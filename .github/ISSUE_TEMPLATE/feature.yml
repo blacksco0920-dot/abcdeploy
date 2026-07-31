@@ -1,0 +1,26 @@
+name: 功能建议
+description: 从用户目标出发提出改进
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: user
+    attributes:
+      label: 用户与目标
+      description: 谁在什么情况下想完成什么？
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: 当前阻碍
+      description: 现在为什么难以完成？
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: 理想结果
+      description: 描述结果，不必预设技术实现。
+    validations:
+      required: true
