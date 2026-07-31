@@ -1,8 +1,10 @@
 # ABCDeploy 当前状态
 
-> 更新时间：2026-07-31。证据截止：本次 change 验证完成时。
+> 更新时间：2026-08-01。证据截止：本次 change 验证完成时。
 
 本页是冷启动时判断“已经验收什么、代码做到什么、下一步做什么”的唯一入口，也是当前完成度与验收事实的唯一账本。产品应当做到什么仍以 [产品合同](product-contract.md) 为准；实现边界以 [工程架构](architecture.md) 为准；本页不把目标或测试覆盖写成用户验收，也不把现有实现反写为产品合同。
+
+代码入口、调用链、测试和已确认缺口统一见 [实现证据索引](internal/implementation-inventory.md)，查询当前定义与影响范围见 [CodeGraph 指南](internal/codegraph.md)。本页只链接实现导航和 active change，不复制代码图谱、任务或设计全文。
 
 ## 状态定义
 
@@ -26,16 +28,16 @@
 | 成功证据与连续验证 | `IMPLEMENTED_UNVERIFIED` | `crates/deploy-core/src/mvp/evidence.rs` 与 `apps/desktop/src/features/deployment-evidence/model.test.ts` 覆盖三次、五秒间隔、十秒窗口；尚无本机或仓库来源的真实验收。 |
 | 更新部署 | `IMPLEMENTED_UNVERIFIED` | 更新后的编辑器行为由 `apps/desktop/src/features/deployment-editor/DeploymentEditorController.update.test.tsx` 覆盖；尚无独立用户验收事实。 |
 | 版本恢复 | `IMPLEMENTED_UNVERIFIED` | 恢复服务入口在 `apps/desktop/src/features/deployment-detail/deployment-detail-services.ts`，展示恢复版本的回归证据在 `apps/desktop/src/components/ProjectGallery.test.tsx`；尚无用户验收事实。 |
-| 当前治理 change | `NEXT` | 活跃变更为 `openspec/changes/organize-canonical-project-assets/`；任务清单为 `openspec/changes/organize-canonical-project-assets/tasks.md`。本页与项目门禁是其 1.1 的实现产物。 |
+| 当前治理 change | `NEXT` | 活跃变更为 [`organize-canonical-project-assets`](../openspec/changes/organize-canonical-project-assets/)；变更依据见 [Design Doc](../openspec/changes/organize-canonical-project-assets/design.md)，实施入口见 [实现证据索引](internal/implementation-inventory.md) 与 [CodeGraph 指南](internal/codegraph.md)。 |
 
 ## 当前进行中的变更
 
-- `NEXT`：`organize-canonical-project-assets` 正在把当前事实入口、文档权威层级和代码导航收束为可复核资产。进度以 `openspec/changes/organize-canonical-project-assets/tasks.md` 为准。
+- `NEXT`：[`organize-canonical-project-assets`](../openspec/changes/organize-canonical-project-assets/) 正在把当前事实入口、文档权威层级和代码导航收束为可复核资产；恢复动机与技术决策读取其 [Design Doc](../openspec/changes/organize-canonical-project-assets/design.md)，进度读取 change 内任务状态。
 - `TARGET`：四种来源/运行位置组合仍是稳定产品目标；不得因为目前只验收服务器正向主线而缩小产品合同。
 
 ## 最近下一步
 
-1. `NEXT`：完成该治理 change 后续任务：冷启动协议、文档权威层级、冲突清理、代码导航和最终验证。
+1. `NEXT`：完成该治理 change 的无历史上下文冷启动审计、链接与状态一致性检查，以及最终项目门禁验证。
 2. `NEXT`：在任何声称仓库来源已可用之前，先接通 `resolveRepository` 的真实解析、身份锁定和受管目录流程，并取得自动测试与用户验收。
 3. `NEXT`：为本机运行、更新部署和版本恢复补充真实客户端验收记录；验收前保持 `IMPLEMENTED_UNVERIFIED`。
 

@@ -56,6 +56,18 @@
         border-radius: 9px; color: white; background: var(--primary); font-weight: 750;
       }
       .prototype-note { font-size: 12px; color: var(--subtle-foreground); }
+      .archive-notice {
+        width: min(1040px, calc(100% - 40px));
+        margin: 18px auto -10px;
+        padding: 12px 14px;
+        border: 1px solid #efc17d;
+        border-radius: 10px;
+        background: var(--warning-soft);
+        color: #82500d;
+        font-size: 13px;
+        font-weight: 650;
+        line-height: 20px;
+      }
       .page { width: min(1040px, calc(100% - 40px)); margin: 0 auto; padding: 34px 0 64px; }
       .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
       h1 { margin: 0; font-size: 24px; line-height: 32px; letter-spacing: -0.02em; }
@@ -307,6 +319,10 @@
       <div class="brand"><span class="brand-mark">A</span><span>ABCDeploy 小白部署</span></div>
       <span class="prototype-note">交互原型 · 假数据 · 不执行真实上线</span>
     </header>
+
+    <aside class="archive-notice" role="note">
+      历史讨论资产：仅用于追溯，不代表当前产品、实现或完成状态。
+    </aside>
 
     <main id="homeView" class="page">
       <header class="page-header">
