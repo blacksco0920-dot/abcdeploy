@@ -41,7 +41,7 @@ ABCDeploy 不用“命令执行完成”或“内部阶段变绿”冒充成功�
 
 项目选择、运行位置、待办、主操作和结果始终在同一个自然纵向页面完成。后台实现可以替换，不决定用户看到的页面结构。
 
-当前桌面客户端已经完成并由用户亲自验通服务器正向 MVP 主线。后续改动必须保持这条主线可运行；历史实现与具体 Provider 已隔离在 [内部实施资料](docs/internal/README.md)，只能用于迁移代码，不能用于补充产品需求。
+历史实现与具体 Provider 已隔离在 [内部实施资料](docs/internal/README.md)，只能用于迁移代码，不能用于补充产品需求。
 
 ## 仓库结构
 
@@ -111,7 +111,7 @@ pnpm codegraph:status
 
 ## 文档入口
 
-AI 和开发者从 [docs/README.md](docs/README.md) 开始。产品冲突只以 [产品合同](docs/product-contract.md) 为准，工程承载方式以 [工程架构](docs/architecture.md) 为准，长期维护要求以 [工程质量规范](docs/engineering-quality.md) 为准，实施完成以 [验收标准](docs/implementation-acceptance.md) 为准。
+AI 和开发者从 [docs/README.md](docs/README.md) 开始；新会话默认阅读 [当前状态](docs/current-state.md)。产品冲突只以 [产品合同](docs/product-contract.md) 为准，工程承载方式以 [工程架构](docs/architecture.md) 为准，长期维护要求以 [工程质量规范](docs/engineering-quality.md) 为准，实施完成以 [验收标准](docs/implementation-acceptance.md) 为准。
 
 ## 许可证
 

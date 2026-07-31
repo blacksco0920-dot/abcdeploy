@@ -134,6 +134,26 @@ function lineCount(file) {
 
 function checkProjectContextRecovery() {
   const currentState = "docs/current-state.md";
+  const entryFiles = ["AGENTS.md", "README.md", "docs/README.md"];
+  for (const file of entryFiles) {
+    if (!existsSync(file)) {
+      failures.push(`冷启动入口缺少文件：${file}`);
+      continue;
+    }
+    if (!referencesCurrentState(file, currentState)) {
+      failures.push(`冷启动入口缺少 ${currentState}：${file}`);
+    }
+  }
+
+  if (existsSync("AGENTS.md")) {
+    const agents = readFileSync("AGENTS.md", "utf8");
+    for (const entry of ["OpenSpec", "Comet", "CodeGraph"]) {
+      if (!agents.includes(entry)) {
+        failures.push(`冷启动入口缺少 ${entry}：AGENTS.md`);
+      }
+    }
+  }
+
   if (!existsSync(currentState)) return;
   const text = readFileSync(currentState, "utf8");
   const statuses = [
@@ -146,6 +166,16 @@ function checkProjectContextRecovery() {
   for (const status of statuses) {
     if (!text.includes(status)) failures.push(`${currentState} 缺少状态枚举：${status}`);
   }
+}
+
+function referencesCurrentState(file, currentState) {
+  const text = readFileSync(file, "utf8");
+  if (text.includes(currentState)) return true;
+  const expectedTarget = path.resolve(root, currentState);
+  return [...text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)].some((match) => {
+    const href = match[1].split("#")[0];
+    return href && path.resolve(root, path.dirname(file), decodeURI(href)) === expectedTarget;
+  });
 }
 
 function checkUserFacingDocumentationBoundaries() {
