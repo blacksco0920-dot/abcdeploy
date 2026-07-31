@@ -3,6 +3,8 @@
 - 当前计划任务：`Task 5: 执行无会话冷启动审计并闭合变更证据`
 - 映射 OpenSpec 任务：`4.1 模拟无历史上下文的新会话，验证其能准确回答已验证能力、未验证实现、下一步、禁止事项和代码入口五个问题`；`4.2 校验所有当前文档链接、状态枚举、权威引用和 OpenSpec 变更资产的一致性`；`4.3 运行 pnpm check:project、pnpm check:secrets 与受影响的文档检查，并同步 CodeGraph`；`4.4 将验证证据写回 docs/current-state.md 和本变更任务清单，确保结论可追溯`
 - 当前阶段：`done`
+- Comet phase：`archive`
+- 当前子阶段：`archive-confirmation`
 - 最终审查者：`/root/context_recovery_final_review`
 - 最终审查范围：`85b759f..afbbf4a`，仅本 change 治理提交
 - 最终审查结果：`With fixes`；0 Critical、4 Important、0 Minor
@@ -12,11 +14,12 @@
 - 最终定向复查结果：`PASS — Ready`；4 个 Important 已解决，0 未解决，0 新 breakage
 - 实现者：`/root/context_recovery_task5`
 - 实现基线：`60c776c7b0cac1ab518bd486147dc461295bffc7`
-- 当前子阶段：`build-guard`
+- 验证结果：`PASS`；full verify；`verify_result=pass`；`branch_status=pending`
+- 验证报告：`docs/superpowers/reports/2026-08-01-organize-canonical-project-assets-verify.md`
 - build guard 首次结果：除计划 Step 7 尚未勾选外全部 PASS；Build PASS；已按守卫提示勾选后重试
 - review_mode：`standard`
 - 实现提交：`d697367 docs: verify context-independent project recovery`
-- 审计证据：已记录于 `.superpowers/sdd/2026-07-31-project-context-recovery/task-5-cold-start-audit.md`，并由提交 `d697367` 摘要写回 `docs/current-state.md`
+- 审计证据：提交 `d697367` 已写回 `docs/current-state.md`，完整持久验证结论见验证报告
 - 冷启动审计者：`/root/cold_start_audit`
 - 冷启动审计结果：`PASS`；五题均可回答；未读取历史原型；未猜测代码入口
 - 协调者核验：答案路径有效；两个非即时后续事项已由提交 `d697367` 从 `NEXT` 收敛为 `TARGET`，当前唯一 NEXT 已固定
@@ -26,5 +29,6 @@
 - 未解决反馈：无
 - 第一次 verify 结果：工程/OpenSpec/CodeGraph 门禁通过，但 plan `base-ref` 错把用户既有全量工作区基线计入本 change；已自动返回 build
 - verify 修复：将 `base-ref` 从 `fd5bacf` 修正为用户全量基线提交 `0a22f58`，使提交区间只覆盖治理资产
+- 第二次 verify 结果：15/15 tasks、6/6 requirements、8/8 scenarios、完整工程门禁、strict OpenSpec 与 CodeGraph 全部 PASS；verify guard 已推进 archive
 - 勾选状态：计划 Task 5 的 Steps 1–5 与 OpenSpec 4.1–4.4 已勾选；OpenSpec `15/15`、未勾选项 0
 - 已完成前置：Task 1–4
