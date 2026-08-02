@@ -14,3 +14,4 @@
 - GREEN evidence: pending
 - Task review: pending
 - Open findings: none
+- Context resolution: Task 1 exports are `extractSourceCommands`, `extractRegisteredCommands`, `extractBundledCommands`, and `compareCommandSets`; `auditDesktopCommandSurface` starts in Task 2. The design's four difference classes are now explicit: `(source ∪ bundle) - registered`, `registered - (source ∪ bundle)`, `bundle - source`, and `source - bundle`.

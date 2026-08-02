@@ -79,10 +79,13 @@ export function extractBundledCommands({ files, registeredCommands, loadTypeScri
 
 export function compareCommandSets({ registeredCommands, sourceCommands, bundledCommands }) {
   return {
+    // (source ∪ bundle) - registered
     missingRegistrations: string[],
-    sourceOnly: string[],
+    // registered - (source ∪ bundle)
     registeredOnly: string[],
+    // bundle - source
     bundleOnly: string[],
+    // source - bundle
     sourceNotBundled: string[],
   };
 }
@@ -165,7 +168,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 - [ ] **Step 1: 写 CLI 诊断失败测试**
 
-  使用临时目录夹具断言 `--mode all --json` 输出稳定字段和排序；人为设置 `registered=[alpha,beta]`、`source=[alpha,gamma]`、`bundle=[alpha]` 时，按共享接口顺序断言五类差异分别为 `gamma/gamma/beta/[]/gamma`，退出码为 `1`。
+  使用临时目录夹具断言 `--mode all --json` 输出稳定字段和排序；人为设置 `registered=[alpha,beta]`、`source=[alpha,gamma]`、`bundle=[alpha]` 时，按共享接口顺序断言四类差异分别为 `gamma/beta/[]/gamma`，退出码为 `1`。
 
 - [ ] **Step 2: 运行测试并确认 Red**
 
@@ -618,7 +621,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Run: `node scripts/check-desktop-command-surface.mjs --mode all`
 
-  Expected: PASS；文本输出三个数量完全相等，`missingRegistrations/sourceOnly/registeredOnly/bundleOnly/sourceNotBundled` 全为空。
+  Expected: PASS；文本输出三个数量完全相等，`missingRegistrations/registeredOnly/bundleOnly/sourceNotBundled` 全为空。
 
 - [ ] **Step 5: 提交 bundle 门禁**
 
