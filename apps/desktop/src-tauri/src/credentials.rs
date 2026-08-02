@@ -431,22 +431,6 @@ async fn cleanup_registry_upload(
     let _ = request.timeout(Duration::from_secs(2)).send().await;
 }
 
-#[tauri::command]
-pub(super) async fn check_registry_credentials(
-    registry: String,
-    username: String,
-    password: String,
-) -> Result<ProviderCheck, String> {
-    let check = tauri::async_runtime::spawn_blocking(move || {
-        let password = Zeroizing::new(password);
-        check_registry_login(&registry, &username, password.as_str())
-    });
-    tokio::time::timeout(Duration::from_secs(25), check)
-        .await
-        .map_err(|_| "镜像仓库验证超时，请检查网络后重试".to_string())?
-        .map_err(public_error)?
-}
-
 pub(super) fn optional_keyring_secret(key: &str) -> Result<Option<Zeroizing<String>>, String> {
     match read_keyring_secret(key) {
         Ok(value) => Ok(Some(Zeroizing::new(value))),

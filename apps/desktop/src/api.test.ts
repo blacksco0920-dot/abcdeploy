@@ -6,22 +6,47 @@ describe("browser demo managed infrastructure", () => {
     vi.resetModules();
   });
 
-  it("reads many saved settings without inventing missing values", async () => {
-    const { getAppSettings, setAppSetting } = await import("./api");
+  it("reads saved settings without inventing missing values", async () => {
+    const { getAppSetting, setAppSetting } = await import("./api");
     await setAppSetting("project.demo.scene", "versions");
     await setAppSetting("project.demo.completed-progress", "");
 
+    await expect(getAppSetting("project.demo.scene")).resolves.toBe("versions");
+    await expect(getAppSetting("project.demo.completed-progress")).resolves.toBe(
+      "",
+    );
+    await expect(getAppSetting("project.demo.missing")).resolves.toBeNull();
+  });
+
+  it("does not expose retired configuration and credential wrappers", async () => {
+    const api = await import("./api");
+    const retiredExports = [
+      "bindConfigProfile",
+      "checkRegistryCredentials",
+      "deleteConfigProfile",
+      "deleteSecret",
+      "getAppSettings",
+      "getSecretStatus",
+      "listConfigProfileBindings",
+      "listConfigProfiles",
+      "saveConfigProfile",
+      "setEnvironmentConfigBindings",
+      "storeSecret",
+    ];
+
     expect(
-      await getAppSettings([
-        "project.demo.scene",
-        "project.demo.completed-progress",
-        "project.demo.missing",
-        "project.demo.scene",
-      ]),
-    ).toEqual({
-      "project.demo.completed-progress": "",
-      "project.demo.scene": "versions",
-    });
+      Object.keys(api)
+        .filter((name) => retiredExports.includes(name))
+        .sort(),
+    ).toEqual([]);
+    expect(
+      [
+        api.replaceRegistryCredentials,
+        api.checkSavedRegistryCredentials,
+        api.getAppSetting,
+        api.setAppSetting,
+      ].map((candidate) => typeof candidate),
+    ).toEqual(["function", "function", "function", "function"]);
   });
 
   it("lists stable connection resources and never returns stored credential material", async () => {
@@ -137,73 +162,27 @@ describe("browser demo managed infrastructure", () => {
     );
   });
 
-  it("binds multiple configuration entries to one environment and replaces them atomically", async () => {
-    const {
-      bindConfigProfile,
-      listConfigProfileBindings,
-      saveConfigProfile,
-      setEnvironmentConfigBindings,
-    } = await import("./api");
-    const first = await saveConfigProfile({
-      id: "profile-api-base-url",
-      kind: "custom",
-      provider: "environment",
-      name: "服务地址",
-      scope: "remote",
-      values: { env_name: "API_BASE_URL", env_value: "https://api.test" },
-      secretFields: [],
-      secrets: {},
-      isDefault: true,
-    });
-    const second = await saveConfigProfile({
-      id: "profile-api-token",
-      kind: "custom",
-      provider: "environment",
-      name: "访问令牌",
-      scope: "remote",
-      values: { env_name: "API_TOKEN" },
-      secretFields: ["API_TOKEN"],
-      secrets: { API_TOKEN: "test-only-secret" },
-      isDefault: false,
-    });
-
-    await bindConfigProfile("/demo/project", "staging", "custom", first.id);
-    await bindConfigProfile("/demo/project", "staging", "custom", second.id);
-    expect(
-      await listConfigProfileBindings("/demo/project", "staging"),
-    ).toHaveLength(2);
-
-    const replaced = await setEnvironmentConfigBindings(
-      "/demo/project",
-      "staging",
-      [second.id, first.id, second.id],
-    );
-    expect(replaced.map((binding) => binding.profileId)).toEqual([
-      second.id,
-      first.id,
-    ]);
-    expect(
-      localStorage.getItem("abcdeploy.demo.config-profiles"),
-    ).not.toContain("test-only-secret");
-
-    await setEnvironmentConfigBindings("/demo/project", "staging", []);
-    expect(await listConfigProfileBindings("/demo/project", "staging")).toEqual(
-      [],
-    );
-  });
-
   it("does not mark incomplete registry credentials as verified", async () => {
-    const { checkRegistryCredentials } = await import("./api");
+    const { replaceRegistryCredentials } = await import("./api");
+    const verifiedAtKey = "abcdeploy.demo.connection.checked.tcr";
 
     await expect(
-      checkRegistryCredentials("ccr.ccs.tencentyun.com", "demo-user", ""),
+      replaceRegistryCredentials(
+        "ccr.ccs.tencentyun.com",
+        "registry.tcr.v2",
+        "demo-user",
+        "",
+      ),
     ).resolves.toMatchObject({
       ok: false,
       code: "AD-IMG-201",
     });
+    expect(localStorage.getItem(verifiedAtKey)).toBeNull();
+
     await expect(
-      checkRegistryCredentials(
+      replaceRegistryCredentials(
         "ccr.ccs.tencentyun.com",
+        "registry.tcr.v2",
         "demo-user",
         "demo-password",
       ),
@@ -211,6 +190,10 @@ describe("browser demo managed infrastructure", () => {
       ok: true,
       summary: "镜像仓库登录信息可用",
     });
+    const verifiedAt = localStorage.getItem(verifiedAtKey);
+    expect(verifiedAt).not.toBeNull();
+    expect(new Date(verifiedAt!).toISOString()).toBe(verifiedAt);
+    expect(verifiedAt).not.toContain("demo-password");
   });
 
   it("keeps one recent successful record for each project environment", async () => {

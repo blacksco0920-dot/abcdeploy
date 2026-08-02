@@ -62,9 +62,8 @@ mod source_snapshots;
 mod workspace;
 
 use credentials::{
-    check_registry_credentials, check_saved_registry_credentials, delete_secret,
-    replace_registry_credentials, secret_status, store_secret, valid_registry_host,
-    valid_registry_namespace,
+    check_saved_registry_credentials, delete_secret, replace_registry_credentials, secret_status,
+    store_secret, valid_registry_host, valid_registry_namespace,
 };
 use deployment_route_verification::{
     collect_public_route_statuses, only_waiting_for_certificates,
@@ -8820,7 +8819,6 @@ fn cnb_build_history_error(error: DeployError) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
-        .plugin(tauri_plugin_clipboard_manager::init())
         .on_window_event(|window, event| {
             #[cfg(not(target_os = "macos"))]
             let _ = (window, event);
@@ -8942,7 +8940,6 @@ pub fn run() {
             secret_status,
             store_secret,
             delete_secret,
-            check_registry_credentials,
             replace_registry_credentials,
             check_saved_registry_credentials,
             connect_cnb,

@@ -9,6 +9,14 @@
 - 65 个未进入 bundle 的候选 = 55 个 `registeredOnly` + 10 个 `sourceNotBundled`，均在下表各占一行。另将 `check_registry_credentials` 单独裁决：它在 bundle 中，但字符串只由浏览器回退路径保活，不是 Tauri Feature 消费证据。
 - 证据方法：`pnpm codegraph:status` 确认索引最新；对每个 `internalize` 候选运行 `codegraph callers`、`codegraph impact`，并用 `rg -n <symbol> apps/desktop/src-tauri/src` 复核 Tauri 动态注册、同名 Workspace 方法和嵌套 caller。CodeGraph 报告 handler “无 caller”时，以表中明确列出的 `*_inner`、Workspace caller 或保护测试补证。
 
+## Task 3 实施记录（2026-08-02）
+
+- 已删除根 API 的 11 个无生产消费者包装：`listConfigProfiles`、`saveConfigProfile`、`deleteConfigProfile`、`bindConfigProfile`、`listConfigProfileBindings`、`setEnvironmentConfigBindings`、`getAppSettings`、`getSecretStatus`、`storeSecret`、`deleteSecret`、`checkRegistryCredentials`；`apps/desktop/src/api/config-profiles.ts` 整体删除。保留签名为 `replaceRegistryCredentials`、`checkSavedRegistryCredentials`、`getAppSetting`、`setAppSetting`。
+- `replaceRegistryCredentials` 的浏览器分支改用私有纯函数 `validateRegistryCredentials`；空密码返回 `AD-IMG-201` 且不写 verified 时间，完整输入只写 ISO 时间，不保存秘密。`check_registry_credentials` 已从 Rust import、`generate_handler!` 和 `credentials.rs` 删除。
+- 已移除 `@radix-ui/react-collapsible`、`@radix-ui/react-dropdown-menu`、`@tauri-apps/plugin-clipboard-manager`、`tauri-plugin-clipboard-manager`、clipboard plugin 初始化和 `clipboard-manager:allow-write-text`。生产仍直接使用 `navigator.clipboard.writeText`，并保留有生产调用者的 dialog `open` / opener `openUrl` 及对应依赖、runtime plugin 和权限。
+- RED：`pnpm --filter @abcdeploy/desktop test -- src/api.test.ts` 失败并完整列出 11 个待退役导出；GREEN 与目标回归为 36 files / 195 tests PASS，严格 TypeScript unused 检查和 desktop build PASS（仅既有 Vite chunk-size warning）。
+- `source`、`bundle`、`all` 三种审计模式均按预期 exit 1，仅剩 65 个 `registeredOnly`；实际计数为 `registered=110`、`source=45`、`bundled=45`，且 `missingRegistrations=0`、`bundleOnly=0`、`sourceNotBundled=0`。
+
 ## 矩阵
 
 | command                                  | feature consumer                                                                                                                                                                                                                                                                  | TypeScript wrapper                                                          | production bundle | Rust internal callers                                                                                                                                                              | data/migration duty                                    | tests                                                                                                                                             | decision      | rationale                                                                                                                       |

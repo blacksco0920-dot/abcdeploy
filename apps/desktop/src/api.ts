@@ -32,23 +32,11 @@ import type {
 } from "./types";
 import { getAppSetting, setAppSetting } from "./api/settings";
 export {
-  checkRegistryCredentials,
   checkSavedRegistryCredentials,
-  deleteSecret,
-  getSecretStatus,
   replaceRegistryCredentials,
-  storeSecret,
 } from "./api/secrets";
 
-export { getAppSetting, getAppSettings, setAppSetting } from "./api/settings";
-export {
-  bindConfigProfile,
-  deleteConfigProfile,
-  listConfigProfileBindings,
-  listConfigProfiles,
-  saveConfigProfile,
-  setEnvironmentConfigBindings,
-} from "./api/config-profiles";
+export { getAppSetting, setAppSetting } from "./api/settings";
 
 export async function selectProjectDirectory(
   title = "选择 AI 生成的整个项目文件夹（不要只选前端或后端）",
