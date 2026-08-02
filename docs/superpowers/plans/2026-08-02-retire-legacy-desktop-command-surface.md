@@ -593,7 +593,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 10: 把生产 bundle 命令契约接入桌面构建
 
-- [ ] Task 10 完成：生产 bundle 命令契约接入桌面构建
+- [x] Task 10 完成：生产 bundle 命令契约接入桌面构建
 
 **Files:**
 - Modify: `apps/desktop/package.json`
@@ -604,21 +604,21 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: `auditDesktopCommandSurface({ root, mode: "bundle" })` 与 Vite 生成的 `apps/desktop/dist/assets/*.js`。
 - Produces: `pnpm --filter @abcdeploy/desktop build` 在 `vite build` 后强制 `registeredCommands = bundledCommands`，并同时拒绝 `sourceNotBundled`。
 
-- [ ] **Step 1: 写 bundle 门禁 Red 测试**
+- [x] **Step 1: 写 bundle 门禁 Red 测试**
 
   用夹具断言：注册命令只在注释或较长字符串中出现时仍失败；source 有包装但 bundle 不含时列入 `sourceNotBundled`；精确 JS 字符串字面量进入集合时通过。
 
-- [ ] **Step 2: 运行测试并确认 Red**
+- [x] **Step 2: 运行测试并确认 Red**
 
   Run: `node --test scripts/desktop-command-surface.test.mjs`
 
   Expected: FAIL，提示构建脚本尚未执行 bundle 模式或相似子串被误判。
 
-- [ ] **Step 3: 接入 build 后门禁**
+- [x] **Step 3: 接入 build 后门禁**
 
   把桌面 `build` 固定为 `tsc --noEmit && vite build && node ../../scripts/check-desktop-command-surface.mjs --mode bundle`。bundle 模式在 `dist/assets` 缺失时直接失败并说明先运行 Vite，不读取旧缓存目录以外的文件。
 
-- [ ] **Step 4: 运行三集合 Green**
+- [x] **Step 4: 运行三集合 Green**
 
   Run: `pnpm --filter @abcdeploy/desktop build`
 
@@ -626,7 +626,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；文本输出三个数量完全相等，`missingRegistrations/registeredOnly/bundleOnly/sourceNotBundled` 全为空。
 
-- [ ] **Step 5: 提交 bundle 门禁**
+- [x] **Step 5: 提交 bundle 门禁**
 
   ```bash
   git add apps/desktop/package.json scripts/check-desktop-command-surface.mjs scripts/desktop-command-surface.test.mjs

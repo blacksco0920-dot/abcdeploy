@@ -4,18 +4,18 @@
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
 - Current task: `Task 10 完成：生产 bundle 命令契约接入桌面构建`
 - OpenSpec mapping: `4.1 把桌面命令面一致性检查接入 pnpm check:project，并要求所有保留例外具有逐项原因` (build-side complement; already checked after Task9)
-- Stage: `preflight`
+- Stage: `done`
 - Review mode: `thorough`
 - Review/fix round: `0/2`
-- Implementer: pending dispatch
-- Implementation commit: pending
-- Changed files: pending
-- RED evidence: pending
-- GREEN evidence: pending
-- Task review: pending
-- Reviewer: pending
-- Open findings: none
-- Risk signals: desktop production build exit semantics and bundle parser correctness; no runtime product change expected.
+- Implementer: `/root/task_10_bundle_gate` (complete)
+- Implementation commit: `3d433bc48cd1b1667635f82d4bf6dd1ef8ee65d3`
+- Changed files: desktop package build script; command-surface library/tests.
+- RED evidence: bundle mode lacked source/sourceNotBundled; missing assets leaked ENOENT; build stopped after tsc/vite without gate.
+- GREEN evidence: 23/23 Node tests; ENOENT actionable and ENOTDIR preserved; real build propagates gate and passes at 45/45/45; full `pnpm check`, project/secrets/OpenSpec/diff/CodeGraph pass.
+- Task review: clean; no Critical/Important/Minor findings; bundle/build/IO boundaries independently reproduced.
+- Reviewer: `/root/review_task_10_bundle_gate`
+- Open findings: none.
+- Risk signals: desktop production build exit semantics and bundle/source mode contract; no runtime product/schema change.
 - Context: source/project gate is complete and command surface is 45/45/45. Task10 adds post-Vite bundle enforcement and resolves the deferred missing-bundle-directory diagnostic Minor.
 - Deferred minors: fixed lexical sorting rule; direct `open_project_preview` write-safety regression test; precise `apply_plan` caller wording; stale `save_config_profile` caller wording. Final review will triage.
-- Checkoff: pending
+- Checkoff: Task 10 plan checkbox checked; OpenSpec 4.1 remains satisfied; exact runtime validation pending coordination commit.
