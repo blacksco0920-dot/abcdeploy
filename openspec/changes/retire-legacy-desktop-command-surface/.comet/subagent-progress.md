@@ -4,18 +4,20 @@
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
 - Current task: `Task 7 完成：旧数据、配置、秘密和 Provider 管理命令完成退役`
 - OpenSpec mapping: `3.4 删除无当前消费者的旧配置、运行时秘密和 Provider 管理命令簇，同时保留当前授权、仓储迁移和部署准备所需共享能力`; `3.5 根据编译器和调用图继续删除只服务退役命令的类型、辅助函数与测试，不删除仍覆盖当前数据兼容行为的断言`
-- Stage: `preflight`
+- Stage: `done`
 - Review mode: `thorough`
 - Review/fix round: `0/2`
-- Implementer: pending dispatch
-- Implementation commit: pending
-- Changed files: pending
-- RED evidence: pending
-- GREEN evidence: pending
-- Task review: pending
-- Reviewer: pending
-- Open findings: none
-- Risk signals: secrets/security, Workspace schema compatibility/current pointers, Provider authorization, intentional API/test deletion, likely >200-line diff.
+- Implementer: `/root/task_7_data_command_cleanup` (complete)
+- Implementation commit: `6144fa12bf75ae7f4bef2d8b538529d56d137bef`
+- Changed files: `credentials.rs`, `lib.rs`, `runtime_config.rs`, `tests.rs`, `workspace.rs`, `workspace/model.rs`, evidence matrix.
+- RED evidence: 71/45/45 with the 26 Task 7 targets exactly equal to registered-only; seven full-path exact compatibility tests each 1 pass.
+- GREEN evidence: source/bundle/all exit 0 at 45/45/45 with every difference and dynamic call zero; workspace/runtime filters 32/4, 134 desktop + 108 core + 3 integration, 195 frontend, Clippy/build/strict TS, project/secrets/OpenSpec/CodeGraph all pass.
+- Task review: clean; no Critical/Important/Minor findings; all command/data/security gates independently reproduced.
+- Reviewer: `/root/review_task_7_data_command_cleanup`
+- Open findings: none.
+- Risk signals: secrets/security; Workspace compatibility/current pointers; Provider authorization; test-only projection seams; intentional API/test deletion; >200-line diff; schema/migration unchanged.
+- Scope note: approved `credentials.rs` only for no-caller `secret_status/store_secret/delete_secret`; preserve registry validation/redaction, secret isolation and current credential APIs/tests.
+- Scope note: approved `workspace/model.rs` solely for seven no-production-caller compatibility-test projection models and matching test accessors under narrow `cfg(test)`; schema/migrations/production queries cannot be conditionalized or suppressed.
 - Context: Task 6 clean and complete; current audit 71/45/45 with exactly the 26 Task 7 targets registered-only. Expected Task 7 result is 45/45/45, all differences zero, all CLI modes exit 0.
 - Deferred minors: fixed lexical sorting rule; actionable missing-bundle-directory error; direct `open_project_preview` write-safety regression test; precise `apply_plan` caller wording. Final review will triage.
-- Checkoff: pending
+- Checkoff: Task 7 plan checkbox and OpenSpec 3.4/3.5 checked; exact runtime validation pending coordination commit.

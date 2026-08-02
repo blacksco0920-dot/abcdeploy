@@ -442,7 +442,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 7: 退役旧数据、配置、运行时秘密和 Provider 管理命令
 
-- [ ] Task 7 完成：旧数据、配置、秘密和 Provider 管理命令完成退役
+- [x] Task 7 完成：旧数据、配置、秘密和 Provider 管理命令完成退役
 
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
@@ -457,13 +457,13 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: `get_project_server/get_project_connection_bindings/delete_deployment_path/list_config_profiles/save_config_profile/delete_config_profile/bind_config_profile/list_config_profile_bindings/set_environment_config_bindings/list_project_environments/list_project_versions/list_version_validations/set_version_validation/load_existing_project_config/runtime_config_sync_status/sync_runtime_config_to_server/runtime_secret_status/store_runtime_secret/generate_runtime_secret/secret_status/store_secret/delete_secret/create_cnb_repository/check_cnb_repository_access/enable_cnb_auto_trigger/get_app_settings`。
 - Produces: 当前 `list_connections/list_deployment_paths/save_deployment_path/list_deployment_path_runs/load_runtime_config/store_runtime_config/prepare_cnb_secret_bundle/replace_registry_credentials/check_saved_registry_credentials/ensure_cnb_repository/check_cnb_secret_repository_access` 保持原契约；Workspace 数据方法按矩阵保留内部可见性。
 
-- [ ] **Step 1: 记录命令面 Red，并固化数据兼容保护线**
+- [x] **Step 1: 记录命令面 Red，并固化数据兼容保护线**
 
   Run: `node scripts/check-desktop-command-surface.mjs --mode source`
 
   Expected: FAIL，`registeredOnly` 包含本任务列出的旧数据、配置、秘密和 Provider 管理命令。随后确认 Workspace 测试已断言：旧 schema 幂等升级；旧失败记录不伪造在线版本；配置 Profile 旧数据可被当前聚合读取但不暴露秘密；重启恢复逐地址检查；更新/恢复失败不移动 `currentRunId`。如果同名测试缺少关键字段，先补一个因该真实缺口失败的断言，不复制夹具。
 
-- [ ] **Step 2: 运行数据测试基线**
+- [x] **Step 2: 运行数据测试基线**
 
   Run: `cargo test -p abcdeploy-desktop workspace::tests::migrates_legacy_workspace_model_idempotently -- --exact`
 
@@ -473,11 +473,11 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: 当前保护测试 PASS；若 Step 1 识别出覆盖缺口，新增字段断言先 FAIL，补齐最小测试接缝后 PASS。
 
-- [ ] **Step 3: 删除公开 CRUD/管理 endpoint，保留数据能力**
+- [x] **Step 3: 删除公开 CRUD/管理 endpoint，保留数据能力**
 
   删除列出的 handler 和 command 属性。仍被迁移、当前聚合、本机基础设施或 Provider 流程调用的 `WorkspaceState` 方法保留；只有调用者为空且没有矩阵数据职责的方法、输入类型、序列化模型和纯 endpoint 测试才删除。不得改 SQLite schema 或 migration SQL。
 
-- [ ] **Step 4: 运行完整 Workspace Green**
+- [x] **Step 4: 运行完整 Workspace Green**
 
   Run: `cargo fmt --all`
 
@@ -489,7 +489,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；矩阵所有数据命令都有 `internalize` 或 `delete` 的具体依据。
 
-- [ ] **Step 5: 提交数据与 Provider 边界清理**
+- [x] **Step 5: 提交数据与 Provider 边界清理**
 
   ```bash
   git add apps/desktop/src-tauri/src/lib.rs apps/desktop/src-tauri/src/runtime_config.rs apps/desktop/src-tauri/src/workspace.rs apps/desktop/src-tauri/src/workspace/tests.rs apps/desktop/src-tauri/src/workspace/current_runs_tests.rs apps/desktop/src-tauri/src/tests.rs openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md
