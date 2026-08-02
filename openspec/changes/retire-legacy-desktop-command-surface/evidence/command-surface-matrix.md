@@ -126,16 +126,16 @@
 
 | Computer Use 无副作用烟测 | 结果 | fresh AX 证据与边界 |
 | --- | --- | --- |
-| 精确构建 app 启动并到达“我的部署” | `PASS` | 使用 node_repl + Computer Use plugin wrapper 以精确 `.app` 路径启动；AX 读到“我的部署”、`新建部署` 和 5 条已保存记录，没有 `command not found`。 |
-| 已有部署列表与详情恢复 | `PASS` | 只读打开一条当前在线的服务器部署，详情恢复当前状态、地址、源码和运行版本；随后返回列表。未点击更新、恢复、设置、删除或地址。 |
-| 系统文件夹选择器打开并取消 | `NOT_TESTED` | fresh AX 点击本地文件夹入口后，精确路径状态读取返回 `cgWindowNotFound`；未能确认选择器状态或取消完成，因此不写 PASS，也未选择目录。 |
-| 外部准备链接打开 | `NOT_TESTED` | 在到达链接入口前 Mac 已锁定；未打开浏览器、未登录或提交数据。 |
-| 复制应用内非敏感准备文本 | `NOT_TESTED` | 在到达复制入口前 Mac 已锁定；未复制凭据、路径或其他敏感文本。 |
-| 本机当前主线入口实际打开 | `NOT_TESTED` | 新建页已渲染“这台电脑”入口，但因不选择目录与随后锁屏，没有进入可操作状态；没有启动服务。 |
-| 服务器当前主线入口实际打开 | `NOT_TESTED` | 新建页已渲染“服务器”入口，但因不选择项目与随后锁屏，没有进入可操作状态；没有连接 Provider 或服务器。 |
+| 精确构建 app 启动并到达“我的部署” | `PASS` | 使用 node_repl + Computer Use plugin wrapper 以精确 `.app` 路径启动；AX 读到“我的部署”、`新建部署` 和 5 条已保存记录，没有 `command not found`。解锁后 `list_apps` 显示两个 bundle id 同为 `cloud.finagent.abcdeploy` 的实例；后续读取与操作始终使用 worktree `.app` 精确路径。 |
+| 已有部署列表、详情与更新入口恢复 | `PASS` | `wx` 的在线服务器详情恢复当前状态、地址、源码和运行版本；点击 `更新上线` 后进入服务器更新编辑器，预检显示“可以开始 / 服务器连接已经验证”，且没有 `command not found`。未点击最终“更新上线”，没有服务器变更。 |
+| 系统文件夹选择器打开并取消 | `PASS` | 首轮点击后曾因 Mac 锁定无法确认；解锁后精确 app 初始 AX 明确为系统 `Open` sheet，证明此前文件夹选择器已经打开。按 Escape 回到新建页，未选择目录。 |
+| 外部准备链接打开 | `NOT_TESTED` | “连接新服务器” modal 和准备说明均正常展开；点击“查看购买服务器说明”后应用无报错且打开动作已派发，但以 Chrome 精确 bundle id 读取返回 `noWindowsAvailable`，目标窗口不可观察。未登录、提交或传输数据，因此不写 PASS 或 FAIL。 |
+| 复制应用内非敏感准备文本 | `NOT_TESTED` | 当前 copy action 仅在 `CnbSecretHandoffDialog` 的 Provider 授权流程可达；为避免连接 Provider 或产生外部副作用未进入该流程，也未复制任何凭据、路径或敏感文本。 |
+| 本机当前主线入口实际打开 | `PASS` | 打开既有待处理记录 `swifteng` 后恢复并预填本地项目；选择“这台电脑”完成预检，显示“可以开始 / 这台电脑可以接收本次运行”，没有 `command not found`。未点击“在本机运行”，没有启动服务。 |
+| 服务器当前主线入口实际打开 | `PASS` | 在同一 `swifteng` 页面选择“服务器”后显示已保存的已验证服务器与“连接新服务器”；选择该服务器完成预检，显示“可以开始 / 服务器连接已经验证”，没有 `command not found`。未点击“上线到服务器”，没有新建连接、上线或修改服务器；`wx` 的更新入口也独立到达同一 ready 门禁。 |
 
-- folder 入口后以显示名读取时意外命中另一同名 legacy ABCDeploy 窗口，并看到其既有数据库约束 toast；该窗口不是精确构建 app 的证据，明确排除在本次回归结论之外。随后只读 `list_apps` 报告 Mac 已锁定，按 Computer Use 安全规则立即停止全部 UI 操作，不尝试解锁。上述 smoke 没有功能 `FAIL`，但锁屏阻断项必须保持 `NOT_TESTED`。
-- 本节仍只记录自动证据和一次有限的无副作用 smoke，不产生用户验收；本机运行、更新和恢复继续是 `IMPLEMENTED_UNVERIFIED`，原服务器正向主线的既有 `VERIFIED` 事实不变。
+- 首轮 folder 入口后以显示名读取时意外命中另一同名 legacy ABCDeploy 窗口，并看到其既有数据库约束 toast；该窗口不是精确构建 app 的证据，明确排除在本次回归结论之外。随后只读 `list_apps` 报告 Mac 已锁定，按 Computer Use 安全规则立即停止全部 UI 操作且不尝试解锁。解锁后的补测先确认存在两个同 bundle id 实例，再全程用 worktree `.app` 精确路径定向；首轮异常经过保留，但不覆盖这些 fresh 精确路径证据。
+- 本节仍只记录自动证据和有限的无副作用 smoke，不产生用户验收；本机运行、更新和恢复继续是 `IMPLEMENTED_UNVERIFIED`，原服务器正向主线的既有 `VERIFIED` 事实不变。文件夹选择器取消、本机 ready 入口和服务器 ready 入口记为 `PASS`；外链目标窗口不可观察与 Provider 授权内复制保持 `NOT_TESTED`，均无功能 `FAIL`。
 
 ## 矩阵
 
