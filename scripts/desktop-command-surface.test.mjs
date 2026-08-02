@@ -481,6 +481,50 @@ callDesktop("wrapped_alias");`,
   ]);
 });
 
+test("extractSourceCommands 检查带类型参数节点的运行时表达式并跳过纯类型引用", () => {
+  const file = "/virtual/expression-with-type-arguments.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+type InvokeType = typeof invoke;
+const forwarded = invoke<string>;
+class Derived extends invoke("base_command") {}
+invoke("direct_command");`, file);
+
+  assert.deepEqual(result.commands, ["base_command", "direct_command"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [{ file, line: 3,
+    reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方" }]);
+});
+
+test("extractSourceCommands 拒绝 core 的具名、星号和命名空间值再导出", () => {
+  const file = "/virtual/core-value-reexports.ts";
+  const result = extractSourceCommands(
+    `export { invoke } from "@tauri-apps/api/core";
+export * from "@tauri-apps/api/core";
+export * as desktopCore from "@tauri-apps/api/core";
+export type { invoke as InvokeType } from "@tauri-apps/api/core";
+export { type invoke as InlineInvokeType } from "@tauri-apps/api/core";
+export type * from "@tauri-apps/api/core";
+export type * as DesktopCore from "@tauri-apps/api/core";`, file);
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [1, 2, 3].map((line) => ({ file, line,
+    reason: "不支持从 @tauri-apps/api/core 直接值再导出；请具名导入 invoke 并直接调用" })));
+});
+
+test("extractSourceCommands 忽略 type-only 命名空间导入", () => {
+  const result = extractSourceCommands(
+    `import type * as desktopCore from "@tauri-apps/api/core";
+import type { invoke as InvokeType } from "@tauri-apps/api/core";`,
+    "/virtual/type-only-core-imports.ts",
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, []);
+});
+
 test("extractSourceCommands 忽略 type-only export 中的导入 invoke 引用", () => {
   const result = extractSourceCommands(
     `import { invoke } from "@tauri-apps/api/core";

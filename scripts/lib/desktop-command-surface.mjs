@@ -22,6 +22,8 @@ const NAMESPACE_IMPORT_REASON =
 const OPTIONAL_CALL_REASON = "导入的 invoke 绑定不支持可选调用";
 const UNSUPPORTED_VALUE_USE_REASON =
   "导入的 invoke 绑定只能作为非可选直接调用的被调用方";
+const VALUE_REEXPORT_REASON =
+  "不支持从 @tauri-apps/api/core 直接值再导出；请具名导入 invoke 并直接调用";
 
 export function extractSourceCommands(sourceText, filePath) {
   const { checker, sourceFile } = createTypeScriptBindingContext(
@@ -44,13 +46,26 @@ export function extractSourceCommands(sourceText, filePath) {
 
   for (const statement of sourceFile.statements) {
     if (
+      ts.isExportDeclaration(statement) &&
+      statement.moduleSpecifier?.text === CORE_MODULE &&
+      hasValueExport(statement)
+    ) {
+      reportUnsupported(statement, VALUE_REEXPORT_REASON);
+      continue;
+    }
+    if (
       !ts.isImportDeclaration(statement) ||
       statement.moduleSpecifier.text !== CORE_MODULE
     ) {
       continue;
     }
 
-    const bindings = statement.importClause?.namedBindings;
+    const importClause = statement.importClause;
+    if (!importClause || importClause.isTypeOnly) {
+      continue;
+    }
+
+    const bindings = importClause.namedBindings;
     if (!bindings) {
       continue;
     }
@@ -60,9 +75,6 @@ export function extractSourceCommands(sourceText, filePath) {
       continue;
     }
 
-    if (statement.importClause?.isTypeOnly) {
-      continue;
-    }
     for (const element of bindings.elements) {
       if (
         !element.isTypeOnly &&
@@ -77,6 +89,10 @@ export function extractSourceCommands(sourceText, filePath) {
   }
 
   function visit(node) {
+    if (ts.isExpressionWithTypeArguments(node)) {
+      visit(node.expression);
+      return;
+    }
     if (ts.isTypeNode(node)) {
       return;
     }
@@ -123,6 +139,18 @@ export function extractSourceCommands(sourceText, filePath) {
       .sort((left, right) => left.position - right.position)
       .map(({ file, line, reason }) => ({ file, line, reason })),
   };
+}
+
+function hasValueExport(declaration) {
+  if (declaration.isTypeOnly) {
+    return false;
+  }
+  const clause = declaration.exportClause;
+  return (
+    !clause ||
+    ts.isNamespaceExport(clause) ||
+    clause.elements.some((element) => !element.isTypeOnly)
+  );
 }
 
 export function extractRegisteredCommands(sourceText) {
