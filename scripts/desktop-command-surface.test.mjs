@@ -80,6 +80,10 @@ async function createAuditFixture({ source = true, bundle = true } = {}) {
     new URL("./lib/desktop-command-surface.mjs", import.meta.url),
     join(root, "scripts", "lib", "desktop-command-surface.mjs"),
   );
+  await copyFile(
+    new URL("./lib/typescript-invoke-bindings.mjs", import.meta.url),
+    join(root, "scripts", "lib", "typescript-invoke-bindings.mjs"),
+  );
   await symlink(
     fileURLToPath(new URL("../apps/desktop/node_modules", import.meta.url)),
     join(root, "apps", "desktop", "node_modules"),
@@ -310,6 +314,24 @@ function invokeLocally(invoke) {
   assert.deepEqual(result.dynamicInvocations, []);
 });
 
+test("extractSourceCommands 只在 catch 词法范围内遮蔽导入绑定", () => {
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+invoke("before_catch");
+try {
+  throw new Error("fixture");
+} catch (invoke) {
+  invoke("ordinary_catch_callback");
+}
+invoke("after_catch");`,
+    "/virtual/catch-shadow.ts",
+  );
+
+  assert.deepEqual(result.commands, ["after_catch", "before_catch"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, []);
+});
+
 test("extractSourceCommands 收集命名空间 invoke 的静态命令并报告动态命令", () => {
   const filePath = "/virtual/namespace-invoke.ts";
   const result = extractSourceCommands(
@@ -341,6 +363,56 @@ callDesktop(aliasCommand);`,
     result.dynamicInvocations.map(({ file, line }) => ({ file, line })),
     [{ file: filePath, line: 4 }],
   );
+  assert.deepEqual(result.unsupportedInvocations, []);
+});
+
+test("extractSourceCommands 解开直接调用和一跳 const 别名的 TypeScript 透明表达式", () => {
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+(invoke)("parenthesized");
+(invoke as typeof invoke)("as_expression");
+(<typeof invoke>invoke)("type_assertion");
+invoke!("non_null");
+(invoke satisfies typeof invoke)("satisfies_expression");
+const callDesktop = (invoke as typeof invoke)!;
+callDesktop("wrapped_alias");`,
+    "/virtual/transparent-invoke.ts",
+  );
+
+  assert.deepEqual(result.commands, [
+    "as_expression",
+    "non_null",
+    "parenthesized",
+    "satisfies_expression",
+    "type_assertion",
+    "wrapped_alias",
+  ]);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, []);
+});
+
+test("extractSourceCommands 在嵌套块和函数中保持精确的一跳 const 来源", () => {
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+{
+  const callInBlock = invoke;
+  callInBlock("nested_block");
+}
+function runNested() {
+  const callInFunction = invoke;
+  callInFunction("nested_function");
+  {
+    const callInFunction = ordinaryCall;
+    callInFunction("shadowed_nested_alias");
+  }
+}
+runNested();`,
+    "/virtual/nested-const-alias.ts",
+  );
+
+  assert.deepEqual(result.commands, ["nested_block", "nested_function"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, []);
 });
 
 test("extractSourceCommands 忽略遮蔽命名空间与本地别名的非 Tauri 调用", () => {
@@ -361,18 +433,215 @@ function runWithLocalBindings(callDesktop, desktopCore) {
   assert.deepEqual(result.dynamicInvocations, []);
 });
 
-test("extractSourceCommands 在本地别名重赋值后不把普通函数调用算作 Tauri 命令", () => {
+test("extractSourceCommands 对可变和重赋值别名给出精确拒绝位置", () => {
+  const filePath = "/virtual/reassigned-invoke-alias.ts";
   const result = extractSourceCommands(
     `import { invoke } from "@tauri-apps/api/core";
 let callDesktop = invoke;
 callDesktop("before_reassignment");
 callDesktop = localInvoke;
 callDesktop("after_reassignment");`,
-    "/virtual/reassigned-invoke-alias.ts",
+    filePath,
   );
 
-  assert.deepEqual(result.commands, ["before_reassignment"]);
+  assert.deepEqual(result.commands, []);
   assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 2,
+      reason: "invoke 别名必须使用单一 const 声明",
+    },
+    {
+      file: filePath,
+      line: 4,
+      reason: "invoke 别名不能重新赋值",
+    },
+  ]);
+});
+
+test("extractSourceCommands 拒绝条件分支中的可变别名而不猜测控制流", () => {
+  const filePath = "/virtual/conditional-alias-write.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+let callDesktop = invoke;
+if (useFallback) {
+  callDesktop = localInvoke;
+}
+callDesktop("not_proven");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 2,
+      reason: "invoke 别名必须使用单一 const 声明",
+    },
+    {
+      file: filePath,
+      line: 4,
+      reason: "invoke 别名不能重新赋值",
+    },
+  ]);
+});
+
+test("extractSourceCommands 拒绝闭包中的别名写入而不采用文本顺序", () => {
+  const filePath = "/virtual/closure-alias-write.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+const callDesktop = invoke;
+function replaceAlias() {
+  callDesktop = localInvoke;
+}
+callDesktop("not_proven_anywhere");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 4,
+      reason: "invoke 别名不能重新赋值",
+    },
+  ]);
+});
+
+test("extractSourceCommands 拒绝解构写入并移除原别名的静态假阳性", () => {
+  const filePath = "/virtual/destructured-alias-write.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+const callDesktop = invoke;
+({ value: callDesktop } = ordinaryHelpers);
+callDesktop("must_not_be_counted");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 3,
+      reason: "invoke 别名不能重新赋值",
+    },
+  ]);
+});
+
+test("extractSourceCommands 拒绝解构和延迟赋值的一跳别名", () => {
+  const filePath = "/virtual/unsupported-one-hop-aliases.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+import * as desktopCore from "@tauri-apps/api/core";
+const [arrayAlias] = [invoke];
+const { invoke: objectAlias } = desktopCore;
+let deferredAlias;
+deferredAlias = invoke;
+arrayAlias("array_command");
+objectAlias("object_command");
+deferredAlias("deferred_command");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 3,
+      reason: "invoke 别名不支持解构",
+    },
+    {
+      file: filePath,
+      line: 4,
+      reason: "invoke 别名不支持解构",
+    },
+    {
+      file: filePath,
+      line: 6,
+      reason: "invoke 别名必须在 const 声明中直接初始化",
+    },
+  ]);
+});
+
+test("extractSourceCommands 拒绝条件和二跳 const 来源", () => {
+  const filePath = "/virtual/unsupported-const-provenance.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+const conditionalAlias = useTauri ? invoke : ordinaryCall;
+const directAlias = invoke;
+const secondHopAlias = directAlias;
+conditionalAlias("conditional_command");
+secondHopAlias("second_hop_command");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 2,
+      reason: "invoke 别名必须直接引用导入绑定",
+    },
+    {
+      file: filePath,
+      line: 4,
+      reason: "invoke 别名只支持一跳 const 引用",
+    },
+  ]);
+});
+
+test("extractSourceCommands 拒绝转发、条件调用和命名空间元素访问", () => {
+  const filePath = "/virtual/unsupported-invoke-references.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+import * as desktopCore from "@tauri-apps/api/core";
+registerCallback(invoke);
+(useTauri ? invoke : ordinaryCall)("conditional_call");
+desktopCore["invoke"]("element_access");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 3,
+      reason: "invoke 引用只能用于直接调用或一跳 const 别名",
+    },
+    {
+      file: filePath,
+      line: 4,
+      reason: "invoke 引用只能用于直接调用或一跳 const 别名",
+    },
+    {
+      file: filePath,
+      line: 5,
+      reason: "命名空间 invoke 必须使用 .invoke 直接访问",
+    },
+  ]);
+});
+
+test("extractSourceCommands 不把无 Tauri 来源的 invoke、core 或 call 算作命令", () => {
+  const result = extractSourceCommands(
+    `function invoke(command) { return command; }
+const core = { invoke };
+const call = core.invoke;
+invoke("ordinary_invoke");
+core.invoke("ordinary_core");
+call("ordinary_call");`,
+    "/virtual/ordinary-functions.ts",
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, []);
 });
 
 test("extractRegisteredCommands 提取唯一 generate_handler 中的标识符", async () => {
@@ -461,6 +730,27 @@ test("commandSurfaceFailures 报告动态调用的精确文件和行号", () => 
 
   assert.deepEqual(failures, [
     "桌面命令调用必须使用字符串字面量：/virtual/src/api.ts:42",
+  ]);
+});
+
+test("commandSurfaceFailures 报告无法静态证明的 invoke 用法和原因", () => {
+  const failures = commandSurfaceFailures({
+    dynamicInvocations: [],
+    unsupportedInvocations: [
+      {
+        file: "/virtual/src/api.ts",
+        line: 24,
+        reason: "invoke 别名不能重新赋值",
+      },
+    ],
+    differences: {
+      missingRegistrations: [],
+      registeredOnly: [],
+    },
+  });
+
+  assert.deepEqual(failures, [
+    "桌面命令 invoke 用法无法静态证明（invoke 别名不能重新赋值）：/virtual/src/api.ts:24",
   ]);
 });
 

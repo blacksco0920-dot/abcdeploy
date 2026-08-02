@@ -2,6 +2,20 @@ import { createRequire } from "node:module";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
+import {
+  addUnsupportedBindingNames,
+  assignmentPatternSelectsNamespaceInvoke,
+  bindingPatternSelectsNamespaceInvoke,
+  expressionContainsInvokeReference,
+  isAllowedInvokeReferenceUse,
+  isAssignmentOperator,
+  isConstVariableDeclaration,
+  isDeclarationBindingName,
+  resolveAssignedBindings,
+  resolveInvokeReference,
+  resolveUnsupportedNamespaceInvokeReference,
+} from "./typescript-invoke-bindings.mjs";
+
 const require = createRequire(
   new URL("../../apps/desktop/package.json", import.meta.url),
 );
@@ -18,12 +32,24 @@ export function extractSourceCommands(sourceText, filePath) {
     sourceText,
     ts.ScriptTarget.Latest,
     true,
-    ts.ScriptKind.TSX,
+    filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
   );
   const bindingKinds = new Map();
-  const aliasWrites = new Map();
+  const invalidInvokeBindings = new Set();
   const commands = [];
   const dynamicInvocations = [];
+  const unsupportedInvocations = new Map();
+  const unsupportedContainers = new WeakSet();
+
+  function reportUnsupported(node, reason) {
+    const position = node.getStart(sourceFile);
+    unsupportedContainers.add(node);
+    unsupportedInvocations.set(`${position}:${reason}`, {
+      ...sourceLocation(node, sourceFile),
+      position,
+      reason,
+    });
+  }
 
   for (const statement of sourceFile.statements) {
     if (
@@ -50,48 +76,166 @@ export function extractSourceCommands(sourceText, filePath) {
     }
   }
 
-  function discoverAliases(node) {
+  function discoverConstAliases(node) {
     if (
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
       node.initializer
     ) {
       const target = resolveInvokeReference(node.initializer, bindingKinds);
-      if (target?.role.kind === "invoke" && target.role.depth === 0) {
+      if (
+        target?.role.kind === "invoke" &&
+        target.role.depth === 0 &&
+        isConstVariableDeclaration(node)
+      ) {
         bindingKinds.set(node.name, { kind: "invoke", depth: 1 });
-        aliasWrites.set(node.name, []);
       }
     }
 
-    ts.forEachChild(node, discoverAliases);
+    ts.forEachChild(node, discoverConstAliases);
   }
 
-  discoverAliases(sourceFile);
+  discoverConstAliases(sourceFile);
 
-  function collectAliasWrites(node) {
+  function findUnsupportedInvokeForms(node) {
+    if (ts.isVariableDeclaration(node) && node.initializer) {
+      const target = resolveInvokeReference(node.initializer, bindingKinds);
+      const role = ts.isIdentifier(node.name)
+        ? bindingKinds.get(node.name)
+        : undefined;
+      const destructuresNamespaceInvoke =
+        bindingPatternSelectsNamespaceInvoke(
+          node.name,
+          node.initializer,
+          bindingKinds,
+        );
+
+      if (
+        role?.kind === "invoke" &&
+        role.depth === 1 &&
+        target?.role.kind === "invoke" &&
+        target.role.depth === 0 &&
+        isConstVariableDeclaration(node)
+      ) {
+        // This is the sole supported alias form.
+      } else if (
+        target?.role.kind === "invoke" ||
+        expressionContainsInvokeReference(node.initializer, bindingKinds) ||
+        destructuresNamespaceInvoke
+      ) {
+        let reason;
+        if (!ts.isIdentifier(node.name)) {
+          reason = "invoke 别名不支持解构";
+        } else if (target?.role.kind === "invoke" && target.role.depth === 1) {
+          reason = "invoke 别名只支持一跳 const 引用";
+        } else if (
+          target?.role.kind === "invoke" &&
+          target.role.depth === 0 &&
+          !isConstVariableDeclaration(node)
+        ) {
+          reason = "invoke 别名必须使用单一 const 声明";
+        } else {
+          reason = "invoke 别名必须直接引用导入绑定";
+        }
+
+        reportUnsupported(node, reason);
+        addUnsupportedBindingNames(node.name, bindingKinds);
+      }
+    }
+
     if (
       ts.isBinaryExpression(node) &&
-      isAssignmentOperator(node.operatorToken.kind) &&
-      ts.isIdentifier(node.left)
+      isAssignmentOperator(node.operatorToken.kind)
     ) {
-      const binding = resolveBinding(node.left);
-      const writes = binding && aliasWrites.get(binding);
-      if (writes) {
-        const target =
-          node.operatorToken.kind === ts.SyntaxKind.EqualsToken
-            ? resolveInvokeReference(node.right, bindingKinds)
-            : undefined;
-        writes.push({
-          position: node.getStart(sourceFile),
-          invokes: target?.role.kind === "invoke",
-        });
+      const assignedBindings = resolveAssignedBindings(node.left);
+      const knownInvokeBindings = assignedBindings.filter((binding) => {
+        const role = bindingKinds.get(binding);
+        return role?.kind === "invoke" || role?.kind === "unsupported";
+      });
+
+      if (knownInvokeBindings.length > 0) {
+        reportUnsupported(node, "invoke 别名不能重新赋值");
+        for (const binding of knownInvokeBindings) {
+          invalidInvokeBindings.add(binding);
+        }
+      } else if (
+        expressionContainsInvokeReference(node.right, bindingKinds) ||
+        assignmentPatternSelectsNamespaceInvoke(
+          node.left,
+          node.right,
+          bindingKinds,
+        )
+      ) {
+        reportUnsupported(
+          node,
+          "invoke 别名必须在 const 声明中直接初始化",
+        );
+        for (const binding of assignedBindings) {
+          bindingKinds.set(binding, { kind: "unsupported" });
+        }
+      }
+    } else if (
+      (ts.isPrefixUnaryExpression(node) ||
+        ts.isPostfixUnaryExpression(node)) &&
+      (node.operator === ts.SyntaxKind.PlusPlusToken ||
+        node.operator === ts.SyntaxKind.MinusMinusToken)
+    ) {
+      const assignedBindings = resolveAssignedBindings(node.operand);
+      const knownInvokeBindings = assignedBindings.filter((binding) => {
+        const role = bindingKinds.get(binding);
+        return role?.kind === "invoke" || role?.kind === "unsupported";
+      });
+      if (knownInvokeBindings.length > 0) {
+        reportUnsupported(node, "invoke 别名不能重新赋值");
+        for (const binding of knownInvokeBindings) {
+          invalidInvokeBindings.add(binding);
+        }
       }
     }
 
-    ts.forEachChild(node, collectAliasWrites);
+    ts.forEachChild(node, findUnsupportedInvokeForms);
   }
 
-  collectAliasWrites(sourceFile);
+  findUnsupportedInvokeForms(sourceFile);
+
+  function validateInvokeReferenceUses(node) {
+    if (unsupportedContainers.has(node) || ts.isTypeNode(node)) {
+      return;
+    }
+    if (ts.isImportDeclaration(node)) {
+      return;
+    }
+
+    if (resolveUnsupportedNamespaceInvokeReference(node, bindingKinds)) {
+      reportUnsupported(
+        node,
+        "命名空间 invoke 必须使用 .invoke 直接访问",
+      );
+      return;
+    }
+
+    const target = resolveInvokeReference(node, bindingKinds);
+    if (
+      target?.role.kind === "invoke" ||
+      target?.role.kind === "unsupported"
+    ) {
+      if (
+        isDeclarationBindingName(node) ||
+        isAllowedInvokeReferenceUse(node, target, bindingKinds)
+      ) {
+        return;
+      }
+      reportUnsupported(
+        node,
+        "invoke 引用只能用于直接调用或一跳 const 别名",
+      );
+      return;
+    }
+
+    ts.forEachChild(node, validateInvokeReferenceUses);
+  }
+
+  validateInvokeReferenceUses(sourceFile);
 
   function visit(node) {
     const target = ts.isCallExpression(node)
@@ -101,7 +245,7 @@ export function extractSourceCommands(sourceText, filePath) {
     if (
       ts.isCallExpression(node) &&
       target?.role.kind === "invoke" &&
-      aliasInvokesAt(target.binding, node.getStart(sourceFile), aliasWrites)
+      !invalidInvokeBindings.has(target.binding)
     ) {
       const command = node.arguments[0];
       if (command && ts.isStringLiteral(command)) {
@@ -115,7 +259,13 @@ export function extractSourceCommands(sourceText, filePath) {
   }
 
   visit(sourceFile);
-  return { commands: sortedUnique(commands), dynamicInvocations };
+  return {
+    commands: sortedUnique(commands),
+    dynamicInvocations,
+    unsupportedInvocations: [...unsupportedInvocations.values()]
+      .sort((left, right) => left.position - right.position)
+      .map(({ file, line, reason }) => ({ file, line, reason })),
+  };
 }
 
 export function extractRegisteredCommands(sourceText) {
@@ -182,6 +332,12 @@ export function commandSurfaceFailures(result) {
   const failures = (result.dynamicInvocations ?? []).map(
     ({ file, line }) => `桌面命令调用必须使用字符串字面量：${file}:${line}`,
   );
+  failures.push(
+    ...(result.unsupportedInvocations ?? []).map(
+      ({ file, line, reason }) =>
+        `桌面命令 invoke 用法无法静态证明（${reason}）：${file}:${line}`,
+    ),
+  );
   const differenceMessages = [
     ["missingRegistrations", "桌面命令未注册"],
     ["registeredOnly", "Tauri 注册命令没有当前消费者"],
@@ -211,6 +367,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
     extractRegisteredCommands(registeredSource);
   let sourceCommands;
   let dynamicInvocations;
+  let unsupportedInvocations;
   let bundledCommands;
 
   const sourceFiles = await productionSourceFiles(
@@ -218,11 +375,13 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   );
   const extractedSourceCommands = [];
   dynamicInvocations = [];
+  unsupportedInvocations = [];
 
   for (const file of sourceFiles) {
     const extracted = extractSourceCommands(await readFile(file, "utf8"), file);
     extractedSourceCommands.push(...extracted.commands);
     dynamicInvocations.push(...extracted.dynamicInvocations);
+    unsupportedInvocations.push(...extracted.unsupportedInvocations);
   }
   sourceCommands = sortedUnique(extractedSourceCommands);
 
@@ -264,6 +423,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
       registeredCommands,
       sourceCommands,
       dynamicInvocations,
+      ...(unsupportedInvocations.length > 0 ? { unsupportedInvocations } : {}),
       differences: compareRegistrationSet(sourceCommands, registeredCommands),
     };
   }
@@ -275,6 +435,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
       sourceCommands,
       bundledCommands,
       dynamicInvocations,
+      ...(unsupportedInvocations.length > 0 ? { unsupportedInvocations } : {}),
       differences: compareCommandSets({
         registeredCommands,
         sourceCommands,
@@ -289,6 +450,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
     sourceCommands,
     bundledCommands,
     dynamicInvocations,
+    ...(unsupportedInvocations.length > 0 ? { unsupportedInvocations } : {}),
     differences: compareCommandSets({
       registeredCommands,
       sourceCommands,
@@ -340,191 +502,6 @@ async function productionSourceFiles(directory) {
   return files.sort();
 }
 
-function resolveInvokeReference(expression, bindingKinds) {
-  if (ts.isIdentifier(expression)) {
-    const binding = resolveBinding(expression);
-    const role = binding && bindingKinds.get(binding);
-    return role ? { binding, role } : undefined;
-  }
-
-  if (
-    ts.isPropertyAccessExpression(expression) &&
-    expression.name.text === "invoke" &&
-    ts.isIdentifier(expression.expression)
-  ) {
-    const binding = resolveBinding(expression.expression);
-    const role = binding && bindingKinds.get(binding);
-    if (role?.kind === "namespace") {
-      return { binding, role: { kind: "invoke", depth: 0 } };
-    }
-  }
-
-  return undefined;
-}
-
-function resolveBinding(identifier) {
-  for (let parent = identifier.parent; parent; parent = parent.parent) {
-    const declarations = scopeBindingDeclarations(parent, identifier.text);
-    if (declarations.length > 0) {
-      return declarations.length === 1 ? declarations[0] : undefined;
-    }
-  }
-
-  return undefined;
-}
-
-function scopeBindingDeclarations(node, bindingName) {
-  const declarations = [];
-
-  if (ts.isSourceFile(node)) {
-    collectVarBindings(node, declarations, bindingName);
-    addLexicalBindings(node.statements, declarations, bindingName);
-    for (const statement of node.statements) {
-      if (ts.isImportDeclaration(statement)) {
-        addImportBindings(statement, declarations, bindingName);
-      }
-    }
-  } else if (ts.isFunctionLike(node)) {
-    for (const parameter of node.parameters) {
-      addBindingName(parameter.name, declarations, bindingName);
-    }
-    if (ts.isFunctionExpression(node) && node.name) {
-      addBindingName(node.name, declarations, bindingName);
-    }
-    if (node.body) {
-      collectVarBindings(node.body, declarations, bindingName);
-    }
-  } else if (ts.isBlock(node) || ts.isModuleBlock(node)) {
-    addLexicalBindings(node.statements, declarations, bindingName);
-  } else if (ts.isCatchClause(node) && node.variableDeclaration) {
-    addBindingName(node.variableDeclaration.name, declarations, bindingName);
-  } else if (
-    ts.isForStatement(node) ||
-    ts.isForInStatement(node) ||
-    ts.isForOfStatement(node)
-  ) {
-    if (node.initializer && ts.isVariableDeclarationList(node.initializer)) {
-      addVariableBindings(node.initializer, declarations, bindingName);
-    }
-  } else if (ts.isCaseBlock(node)) {
-    for (const clause of node.clauses) {
-      addLexicalBindings(clause.statements, declarations, bindingName);
-    }
-  }
-
-  return declarations;
-}
-
-function addLexicalBindings(statements, declarations, bindingName) {
-  for (const statement of statements) {
-    if (
-      ts.isVariableStatement(statement) &&
-      isBlockScopedVariableDeclarationList(statement.declarationList)
-    ) {
-      addVariableBindings(statement.declarationList, declarations, bindingName);
-    } else if (
-      (ts.isFunctionDeclaration(statement) ||
-        ts.isClassDeclaration(statement)) &&
-      statement.name
-    ) {
-      addBindingName(statement.name, declarations, bindingName);
-    }
-  }
-}
-
-function addImportBindings(statement, declarations, bindingName) {
-  const clause = statement.importClause;
-  if (!clause) {
-    return;
-  }
-
-  if (clause.name) {
-    addBindingName(clause.name, declarations, bindingName);
-  }
-  if (!clause.namedBindings) {
-    return;
-  }
-  if (ts.isNamespaceImport(clause.namedBindings)) {
-    addBindingName(clause.namedBindings.name, declarations, bindingName);
-    return;
-  }
-
-  for (const element of clause.namedBindings.elements) {
-    addBindingName(element.name, declarations, bindingName);
-  }
-}
-
-function collectVarBindings(node, declarations, bindingName) {
-  function visit(child) {
-    if (
-      child !== node &&
-      (ts.isFunctionLike(child) ||
-        ts.isClassDeclaration(child) ||
-        ts.isClassExpression(child))
-    ) {
-      return;
-    }
-    if (
-      ts.isVariableDeclaration(child) &&
-      !isBlockScopedVariableDeclarationList(child.parent)
-    ) {
-      addBindingName(child.name, declarations, bindingName);
-    }
-    ts.forEachChild(child, visit);
-  }
-
-  visit(node);
-}
-
-function isBlockScopedVariableDeclarationList(declarationList) {
-  return Boolean(
-    ts.getCombinedNodeFlags(declarationList) & ts.NodeFlags.BlockScoped,
-  );
-}
-
-function addVariableBindings(declarationList, declarations, bindingName) {
-  for (const declaration of declarationList.declarations) {
-    addBindingName(declaration.name, declarations, bindingName);
-  }
-}
-
-function addBindingName(name, declarations, bindingName) {
-  if (ts.isIdentifier(name)) {
-    if (name.text === bindingName) {
-      declarations.push(name);
-    }
-    return;
-  }
-
-  for (const element of name.elements) {
-    if (ts.isBindingElement(element)) {
-      addBindingName(element.name, declarations, bindingName);
-    }
-  }
-}
-
-function isAssignmentOperator(kind) {
-  return (
-    kind >= ts.SyntaxKind.FirstAssignment &&
-    kind <= ts.SyntaxKind.LastAssignment
-  );
-}
-
-function aliasInvokesAt(binding, position, aliasWrites) {
-  const writes = aliasWrites.get(binding);
-  if (!writes) {
-    return true;
-  }
-
-  let invokes = true;
-  for (const write of writes) {
-    if (write.position >= position) {
-      break;
-    }
-    invokes = write.invokes;
-  }
-  return invokes;
-}
 
 function sourceLocation(node, sourceFile) {
   const { line } = sourceFile.getLineAndCharacterOfPosition(
