@@ -286,7 +286,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 4: 退役旧预检、Manifest 与项目步骤命令
 
-- [ ] Task 4 完成：旧预检、Manifest 与项目步骤命令完成退役
+- [x] Task 4 完成：旧预检、Manifest 与项目步骤命令完成退役
 
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
@@ -297,13 +297,13 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: 矩阵中 `get_preflight/save_project_step/preview_manifest/apply_manifest/check_docker/discover_ssh_identities` 的裁决。
 - Produces: handler 不再注册这些 endpoint；`open_project`、`continue_existing_deployment`、`reset_project_deployment`、`resolve_local_folder_source`、`save_manifest_draft`、`generate_ssh_identity` 的参数、返回值与错误字符串不变。
 
-- [ ] **Step 1: 记录命令面 Red，并确认项目恢复保护线**
+- [x] **Step 1: 记录命令面 Red，并确认项目恢复保护线**
 
   Run: `node scripts/check-desktop-command-surface.mjs --mode source`
 
   Expected: FAIL，`registeredOnly` 至少包含 `get_preflight/save_project_step/preview_manifest/apply_manifest/check_docker/discover_ssh_identities`。随后检查 `apps/desktop/src-tauri/src/tests.rs` 已覆盖：打开已有项目不得写入源码目录；继续/重置采用现有 adoption 状态；`save_manifest_draft` 拒绝不安全 manifest。只在缺少具体不变量时先补一个会失败的内部行为断言，不新增 endpoint 存在性测试。
 
-- [ ] **Step 2: 运行项目恢复特征测试**
+- [x] **Step 2: 运行项目恢复特征测试**
 
   Run: `cargo test -p abcdeploy-desktop open_project -- --nocapture`
 
@@ -311,11 +311,11 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: 全部 PASS；这些测试作为删除前后的行为基线，不通过临时篡改生产实现制造失败。
 
-- [ ] **Step 3: 从 handler 和 command 属性删除旧边界**
+- [x] **Step 3: 从 handler 和 command 属性删除旧边界**
 
   逐项删除上述注册项及 `#[tauri::command]` 适配器。仍被 `open_project`、源码快照或测试复用的解析/检查函数改为普通私有函数；没有内部调用、迁移职责或行为测试的专属输入类型、常量和辅助函数一并删除。
 
-- [ ] **Step 4: Green 与 Refactor**
+- [x] **Step 4: Green 与 Refactor**
 
   Run: `cargo fmt --all`
 
@@ -327,7 +327,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；矩阵对应行没有未裁决或无依据保留项。
 
-- [ ] **Step 5: 提交孤立项目命令清理**
+- [x] **Step 5: 提交孤立项目命令清理**
 
   ```bash
   git add apps/desktop/src-tauri/src/lib.rs apps/desktop/src-tauri/src/tests.rs openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md
