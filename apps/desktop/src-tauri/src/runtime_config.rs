@@ -1,75 +1,6 @@
 use super::*;
 
 #[tauri::command]
-pub(super) fn runtime_secret_status(
-    path: String,
-    environment: String,
-    variable: String,
-) -> Result<RuntimeSecretStatus, String> {
-    let key = runtime_secret_key(Path::new(&path), &environment, &variable)?;
-    let stored = match read_keyring_secret(&key) {
-        Ok(mut value) => {
-            let stored = !value.is_empty();
-            value.zeroize();
-            stored
-        }
-        Err(error) if error == "missing" => false,
-        Err(error) => return Err(error),
-    };
-    Ok(RuntimeSecretStatus {
-        environment,
-        variable,
-        stored,
-    })
-}
-
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-#[tauri::command]
-pub(super) fn store_runtime_secret(
-    path: String,
-    environment: String,
-    variable: String,
-    mut value: String,
-) -> Result<RuntimeSecretStatus, String> {
-    if value.is_empty() {
-        return Err("配置值不能为空".to_string());
-    }
-    let key = runtime_secret_key(Path::new(&path), &environment, &variable)?;
-    let result = write_keyring_secret(&key, &value);
-    value.zeroize();
-    result?;
-    Ok(RuntimeSecretStatus {
-        environment,
-        variable,
-        stored: true,
-    })
-}
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-#[tauri::command]
-pub(super) fn generate_runtime_secret(
-    path: String,
-    environment: String,
-    variable: String,
-) -> Result<RuntimeSecretStatus, String> {
-    let key = runtime_secret_key(Path::new(&path), &environment, &variable)?;
-    let mut bytes = [0_u8; 32];
-    OsRng.fill_bytes(&mut bytes);
-    let mut value = String::with_capacity(bytes.len() * 2);
-    for byte in &bytes {
-        write!(&mut value, "{byte:02x}").expect("writing to a String is infallible");
-    }
-    bytes.zeroize();
-    let result = write_keyring_secret(&key, &value);
-    value.zeroize();
-    result?;
-    Ok(RuntimeSecretStatus {
-        environment,
-        variable,
-        stored: true,
-    })
-}
-
-#[tauri::command]
 #[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
 pub(super) fn load_runtime_config(
     path: String,
@@ -131,51 +62,6 @@ pub(super) fn load_runtime_config(
 
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-pub(super) fn load_existing_project_config(
-    path: String,
-    environment: String,
-) -> Result<ExistingProjectConfig, String> {
-    let environment = parse_deploy_environment(&environment)?;
-    let root = PathBuf::from(path)
-        .canonicalize()
-        .map_err(|error| format!("项目目录无法读取：{error}"))?;
-    let candidates = match environment {
-        EnvironmentName::Staging => [".env", ".env.local", ".env.production", ".env.staging"],
-        EnvironmentName::Production => [".env", ".env.local", ".env.staging", ".env.production"],
-        EnvironmentName::Development => unreachable!("deploy environment excludes development"),
-    };
-    let mut source_files = Vec::new();
-    let mut sections = Vec::new();
-    for relative in candidates {
-        let candidate = root.join(relative);
-        if !candidate.is_file() {
-            continue;
-        }
-        let metadata = fs::metadata(&candidate).map_err(public_error)?;
-        if metadata.len() > 1024 * 1024 {
-            return Err(format!("项目现有配置 {relative} 过大，已停止读取"));
-        }
-        let content = fs::read_to_string(&candidate).map_err(public_error)?;
-        if content.contains('\0') {
-            return Err(format!("项目现有配置 {relative} 包含无效字符"));
-        }
-        source_files.push(relative.to_string());
-        sections.push(format!(
-            "# ===== 项目已有配置：{relative} =====\n{}",
-            content.trim_end_matches(['\r', '\n'])
-        ));
-    }
-    if source_files.is_empty() {
-        return Err("项目中没有可复用的 .env 配置".to_string());
-    }
-    Ok(ExistingProjectConfig {
-        source_files,
-        content: format!("{}\n", sections.join("\n\n")),
-    })
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
 pub(super) fn store_runtime_config(
     path: String,
     environment: String,
@@ -195,107 +81,6 @@ pub(super) fn store_runtime_config(
         filename: runtime_config_filename(&environment),
         environment,
         stored: true,
-    })
-}
-
-#[tauri::command]
-pub(super) async fn runtime_config_sync_status(
-    path: String,
-    environment: String,
-    server: ServerConnectionInput,
-) -> Result<RuntimeConfigSyncStatus, String> {
-    let environment_name = parse_deploy_environment(&environment)?;
-    let root = PathBuf::from(&path);
-    let manifest = load_manifest(&root.join(MANIFEST_FILE)).map_err(public_error)?;
-    let runtime_file_key = runtime_config_key(&root, &environment)?;
-    let mut content = match read_keyring_secret_without_prompt(&runtime_file_key) {
-        Ok(value) if !value.is_empty() => value,
-        Ok(mut value) => {
-            value.zeroize();
-            return Ok(RuntimeConfigSyncStatus {
-                stored: false,
-                synchronized: false,
-            });
-        }
-        Err(error) if error == "missing" => {
-            return Ok(RuntimeConfigSyncStatus {
-                stored: false,
-                synchronized: false,
-            });
-        }
-        Err(error) => return Err(error),
-    };
-    let profile = verified_server_profile(&server).await?;
-    let destination = remote_runtime_config_path(&manifest.project.name, environment_name);
-    let command = format!(
-        "if [ -f {destination} ]; then sha256sum {destination} | awk '{{print $1}}'; fi",
-        destination = shell_quote(&destination),
-    );
-    let output = ssh::execute(&profile, &command, None, Duration::from_secs(20))
-        .await
-        .map_err(public_error)?;
-    if output.exit_status != Some(0) {
-        content.zeroize();
-        return Ok(RuntimeConfigSyncStatus {
-            stored: true,
-            synchronized: false,
-        });
-    }
-    let mut digest = Sha256::new();
-    digest.update(content.as_bytes());
-    let expected = format!("{:x}", digest.finalize());
-    content.zeroize();
-    Ok(RuntimeConfigSyncStatus {
-        stored: true,
-        synchronized: output.stdout.trim() == expected,
-    })
-}
-
-#[tauri::command]
-pub(super) async fn sync_runtime_config_to_server(
-    path: String,
-    environment: String,
-    server: ServerConnectionInput,
-) -> Result<RuntimeConfigSyncStatus, String> {
-    let environment_name = parse_deploy_environment(&environment)?;
-    let root = PathBuf::from(&path);
-    let manifest = load_manifest(&root.join(MANIFEST_FILE)).map_err(public_error)?;
-    let profile = verified_server_profile(&server).await?;
-    let environment_config = manifest.environments.get(environment_name);
-    let managed_dependencies =
-        ensure_remote_runtime_dependencies(&root, environment_name, environment_config, &profile)
-            .await?;
-    let runtime_file_key = runtime_config_key(&root, &environment)?;
-    let mut content = match read_keyring_secret(&runtime_file_key) {
-        Ok(value) if !value.is_empty() => value,
-        Ok(mut value) => {
-            value.zeroize();
-            return Err("请先保存运行配置".to_string());
-        }
-        Err(error) if error == "missing" => return Err("请先保存运行配置".to_string()),
-        Err(error) => return Err(error),
-    };
-    let (filled, _) = fill_managed_runtime_dependencies(&content, &managed_dependencies);
-    content.zeroize();
-    content = filled;
-    let missing = missing_runtime_variables(
-        &content,
-        &required_runtime_variables(&manifest, environment_name),
-        environment_name,
-    );
-    if !missing.is_empty() {
-        content.zeroize();
-        return Err(format!("还有 {} 项必填配置没有值", missing.len()));
-    }
-    write_keyring_secret(&runtime_file_key, &content)?;
-    let result =
-        persist_remote_runtime_config(&profile, &manifest.project.name, environment_name, &content)
-            .await;
-    content.zeroize();
-    result?;
-    Ok(RuntimeConfigSyncStatus {
-        stored: true,
-        synchronized: true,
     })
 }
 
@@ -505,23 +290,6 @@ pub(super) fn remote_runtime_config_path(project: &str, environment: Environment
         ".deploydesk/runtime-config/{project}/{}.env",
         environment.as_str()
     )
-}
-
-pub(super) async fn verified_server_profile(
-    server: &ServerConnectionInput,
-) -> Result<ssh::SshProfile, String> {
-    let profile = server.profile();
-    let expected_fingerprint = profile
-        .host_fingerprint
-        .as_deref()
-        .ok_or_else(|| "请先完成服务器身份验证".to_string())?;
-    let host_identity = ssh::probe_host_identity(&profile)
-        .await
-        .map_err(public_error)?;
-    if host_identity.fingerprint != expected_fingerprint {
-        return Err("服务器身份指纹已变化，已停止同步运行配置".to_string());
-    }
-    Ok(profile)
 }
 
 pub(super) async fn ensure_remote_runtime_dependencies(

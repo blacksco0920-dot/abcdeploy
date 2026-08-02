@@ -57,8 +57,8 @@ mod source_snapshots;
 mod workspace;
 
 use credentials::{
-    check_saved_registry_credentials, delete_secret, replace_registry_credentials, secret_status,
-    store_secret, valid_registry_host, valid_registry_namespace,
+    check_saved_registry_credentials, replace_registry_credentials, valid_registry_host,
+    valid_registry_namespace,
 };
 use deployment_route_verification::{
     collect_public_route_statuses, wait_for_stable_public_route_statuses,
@@ -85,11 +85,9 @@ use mvp_environment::{
 pub use pilot_validation::run_pilot_validation_cli;
 use runtime_config::{
     ensure_remote_runtime_dependencies_scoped, ensure_runtime_template_variables,
-    fill_managed_runtime_dependencies, generate_runtime_secret, load_existing_project_config,
-    load_runtime_config, prepare_cnb_secret_bundle, remote_dependency_error,
-    replace_managed_runtime_dependencies, runtime_config_sync_status, runtime_defaults,
-    runtime_secret_status, store_runtime_config, store_runtime_secret,
-    sync_runtime_config_to_server,
+    fill_managed_runtime_dependencies, load_runtime_config, prepare_cnb_secret_bundle,
+    remote_dependency_error, replace_managed_runtime_dependencies, runtime_defaults,
+    store_runtime_config,
 };
 use source_snapshots::{
     create_managed_local_run_workspace, resolve_local_folder_source, verify_managed_local_run,
@@ -111,11 +109,9 @@ use pilot_validation::pilot_can_resume_existing_artifacts;
 use runtime_config::{REMOTE_DEPENDENCY_SCRIPT, safe_postgres_identifier, url_encode_userinfo};
 
 use workspace::{
-    CNB_SOURCE_CONNECTION_ID, ConfigProfile, ConnectionResource, DeploymentArtifact,
-    DeploymentPath, DeploymentPathInput, DeploymentRun, ProjectAdoptionRecord,
-    ProjectConnectionBindings, ProjectEnvironment, ProjectProfileBinding, ProjectRelinkIdentity,
-    ProjectVersion, RecentProject, ServerResource, TCR_REGISTRY_CONNECTION_ID, VersionValidation,
-    WorkspaceState, project_storage_id,
+    CNB_SOURCE_CONNECTION_ID, ConnectionResource, DeploymentArtifact, DeploymentPath,
+    DeploymentPathInput, DeploymentRun, ProjectAdoptionRecord, ProjectRelinkIdentity,
+    RecentProject, ServerResource, TCR_REGISTRY_CONNECTION_ID, WorkspaceState, project_storage_id,
 };
 
 const KEYRING_SERVICE: &str = "cloud.finagent.abcdeploy";
@@ -211,13 +207,6 @@ struct ApplyResult {
     backup_directory: String,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct SecretStatus {
-    key: String,
-    stored: bool,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 struct CnbAccount {
@@ -235,13 +224,6 @@ struct CnbNamespace {
     display_name: String,
     access_role: String,
     can_create_repository: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct CnbRepositoryResult {
-    repository: String,
-    visibility: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -288,14 +270,6 @@ struct ServerRouteProblem {
     message: String,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RuntimeSecretStatus {
-    environment: String,
-    variable: String,
-    stored: bool,
-}
-
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RuntimeConfigFile {
@@ -315,39 +289,6 @@ struct RuntimeConfigStatus {
     environment: String,
     filename: String,
     stored: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RuntimeConfigSyncStatus {
-    stored: bool,
-    synchronized: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ExistingProjectConfig {
-    source_files: Vec<String>,
-    content: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ConfigProfileInput {
-    id: Option<String>,
-    kind: String,
-    provider: String,
-    name: String,
-    #[serde(default = "default_profile_scope")]
-    scope: String,
-    values: BTreeMap<String, String>,
-    secret_fields: Vec<String>,
-    secrets: BTreeMap<String, String>,
-    is_default: bool,
-}
-
-fn default_profile_scope() -> String {
-    "any".to_string()
 }
 
 #[derive(Debug, Serialize)]
@@ -694,16 +635,6 @@ fn list_servers(state: State<'_, WorkspaceState>) -> Result<Vec<ServerResource>,
 
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-fn get_project_server(
-    path: String,
-    environment: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<Option<ServerResource>, String> {
-    state.server_for_project(Path::new(&path), &environment)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
 fn bind_project_server(
     path: String,
     environment: String,
@@ -720,27 +651,6 @@ fn get_app_setting(
     state: State<'_, WorkspaceState>,
 ) -> Result<Option<String>, String> {
     state.setting(&key)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri deserializes the requested keys.
-fn get_app_settings(
-    keys: Vec<String>,
-    state: State<'_, WorkspaceState>,
-) -> Result<BTreeMap<String, String>, String> {
-    if keys.len() > 256
-        || keys
-            .iter()
-            .any(|key| key.is_empty() || key.len() > 512 || key.chars().any(char::is_control))
-    {
-        return Err("批量读取的应用设置名称不正确".to_string());
-    }
-    let unique = keys
-        .into_iter()
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .collect::<Vec<_>>();
-    state.settings(&unique)
 }
 
 #[tauri::command]
@@ -942,84 +852,6 @@ fn mark_cnb_connection_ready(state: &WorkspaceState, account: &CnbAccount) -> Re
     )
 }
 
-fn reconcile_project_connection_bindings(
-    path: &Path,
-    state: &WorkspaceState,
-) -> Result<(), String> {
-    let manifest_path = path.join(MANIFEST_FILE);
-    if !manifest_path.is_file() {
-        return Ok(());
-    }
-    let manifest = load_manifest(&manifest_path).map_err(public_error)?;
-    if !state.connection_exists(CNB_SOURCE_CONNECTION_ID)? {
-        let metadata = BTreeMap::from([
-            ("endpoint".to_string(), "https://cnb.cool".to_string()),
-            (
-                "repository".to_string(),
-                manifest.providers.build.repository.clone(),
-            ),
-        ]);
-        state.upsert_compat_connection(
-            CNB_SOURCE_CONNECTION_ID,
-            "source",
-            "cnb",
-            "CNB",
-            Some("cnb-token"),
-            &metadata,
-            &[
-                "repositories".to_string(),
-                "builds".to_string(),
-                "automation".to_string(),
-            ],
-            "needs_authorization",
-            None,
-        )?;
-    }
-    state.bind_project_source_connection(path, Some(CNB_SOURCE_CONNECTION_ID))?;
-
-    if let RegistryConfig::Tcr {
-        registry,
-        namespace,
-    } = &manifest.providers.registry
-    {
-        let existing = state
-            .list_connections(Some("registry"))?
-            .into_iter()
-            .find(|connection| connection.id == TCR_REGISTRY_CONNECTION_ID);
-        let mut metadata = existing
-            .as_ref()
-            .map(|connection| connection.metadata.clone())
-            .unwrap_or_default();
-        metadata.insert("endpoint".to_string(), registry.clone());
-        metadata.insert("namespace".to_string(), namespace.clone());
-        state.upsert_compat_connection(
-            TCR_REGISTRY_CONNECTION_ID,
-            "registry",
-            "tcr",
-            "腾讯云 TCR",
-            Some("registry.tcr.v2.password"),
-            &metadata,
-            &["push".to_string(), "pull".to_string()],
-            existing
-                .as_ref()
-                .map_or("needs_authorization", |connection| {
-                    connection.status.as_str()
-                }),
-            existing
-                .as_ref()
-                .and_then(|connection| connection.last_checked_at.as_deref()),
-        )?;
-        for environment in ["staging", "production"] {
-            state.bind_project_registry_connection(
-                path,
-                environment,
-                Some(TCR_REGISTRY_CONNECTION_ID),
-            )?;
-        }
-    }
-    Ok(())
-}
-
 #[tauri::command]
 fn list_connections(
     kind: Option<String>,
@@ -1031,19 +863,6 @@ fn list_connections(
         .map(str::trim)
         .filter(|value| !value.is_empty());
     state.list_connections(kind)
-}
-
-#[tauri::command]
-fn get_project_connection_bindings(
-    path: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<ProjectConnectionBindings, String> {
-    let path = PathBuf::from(path);
-    reconcile_compat_connections(state.inner())?;
-    if state.project_adoption(&path)?.mode == "managed" {
-        reconcile_project_connection_bindings(&path, state.inner())?;
-    }
-    state.project_connection_bindings(&path)
 }
 
 #[tauri::command]
@@ -1070,15 +889,6 @@ fn save_deployment_path(
 ) -> Result<DeploymentPath, String> {
     reconcile_compat_connections(state.inner())?;
     state.save_deployment_path(input)
-}
-
-#[tauri::command]
-fn delete_deployment_path(
-    project_path: String,
-    path_id: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<bool, String> {
-    state.delete_deployment_path(Path::new(&project_path), &path_id)
 }
 
 #[tauri::command]
@@ -1124,172 +934,6 @@ async fn redeploy_deployment_path_version(
     run.updated_at = Utc::now().to_rfc3339();
     state.save_deployment_run(&run)?;
     Ok(run)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri injects managed state by value.
-fn list_config_profiles(state: State<'_, WorkspaceState>) -> Result<Vec<ConfigProfile>, String> {
-    let mut profiles = state.list_config_profiles()?;
-    for profile in &mut profiles {
-        profile.configured_secret_fields = profile
-            .secret_fields
-            .iter()
-            .filter(|field| {
-                read_keyring_secret_without_prompt(&config_profile_secret_key(&profile.id, field))
-                    .is_ok_and(|mut value| {
-                        let configured = !value.is_empty();
-                        value.zeroize();
-                        configured
-                    })
-            })
-            .cloned()
-            .collect();
-    }
-    Ok(profiles)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned input.
-fn save_config_profile(
-    mut input: ConfigProfileInput,
-    state: State<'_, WorkspaceState>,
-) -> Result<ConfigProfile, String> {
-    input.kind = input.kind.trim().to_ascii_lowercase();
-    input.provider = input.provider.trim().to_ascii_lowercase();
-    input.name = input.name.trim().to_string();
-    input.scope = input.scope.trim().to_ascii_lowercase();
-    input.secret_fields.sort();
-    input.secret_fields.dedup();
-    if !matches!(
-        input.kind.as_str(),
-        "ai" | "database" | "redis" | "dns" | "registry" | "custom"
-    ) || !valid_config_identifier(&input.provider)
-        || !matches!(input.scope.as_str(), "any" | "local" | "remote")
-        || input.name.is_empty()
-        || input.name.len() > 80
-        || input.name.chars().any(char::is_control)
-        || input.values.len() > 40
-        || input.secret_fields.len() > 40
-        || input
-            .values
-            .keys()
-            .chain(input.secret_fields.iter())
-            .any(|field| !valid_config_identifier(field))
-    {
-        return Err("配置中心连接的名称或字段格式不正确".to_string());
-    }
-    let id = input.id.unwrap_or_else(|| {
-        let seed = format!(
-            "{}:{}:{}:{}",
-            input.kind,
-            input.provider,
-            input.name,
-            Utc::now().timestamp_nanos_opt().unwrap_or_default()
-        );
-        let mut digest = Sha256::new();
-        digest.update(seed.as_bytes());
-        let digest = format!("{:x}", digest.finalize());
-        format!("profile-{}", &digest[..24])
-    });
-    if !valid_config_identifier(&id) {
-        return Err("配置中心连接编号格式不正确".to_string());
-    }
-    let existing = state.config_profile(&id)?;
-    if existing
-        .as_ref()
-        .is_some_and(|profile| profile.kind != input.kind)
-    {
-        return Err("已有连接不能修改为其他类型，请新建连接".to_string());
-    }
-    let existing_profiles = state.list_config_profiles()?;
-    let is_default = input.is_default
-        || !existing_profiles
-            .iter()
-            .any(|profile| profile.kind == input.kind && profile.scope == input.scope)
-        || existing.as_ref().is_some_and(|profile| {
-            profile.is_default
-                && !existing_profiles.iter().any(|candidate| {
-                    candidate.kind == input.kind
-                        && candidate.scope == input.scope
-                        && candidate.id != profile.id
-                        && candidate.is_default
-                })
-        });
-    for field in input.secrets.keys() {
-        if !input.secret_fields.contains(field) {
-            return Err("敏感配置字段与连接模板不一致".to_string());
-        }
-    }
-    for (field, value) in &mut input.secrets {
-        if value.is_empty() {
-            continue;
-        }
-        let result = write_keyring_secret(&config_profile_secret_key(&id, field), value);
-        value.zeroize();
-        result?;
-    }
-    let profile = ConfigProfile {
-        id,
-        kind: input.kind,
-        provider: input.provider,
-        name: input.name,
-        scope: input.scope,
-        values: input.values,
-        secret_fields: input.secret_fields,
-        configured_secret_fields: Vec::new(),
-        is_default,
-        updated_at: Utc::now().to_rfc3339(),
-    };
-    state.save_config_profile(&profile)?;
-    list_config_profiles(state)?
-        .into_iter()
-        .find(|candidate| candidate.id == profile.id)
-        .ok_or_else(|| "连接保存后无法读取，请重新尝试".to_string())
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned command arguments.
-fn delete_config_profile(id: String, state: State<'_, WorkspaceState>) -> Result<bool, String> {
-    let Some(profile) = state.config_profile(&id)? else {
-        return Ok(false);
-    };
-    for field in profile.secret_fields {
-        delete_keyring_secret(&config_profile_secret_key(&id, &field))?;
-    }
-    state.remove_config_profile(&id)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned command arguments.
-fn bind_config_profile(
-    path: String,
-    environment: String,
-    kind: String,
-    profile_id: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<ProjectProfileBinding, String> {
-    state.bind_config_profile(Path::new(&path), &environment, &kind, &profile_id)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned command arguments.
-fn list_config_profile_bindings(
-    path: String,
-    environment: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<Vec<ProjectProfileBinding>, String> {
-    state.config_profile_bindings(Path::new(&path), &environment)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned command arguments.
-fn set_environment_config_bindings(
-    path: String,
-    environment: String,
-    profile_ids: Vec<String>,
-    state: State<'_, WorkspaceState>,
-) -> Result<Vec<ProjectProfileBinding>, String> {
-    state.set_environment_config_bindings(Path::new(&path), &environment, &profile_ids)
 }
 
 #[tauri::command]
@@ -3624,44 +3268,6 @@ fn list_deployment_runs(
 }
 
 #[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-fn list_project_environments(
-    path: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<Vec<ProjectEnvironment>, String> {
-    state.list_project_environments(Path::new(&path))
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-fn list_project_versions(
-    path: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<Vec<ProjectVersion>, String> {
-    state.list_project_versions(Path::new(&path))
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-fn list_version_validations(
-    path: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<Vec<VersionValidation>, String> {
-    state.list_version_validations(Path::new(&path))
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-fn set_version_validation(
-    path: String,
-    run_id: String,
-    validation_state: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<VersionValidation, String> {
-    state.set_version_validation(Path::new(&path), &run_id, &validation_state)
-}
-
-#[tauri::command]
 #[allow(clippy::needless_pass_by_value)] // Tauri injects managed state by value.
 fn list_active_deployment_runs(
     state: State<'_, WorkspaceState>,
@@ -4835,26 +4441,6 @@ fn existing_cnb_repository(
 }
 
 #[tauri::command]
-async fn create_cnb_repository(
-    token: String,
-    slug: String,
-    name: String,
-    description: String,
-    private_repo: bool,
-) -> Result<CnbRepositoryResult, String> {
-    let token = resolve_cnb_token(token)?;
-    let client = CnbClient::new(token).map_err(cnb_public_error)?;
-    client
-        .create_repository(&slug, &name, &description, private_repo)
-        .await
-        .map_err(cnb_public_error)?;
-    Ok(CnbRepositoryResult {
-        repository: format!("{}/{}", slug.trim(), name.trim()),
-        visibility: if private_repo { "private" } else { "public" }.to_string(),
-    })
-}
-
-#[tauri::command]
 async fn ensure_cnb_repository(slug: String, name: String) -> Result<CnbProjectSetup, String> {
     if !valid_cnb_namespace(slug.trim()) || !valid_repository_segment(name.trim()) {
         return Err("AD-CNB-105：CNB 组织或仓库名称格式不正确".to_string());
@@ -4912,46 +4498,6 @@ async fn ensure_cnb_repository(slug: String, name: String) -> Result<CnbProjectS
     Ok(CnbProjectSetup {
         repository,
         created,
-    })
-}
-
-#[tauri::command]
-async fn enable_cnb_auto_trigger(repository: String) -> Result<ProviderCheck, String> {
-    validate_repository_slug(&repository)?;
-    let token = Zeroizing::new(resolve_cnb_token(String::new())?);
-    let client = CnbClient::new(token.as_str()).map_err(cnb_public_error)?;
-    client
-        .enable_auto_trigger(&repository)
-        .await
-        .map_err(cnb_public_error)?;
-    Ok(ProviderCheck {
-        provider: "cnb-auto-trigger".to_string(),
-        ok: true,
-        summary: "CNB 自动构建已开启".to_string(),
-        details: vec!["发布分支的新提交会自动进入测试环境".to_string()],
-        code: None,
-        next_steps: Vec::new(),
-        retryable: false,
-    })
-}
-
-#[tauri::command]
-async fn check_cnb_repository_access(repository: String) -> Result<ProviderCheck, String> {
-    validate_repository_slug(&repository)?;
-    let token = Zeroizing::new(resolve_cnb_token(String::new())?);
-    let client = CnbClient::new(token.as_str()).map_err(cnb_public_error)?;
-    client
-        .recent_builds(&repository, 1)
-        .await
-        .map_err(cnb_build_history_error)?;
-    Ok(ProviderCheck {
-        provider: "cnb-repository".to_string(),
-        ok: true,
-        summary: "CNB 仓库可用".to_string(),
-        details: Vec::new(),
-        code: None,
-        next_steps: Vec::new(),
-        retryable: false,
     })
 }
 
@@ -5942,21 +5488,6 @@ fn valid_deployment_path_scope(value: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
 }
 
-fn config_profile_secret_key(profile_id: &str, field: &str) -> String {
-    let mut digest = Sha256::new();
-    digest.update(field.as_bytes());
-    let field_id = format!("{:x}", digest.finalize());
-    format!("profile.{profile_id}.{}", &field_id[..16])
-}
-
-fn valid_config_identifier(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 80
-        && value
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
-}
-
 fn empty_runtime_variables(content: &str) -> Vec<String> {
     let mut variables = content
         .lines()
@@ -6589,32 +6120,18 @@ pub fn run() {
             list_recent_projects,
             forget_project,
             list_servers,
-            get_project_server,
             bind_project_server,
             get_app_setting,
-            get_app_settings,
             set_app_setting,
             list_connections,
-            get_project_connection_bindings,
             list_deployment_paths,
             list_deployment_path_runs,
             save_deployment_path,
-            delete_deployment_path,
             redeploy_deployment_path_version,
-            list_config_profiles,
-            save_config_profile,
-            delete_config_profile,
-            bind_config_profile,
-            list_config_profile_bindings,
-            set_environment_config_bindings,
             start_local_preview,
             refresh_deployment,
             check_deployment_routes,
             list_deployment_runs,
-            list_project_environments,
-            list_project_versions,
-            list_version_validations,
-            set_version_validation,
             list_active_deployment_runs,
             list_attention_deployment_runs,
             list_recent_successful_deployment_runs,
@@ -6624,27 +6141,15 @@ pub fn run() {
             check_server,
             install_server_key_with_password,
             prepare_pipeline_identity,
-            runtime_secret_status,
-            store_runtime_secret,
-            generate_runtime_secret,
             load_runtime_config,
-            load_existing_project_config,
             store_runtime_config,
-            runtime_config_sync_status,
-            sync_runtime_config_to_server,
             prepare_cnb_secret_bundle,
-            secret_status,
-            store_secret,
-            delete_secret,
             replace_registry_credentials,
             check_saved_registry_credentials,
             connect_cnb,
             get_cnb_account,
-            create_cnb_repository,
             ensure_cnb_repository,
-            check_cnb_repository_access,
             check_cnb_secret_repository_access,
-            enable_cnb_auto_trigger,
             sync_project_to_cnb,
         ])
         .build(tauri::generate_context!())

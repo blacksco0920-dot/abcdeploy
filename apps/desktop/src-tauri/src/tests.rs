@@ -22,23 +22,22 @@ use super::{
     evict_cached_secret, existing_cnb_repository, fill_empty_runtime_values,
     fill_managed_runtime_dependencies, git_failure, git_stdout, internal_runtime_secret,
     interrupted_public_route_status, interrupted_route_check_message, is_deployment_internal_path,
-    is_deployment_owned_path, load_existing_project_config, local_build_failure_summary,
-    local_build_proxy_attempts, local_git_title, local_start_failure,
-    looks_like_dependency_network_text, overlay_server_route_problems, parse_deploy_environment,
-    parse_deployed_service_states, parse_deployment_artifacts, parse_managed_local_port_owner,
-    parse_runtime_environment, pause_deployment_path_after_deploy_error,
-    pause_public_route_inspection, pilot_can_resume_existing_artifacts,
-    prepare_deployment_path_retry_inner, provider_check_failure, readable_version_title,
-    remember_cnb_account, remote_dependency_error, replace_managed_runtime_dependencies,
-    repository_identity, required_runtime_variables, resolve_cnb_token_sources, run_git_command,
-    run_local_build_with_recovery, runnable_local_service_ids, runtime_config_key,
-    runtime_config_template, runtime_defaults, runtime_secret_key, safe_postgres_identifier,
-    same_artifact_digests, save_cnb_connection_metadata_best_effort, serialize_manifest,
-    server_route_activation_script, services_use_public_generated_dockerfiles,
-    split_deployment_error, stage_deployment_owned_files, stage_key, system_command,
-    update_run_from_cnb, url_encode_userinfo, valid_registry_host,
-    validate_deployment_routing_manifest, validate_git_branch, validate_project_relink,
-    validate_repository_slug, verify_public_routes,
+    is_deployment_owned_path, local_build_failure_summary, local_build_proxy_attempts,
+    local_git_title, local_start_failure, looks_like_dependency_network_text,
+    overlay_server_route_problems, parse_deploy_environment, parse_deployed_service_states,
+    parse_deployment_artifacts, parse_managed_local_port_owner, parse_runtime_environment,
+    pause_deployment_path_after_deploy_error, pause_public_route_inspection,
+    pilot_can_resume_existing_artifacts, prepare_deployment_path_retry_inner,
+    provider_check_failure, readable_version_title, remember_cnb_account, remote_dependency_error,
+    replace_managed_runtime_dependencies, repository_identity, required_runtime_variables,
+    resolve_cnb_token_sources, run_git_command, run_local_build_with_recovery,
+    runnable_local_service_ids, runtime_config_key, runtime_config_template, runtime_defaults,
+    runtime_secret_key, safe_postgres_identifier, same_artifact_digests,
+    save_cnb_connection_metadata_best_effort, serialize_manifest, server_route_activation_script,
+    services_use_public_generated_dockerfiles, split_deployment_error,
+    stage_deployment_owned_files, stage_key, system_command, update_run_from_cnb,
+    url_encode_userinfo, valid_registry_host, validate_deployment_routing_manifest,
+    validate_git_branch, validate_project_relink, validate_repository_slug, verify_public_routes,
 };
 use deploy_core::error::DeployError;
 use deploy_core::model::{EnvironmentName, PackageManager, ProviderCheck, PublicRouteStatus};
@@ -2642,27 +2641,6 @@ fn stored_runtime_absorbs_only_safe_non_secret_defaults_and_new_managed_fields()
     assert!(content.contains("POSTGRES_DB=\"swifteng_path\""));
     assert!(content.contains("POSTGRES_USER=\"swifteng_user\""));
     assert_eq!(filled, vec!["POSTGRES_DB", "POSTGRES_USER"]);
-}
-
-#[test]
-fn existing_project_config_prefers_environment_specific_values() {
-    let project = tempdir().expect("project");
-    fs::write(project.path().join(".env"), "API_KEY=shared\n").expect("base env");
-    fs::write(
-        project.path().join(".env.production"),
-        "API_KEY=production\n",
-    )
-    .expect("production env");
-    let config = load_existing_project_config(
-        project.path().to_string_lossy().into_owned(),
-        "production".to_string(),
-    )
-    .expect("existing config");
-    assert_eq!(config.source_files, [".env", ".env.production"]);
-    assert!(
-        config.content.find("API_KEY=shared").unwrap()
-            < config.content.find("API_KEY=production").unwrap()
-    );
 }
 
 #[test]

@@ -24,6 +24,7 @@ pub struct ConnectionResource {
     pub metadata: BTreeMap<String, String>,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct EnvironmentConnectionBindings {
@@ -31,6 +32,7 @@ pub struct EnvironmentConnectionBindings {
     pub registry_connection_id: Option<String>,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectConnectionBindings {
@@ -149,6 +151,7 @@ pub struct ServerResource {
     pub last_checked_at: String,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigProfile {
@@ -165,6 +168,7 @@ pub struct ConfigProfile {
     pub updated_at: String,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectProfileBinding {
@@ -173,6 +177,7 @@ pub struct ProjectProfileBinding {
     pub profile_id: String,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectEnvironment {
@@ -219,6 +224,7 @@ pub struct DeploymentArtifact {
     pub digest: String,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionValidation {
@@ -228,6 +234,7 @@ pub struct VersionValidation {
     pub verified_at: String,
 }
 
+#[cfg(test)]
 /// One immutable project version. Deployment failures deliberately do not
 /// appear here: a version exists only after a successful deployment produced
 /// a stable commit or OCI digest identity.

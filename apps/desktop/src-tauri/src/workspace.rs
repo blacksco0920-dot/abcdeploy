@@ -500,6 +500,7 @@ impl WorkspaceState {
             .map_err(public_storage_error)
     }
 
+    #[cfg(test)]
     pub fn delete_deployment_path(&self, path: &Path, path_id: &str) -> Result<bool, String> {
         let normalized = normalize_path(path);
         let connection = self.connection.lock().map_err(lock_error)?;
@@ -1263,17 +1264,7 @@ impl WorkspaceState {
         )
     }
 
-    pub fn connection_exists(&self, id: &str) -> Result<bool, String> {
-        let connection = self.connection.lock().map_err(lock_error)?;
-        connection
-            .query_row(
-                "SELECT EXISTS(SELECT 1 FROM connections WHERE id = ?1)",
-                [id],
-                |row| row.get(0),
-            )
-            .map_err(public_storage_error)
-    }
-
+    #[cfg(test)]
     pub fn bind_project_source_connection(
         &self,
         path: &Path,
@@ -1303,6 +1294,7 @@ impl WorkspaceState {
         Ok(())
     }
 
+    #[cfg(test)]
     pub fn bind_project_registry_connection(
         &self,
         path: &Path,
@@ -1333,6 +1325,7 @@ impl WorkspaceState {
         Ok(())
     }
 
+    #[cfg(test)]
     pub fn project_connection_bindings(
         &self,
         path: &Path,
@@ -1611,6 +1604,7 @@ impl WorkspaceState {
         Ok(values)
     }
 
+    #[cfg(test)]
     pub fn save_config_profile(&self, profile: &ConfigProfile) -> Result<(), String> {
         validate_profile(profile)?;
         let values_json = serde_json::to_string(&profile.values).map_err(public_storage_error)?;
@@ -1658,6 +1652,7 @@ impl WorkspaceState {
         transaction.commit().map_err(public_storage_error)
     }
 
+    #[cfg(test)]
     pub fn list_config_profiles(&self) -> Result<Vec<ConfigProfile>, String> {
         let connection = self.connection.lock().map_err(lock_error)?;
         let mut statement = connection
@@ -1675,6 +1670,7 @@ impl WorkspaceState {
             .map_err(public_storage_error)
     }
 
+    #[cfg(test)]
     pub fn config_profile(&self, id: &str) -> Result<Option<ConfigProfile>, String> {
         let connection = self.connection.lock().map_err(lock_error)?;
         connection
@@ -1689,6 +1685,7 @@ impl WorkspaceState {
             .map_err(public_storage_error)
     }
 
+    #[cfg(test)]
     pub fn remove_config_profile(&self, id: &str) -> Result<bool, String> {
         let mut connection = self.connection.lock().map_err(lock_error)?;
         let transaction = connection.transaction().map_err(public_storage_error)?;
@@ -1726,6 +1723,7 @@ impl WorkspaceState {
         Ok(changed > 0)
     }
 
+    #[cfg(test)]
     pub fn bind_config_profile(
         &self,
         path: &Path,
@@ -1764,6 +1762,7 @@ impl WorkspaceState {
         })
     }
 
+    #[cfg(test)]
     pub fn set_environment_config_bindings(
         &self,
         path: &Path,
@@ -1839,6 +1838,7 @@ impl WorkspaceState {
         Ok(bindings)
     }
 
+    #[cfg(test)]
     pub fn config_profile_bindings(
         &self,
         path: &Path,
@@ -2170,6 +2170,7 @@ impl WorkspaceState {
         Ok(runs)
     }
 
+    #[cfg(test)]
     pub fn list_project_environments(
         &self,
         path: &Path,
@@ -2215,6 +2216,7 @@ impl WorkspaceState {
             .map_err(public_storage_error)
     }
 
+    #[cfg(test)]
     pub fn list_project_versions(&self, path: &Path) -> Result<Vec<ProjectVersion>, String> {
         let normalized = normalize_path(path);
         let connection = self.connection.lock().map_err(lock_error)?;
@@ -2355,6 +2357,7 @@ impl WorkspaceState {
         Ok(versions)
     }
 
+    #[cfg(test)]
     pub fn list_version_validations(&self, path: &Path) -> Result<Vec<VersionValidation>, String> {
         let normalized = normalize_path(path);
         let connection = self.connection.lock().map_err(lock_error)?;
@@ -2399,6 +2402,7 @@ impl WorkspaceState {
             .map_err(public_storage_error)
     }
 
+    #[cfg(test)]
     pub fn set_version_validation(
         &self,
         path: &Path,
@@ -3096,6 +3100,7 @@ fn server_resource_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ServerR
     })
 }
 
+#[cfg(test)]
 fn config_profile_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ConfigProfile> {
     let values_json: String = row.get(5)?;
     let secret_fields_json: String = row.get(6)?;
@@ -3119,6 +3124,7 @@ fn config_profile_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ConfigPr
     })
 }
 
+#[cfg(test)]
 fn validate_profile(profile: &ConfigProfile) -> Result<(), String> {
     validate_profile_segment(&profile.id, "连接编号")?;
     validate_profile_segment(&profile.kind, "连接类型")?;
@@ -3142,6 +3148,7 @@ fn validate_profile(profile: &ConfigProfile) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(test)]
 fn validate_profile_segment(value: &str, label: &str) -> Result<(), String> {
     if value.is_empty()
         || value.len() > 80
@@ -3154,12 +3161,14 @@ fn validate_profile_segment(value: &str, label: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(test)]
 fn profile_scope_supports_environment(scope: &str, environment: &str) -> bool {
     scope == "any"
         || (scope == "local" && environment == "development")
         || (scope == "remote" && environment != "development")
 }
 
+#[cfg(test)]
 fn valid_project_config_scope(value: &str) -> bool {
     matches!(value, "development" | "staging" | "production")
         || (value.starts_with("path-")
