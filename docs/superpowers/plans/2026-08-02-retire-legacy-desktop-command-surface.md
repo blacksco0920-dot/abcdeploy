@@ -159,12 +159,13 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 **Files:**
 - Create: `scripts/check-desktop-command-surface.mjs`
+- Modify: `scripts/lib/desktop-command-surface.mjs`
 - Modify: `scripts/desktop-command-surface.test.mjs`
 - Create: `openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md`
 
 **Interfaces:**
-- Consumes: Task 1 的 `auditDesktopCommandSurface({ root, mode })` 与 `compareCommandSets(...)`。
-- Produces: CLI `node scripts/check-desktop-command-surface.mjs --mode source|bundle|all [--json]`；矩阵字段固定为 `command | feature consumer | TypeScript wrapper | production bundle | Rust internal callers | data/migration duty | tests | decision | rationale`。
+- Consumes: Task 1 的 `extractSourceCommands(...)`、`extractRegisteredCommands(...)`、`extractBundledCommands(...)` 与 `compareCommandSets(...)`。
+- Produces: `auditDesktopCommandSurface({ root, mode })`、CLI `node scripts/check-desktop-command-surface.mjs --mode source|bundle|all [--json]`；矩阵字段固定为 `command | feature consumer | TypeScript wrapper | production bundle | Rust internal callers | data/migration duty | tests | decision | rationale`。
 
 - [ ] **Step 1: 写 CLI 诊断失败测试**
 
