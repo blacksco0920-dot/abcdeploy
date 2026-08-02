@@ -2,22 +2,20 @@
 
 - Change: `retire-legacy-desktop-command-surface`
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
-- Current task: `Task 4 完成：旧预检、Manifest 与项目步骤命令完成退役`
-- OpenSpec mapping: `3.1 删除无当前消费者的旧预检、Manifest 与项目步骤命令簇，同时保留当前源码快照和项目恢复入口`
-- Stage: `done`
+- Current task: `Task 5 完成：旧本机准备与服务控制命令完成退役`
+- OpenSpec mapping: `3.2 删除无当前消费者的旧本机准备/服务控制命令簇，同时保留受管运行工作区、当前启动与连续验证主线`
+- Stage: `preflight`
 - Review mode: `thorough`
-- Review/fix round: `1/2`
-- Implementer: `/root/task_4_project_command_cleanup` (complete)
-- Fix implementer: `/root/fix_task_4_dead_code`
-- Implementation commit: `10abfae7290f4e05477219eba3ddc3f3ed72a858`
-- Fix commit: `bff03febeeafa7afbc001286bf392ba8d3276108`
-- Changed files: `apps/desktop/src-tauri/src/lib.rs`; `apps/desktop/src/types.ts`; `crates/deploy-core/src/providers/ssh.rs`; command-surface evidence matrix.
-- RED evidence: source audit 110 registered / 45 source with 65 registered-only; all six target commands present in the difference set.
-- GREEN evidence: source/bundle/all audit 104/45/45 with only 59 registered-only and all other differences zero; frontend 195 tests/strict type/build, Rust workspace 259 tests, managed identity focused tests, locked Clippy/build, project/secrets, diff and CodeGraph gates pass.
-- Task review: clean after fix round 1/2; original Important addressed, no new Critical/Important breakage; two Minors deferred to final whole-branch review.
-- Reviewer: `/root/rereview_task_4_dead_code` (scoped fix re-review)
-- Open findings: none blocking. Deferred Minor — direct `open_project_preview` safety test; precise `apply_plan` caller wording.
-- Risk signals: intentional Rust public command surface removal; manifest/project recovery behavior protected; no security/concurrency/data/schema/dependency or >200-line diff signal.
-- Context: Task 4 is clean and complete; current audit is 104/45/45 with 59 registered-only commands.
+- Review/fix round: `0/2`
+- Implementer: pending dispatch
+- Implementation commit: pending
+- Changed files: pending
+- RED evidence: pending
+- GREEN evidence: pending
+- Task review: pending
+- Reviewer: pending
+- Open findings: none
+- Risk signals: local process lifecycle/concurrency; public command surface; diff likely >200 lines.
+- Context: Task 4 is clean and complete; current audit is 104/45/45 with 59 registered-only commands. Task 5 removes 14 handlers and expects 90/45/45 with 45 registered-only commands.
 - Deferred minors: fixed lexical sorting rule; actionable missing-bundle-directory error; direct `open_project_preview` write-safety regression test; precise `apply_plan` caller wording. Final review will triage.
-- Checkoff: Task 4 plan checkbox and OpenSpec 3.1 checked; exact runtime validation pending coordination commit.
+- Checkoff: pending
