@@ -2,20 +2,20 @@
 
 - Change: `retire-legacy-desktop-command-surface`
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
-- Current task: `Task 11 完成：实现文档、OpenSpec 证据与 CodeGraph 完成同步`
-- OpenSpec mapping: `4.2 更新 docs/internal/implementation-inventory.md、相关架构债务和当前状态证据，不把自动测试升级为用户验收`; `4.3 重建并同步 CodeGraph，确认文档中的稳定入口和调用关系指向清理后的主线`
-- Stage: `done`
+- Current task: `Task 12 完成：完整门禁、签名 .app 与最终证据通过验收`
+- OpenSpec mapping: `4.4 运行 pnpm check:project、pnpm check:secrets、受影响测试与完整 pnpm check，记录命令数量、删除规模和验证结果`; `4.5 运行 pnpm tauri:build:app 生成签名的 macOS Apple Silicon .app，完成启动与当前主线基本烟测且不触发正式发布`
+- Stage: `preflight`
 - Review mode: `thorough`
 - Review/fix round: `0/2`
-- Implementer: `/root/task_11_docs_sync` (complete)
-- Implementation commit: `1a8161676d20b83408d73024760a3210925017db`
-- Changed files: implementation inventory; current state; command-surface matrix.
-- RED evidence: stable docs had old CodeGraph counts and stale matrix caller wording; final facts collected from worktree CLI/diff/CodeGraph.
-- GREEN evidence: docs record 45/45/45, net -2,991, 216/3,006/8,936, three gates and protected kernels without acceptance upgrade; project/secrets/OpenSpec/source/build/all/diff/CodeGraph pass.
-- Task review: clean; no Critical/Important/Minor findings; documentation facts and status semantics independently reproduced.
-- Reviewer: `/root/review_task_11_docs_sync`
-- Open findings: none.
-- Risk signals: stable documentation truth and acceptance-status semantics; no product/checkoff code change.
-- Context: code/gates are complete at 45/45/45. Task11 updates stable docs/matrix/CodeGraph and reports OpenSpec checkoff consistency without changing checkboxes.
-- Deferred minors: fixed lexical sorting rule; direct `open_project_preview` write-safety regression test. Matrix `apply_plan` and `save_config_profile` wording Minors are assigned to Task11.
-- Checkoff: Task 11 plan checkbox and OpenSpec 4.2/4.3 checked; exact runtime validation pending coordination commit.
+- Implementer: pending dispatch
+- Implementation commit: pending
+- Changed files: pending
+- RED evidence: not applicable; final verification task consumes completed code and records failures if any.
+- GREEN evidence: pending
+- Task review: pending
+- Reviewer: pending
+- Open findings: none
+- Risk signals: full regression, signed app build and UI smoke; no release or production mutation authorized.
+- Context: Tasks1-11 complete; command surface 45/45/45, gates and docs integrated. Task12 owns final build/sign/smoke evidence, not product fixes unless a real regression is found and routed through the fix loop.
+- Deferred minors for final whole-branch review: fixed lexical sorting rule; direct `open_project_preview` write-safety regression test.
+- Checkoff: pending
