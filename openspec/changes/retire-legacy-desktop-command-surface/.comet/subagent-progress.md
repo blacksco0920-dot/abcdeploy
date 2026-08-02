@@ -2,20 +2,20 @@
 
 - Change: `retire-legacy-desktop-command-surface`
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
-- Current task: `Task 10 完成：生产 bundle 命令契约接入桌面构建`
-- OpenSpec mapping: `4.1 把桌面命令面一致性检查接入 pnpm check:project，并要求所有保留例外具有逐项原因` (build-side complement; already checked after Task9)
-- Stage: `done`
+- Current task: `Task 11 完成：实现文档、OpenSpec 证据与 CodeGraph 完成同步`
+- OpenSpec mapping: `4.2 更新 docs/internal/implementation-inventory.md、相关架构债务和当前状态证据，不把自动测试升级为用户验收`; `4.3 重建并同步 CodeGraph，确认文档中的稳定入口和调用关系指向清理后的主线`
+- Stage: `preflight`
 - Review mode: `thorough`
 - Review/fix round: `0/2`
-- Implementer: `/root/task_10_bundle_gate` (complete)
-- Implementation commit: `3d433bc48cd1b1667635f82d4bf6dd1ef8ee65d3`
-- Changed files: desktop package build script; command-surface library/tests.
-- RED evidence: bundle mode lacked source/sourceNotBundled; missing assets leaked ENOENT; build stopped after tsc/vite without gate.
-- GREEN evidence: 23/23 Node tests; ENOENT actionable and ENOTDIR preserved; real build propagates gate and passes at 45/45/45; full `pnpm check`, project/secrets/OpenSpec/diff/CodeGraph pass.
-- Task review: clean; no Critical/Important/Minor findings; bundle/build/IO boundaries independently reproduced.
-- Reviewer: `/root/review_task_10_bundle_gate`
-- Open findings: none.
-- Risk signals: desktop production build exit semantics and bundle/source mode contract; no runtime product/schema change.
-- Context: source/project gate is complete and command surface is 45/45/45. Task10 adds post-Vite bundle enforcement and resolves the deferred missing-bundle-directory diagnostic Minor.
-- Deferred minors: fixed lexical sorting rule; direct `open_project_preview` write-safety regression test; precise `apply_plan` caller wording; stale `save_config_profile` caller wording. Final review will triage.
-- Checkoff: Task 10 plan checkbox checked; OpenSpec 4.1 remains satisfied; exact runtime validation pending coordination commit.
+- Implementer: pending dispatch
+- Implementation commit: pending
+- Changed files: pending
+- RED evidence: pending
+- GREEN evidence: pending
+- Task review: pending
+- Reviewer: pending
+- Open findings: none
+- Risk signals: stable documentation truth and acceptance-status semantics; no product code change expected.
+- Context: code/gates are complete at 45/45/45. Task11 updates stable docs/matrix/CodeGraph and reports OpenSpec checkoff consistency without changing checkboxes.
+- Deferred minors: fixed lexical sorting rule; direct `open_project_preview` write-safety regression test. Matrix `apply_plan` and `save_config_profile` wording Minors are assigned to Task11.
+- Checkoff: pending
