@@ -14,6 +14,14 @@
 - 代码入口改变时更新 `docs/internal/implementation-inventory.md` 并同步 CodeGraph。
 - 归档 change 前同步 `docs/current-state.md` 的状态和验证证据。
 
+## Comet 路由与协作
+
+- 会改变产品行为、代码、配置、测试或权威文档的直接需求，默认调用 `/comet`，按项目配置进入 Comet Native。
+- 问答、解释、只读检查、状态汇报、代码审查和不修改项目的 Git 操作不创建 Comet change。
+- 与唯一 active change 目标一致的后续输入自动恢复该 change；无关任务不得附加到现有 change。
+- 用户显式指定 `/comet-native` 或 `/comet-classic` 时服从显式入口；不得根据任务大小、文件数量或模型能力在两种工作流之间隐式切换。
+- Native 与 Classic 的 change、状态和产物保持独立，不迁移已归档的 Classic change。
+
 ## 工程质量底线
 
 - 开始修改前阅读 `docs/README.md`、`docs/product-contract.md` 和 `docs/architecture.md`。
