@@ -1,0 +1,14 @@
+{
+  "change": "retire-legacy-desktop-command-surface",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "87aa779ceb665770639b4fc4d473e9b104bb5558542368d2a84a4e954cf7f6c5",
+  "files": [
+    { "path": "openspec/changes/retire-legacy-desktop-command-surface/proposal.md", "sha256": "1a3f7194729ce48b478515a3230897cbee777902b9ed5162a87242f805e920ca" },
+    { "path": "openspec/changes/retire-legacy-desktop-command-surface/design.md", "sha256": "d9cab7b8786dbd4768b3a0c99ba5adcc3b0a1200ee9e9e2e91a9d35af8685b82" },
+    { "path": "openspec/changes/retire-legacy-desktop-command-surface/tasks.md", "sha256": "b225ec4339866c1aa88b28067c4b7854d17eed26fd7eaf538452306b5926060e" },
+    { "path": "openspec/changes/retire-legacy-desktop-command-surface/specs/desktop-command-surface-governance/spec.md", "sha256": "d61a5edff721c417448aba33df32a3baf9ec2f97c957ad52d6c986ee4d8cc396" }
+  ]
+}

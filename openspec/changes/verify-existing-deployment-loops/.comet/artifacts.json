@@ -1,0 +1,6 @@
+{
+  "openspec_proposal": "openspec/changes/verify-existing-deployment-loops/proposal.md",
+  "openspec_design": "openspec/changes/verify-existing-deployment-loops/design.md",
+  "openspec_tasks": "openspec/changes/verify-existing-deployment-loops/tasks.md",
+  "openspec_delta_spec": "openspec/changes/verify-existing-deployment-loops/specs/deployment-loop-acceptance/spec.md"
+}

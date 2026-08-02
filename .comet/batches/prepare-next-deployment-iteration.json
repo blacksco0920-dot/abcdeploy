@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "batch_id": "prepare-next-deployment-iteration",
+  "original_goal": "比对项目文档与代码，删除可证明的冗余代码，跑通现有部署闭环，并为下一轮仓库来源能力迭代建立清晰、可恢复的工程边界。",
+  "created_at": "2026-08-02T03:59:06Z",
+  "language": "zh-CN",
+  "changes": [
+    {
+      "name": "retire-legacy-desktop-command-surface",
+      "goal": "移除当前产品主线不可达的桌面命令、前端 API 门面和依赖，减少新旧工作流并存造成的误导与维护成本。",
+      "scope": [
+        "以当前生产前端调用链、Tauri 动态注册、内部调用和测试为证据识别不可达命令",
+        "删除确认无生产入口的命令适配层、仅服务旧入口的实现和测试",
+        "删除无生产用途的前端 API 再导出与依赖",
+        "同步实现证据索引、架构债务记录和 CodeGraph"
+      ],
+      "non_goals": [
+        "不删除数据库迁移、旧记录读取和恢复所需的兼容逻辑",
+        "不改变当前本机运行、服务器上线、更新或恢复的用户行为",
+        "不实现代码仓库地址来源",
+        "不以拆文件代替可达性删除"
+      ],
+      "acceptance_scenarios": [
+        "当前前端调用的每个 Tauri 命令仍被注册且具备类型化入口",
+        "没有生产调用入口的旧命令及其专属实现被删除，必要的内部仓储和迁移能力仍保留",
+        "完整项目门禁通过，现有用户能力回归测试保持通过",
+        "文档和 CodeGraph 只指向实际主线入口"
+      ],
+      "depends_on": [],
+      "status": "selected"
+    },
+    {
+      "name": "converge-deployment-application-boundaries",
+      "goal": "把保留下来的部署主线从超大门面和入口文件迁入明确的 commands、application、workspace 与前端 API 边界。",
+      "scope": [
+        "拆分当前主线 Tauri 命令与应用服务编排职责",
+        "持续缩小 lib.rs、api.ts 和 workspace.rs 的棘轮预算",
+        "保持现有数据库、Provider 和用户可见行为兼容",
+        "同步实现清单、模块预算与 CodeGraph"
+      ],
+      "non_goals": [
+        "不重新设计产品交互",
+        "不更换 Provider 或数据库技术",
+        "不实现代码仓库地址来源",
+        "不把纯移动包装成冗余删除"
+      ],
+      "acceptance_scenarios": [
+        "当前部署主线通过类型化命令边界进入独立应用服务",
+        "入口文件只承担装配和动态注册，前端门面只保留兼容职责",
+        "迁移前后的本机、服务器、更新和恢复自动化行为一致",
+        "文件预算只缩小且完整门禁通过"
+      ],
+      "depends_on": [
+        "retire-legacy-desktop-command-surface"
+      ],
+      "status": "open-complete"
+    },
+    {
+      "name": "verify-existing-deployment-loops",
+      "goal": "为已经实现的本地文件夹到本机、服务器、更新和版本恢复建立可重复的端到端验证与真实客户端验收闭环。",
+      "scope": [
+        "补齐现有四条已实现路径的跨层回归与端到端验证证据",
+        "验证失败保留在线版本、连续成功证据和重启恢复",
+        "运行完整门禁并生成 macOS Apple Silicon .app 测试包",
+        "仅在真实客户端验收后更新 current-state 的 VERIFIED 状态"
+      ],
+      "non_goals": [
+        "不实现代码仓库地址来源",
+        "不执行正式发布、版本升级、标签或全平台构建",
+        "不把自动测试结果写成用户验收",
+        "不依赖个人生产账号完成自动测试"
+      ],
+      "acceptance_scenarios": [
+        "本地文件夹可以从最终快照在本机启动并形成连续成功证据",
+        "本地文件夹可以复用已验收服务器主线完成上线并恢复结果",
+        "更新失败不覆盖当前在线版本，成功更新切换到新不可变版本",
+        "版本恢复创建新运行记录并只在验证成功后切换当前指针",
+        "macOS 测试包可供用户完成真实客户端验收"
+      ],
+      "depends_on": [
+        "converge-deployment-application-boundaries"
+      ],
+      "status": "open-complete"
+    }
+  ]
+}
