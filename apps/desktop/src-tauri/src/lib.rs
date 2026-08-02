@@ -17,17 +17,15 @@ use deploy_core::manifest::{ManifestValidation, validate_manifest};
 use deploy_core::model::{
     DeploymentPlan, DnsProviderHint, DomainRoute, EnvironmentConfig, EnvironmentName, Framework,
     InspectionReport, PackageManager, ProjectManifest, ProviderCheck, PublicRouteStatus,
-    RegistryConfig, ServiceKind, SystemPreflight,
+    RegistryConfig, ServiceKind,
 };
 use deploy_core::plan::serialize_manifest;
-use deploy_core::preflight::system_preflight;
 use deploy_core::providers::{
     caddy,
     cnb::{
         CnbBuildRecord, CnbClient, build_records, build_revision, build_serial,
         missing_permission_scopes, summarize_build_status,
     },
-    docker,
     registry::RegistryProvider,
     ssh,
 };
@@ -499,11 +497,6 @@ struct PipelineIdentityMaterial {
 }
 
 #[tauri::command]
-fn get_preflight() -> SystemPreflight {
-    system_preflight()
-}
-
-#[tauri::command]
 #[allow(clippy::needless_pass_by_value)] // Tauri injects managed state by value.
 fn open_project(
     path: String,
@@ -725,67 +718,6 @@ fn inspection_identity_fingerprint(inspection: &InspectionReport) -> String {
 }
 
 #[tauri::command]
-fn preview_manifest(
-    path: String,
-    manifest_yaml: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<WorkspacePreview, String> {
-    let root = PathBuf::from(path);
-    let inspection = inspect_project(&root).map_err(public_error)?;
-    let manifest =
-        parse_manifest(&manifest_yaml, Path::new(MANIFEST_FILE)).map_err(public_error)?;
-    let validation = validate_manifest(&manifest);
-    if !validation.valid {
-        return Err("部署配置仍有必填项或隔离问题，请先处理校验结果".to_string());
-    }
-    let plan = build_plan(&root, &inspection, &manifest).map_err(public_error)?;
-    let manifest_exists = root.join(MANIFEST_FILE).is_file();
-    let pipeline_exists = root.join(".cnb.yml").is_file();
-    let detected = manifest_exists || pipeline_exists;
-    let adoption = state.project_adoption(&root)?;
-    let fresh_draft = adoption.fresh_draft;
-    let repository = repository_identity(&manifest.providers.build.repository);
-    Ok(WorkspacePreview {
-        inspection,
-        manifest_yaml,
-        validation,
-        plan,
-        manifest_exists: manifest_exists && !fresh_draft,
-        adoption: adoption_preview(adoption, detected, repository, pipeline_exists, fresh_draft),
-    })
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned command arguments.
-fn apply_manifest(
-    path: String,
-    manifest_yaml: String,
-    confirmed: bool,
-    state: State<'_, WorkspaceState>,
-) -> Result<ApplyResult, String> {
-    if !confirmed {
-        return Err("写入前必须查看并确认部署计划".to_string());
-    }
-    let root = PathBuf::from(path);
-    let inspection = inspect_project(&root).map_err(public_error)?;
-    let manifest =
-        parse_manifest(&manifest_yaml, Path::new(MANIFEST_FILE)).map_err(public_error)?;
-    let plan = build_plan(&root, &inspection, &manifest).map_err(public_error)?;
-    let written_files = apply_plan(&root, &plan).map_err(public_error)?;
-    state.mark_project_fresh_draft_saved(&root)?;
-    state.set_project_step(&root, "workspace")?;
-    Ok(ApplyResult {
-        plan_id: plan.id.clone(),
-        written_files,
-        backup_directory: root
-            .join(".deploydesk/backups")
-            .join(&plan.id)
-            .to_string_lossy()
-            .into_owned(),
-    })
-}
-
-#[tauri::command]
 #[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
 fn save_manifest_draft(
     path: String,
@@ -819,16 +751,6 @@ fn save_manifest_draft(
 #[allow(clippy::needless_pass_by_value)] // Tauri injects managed state by value.
 fn list_recent_projects(state: State<'_, WorkspaceState>) -> Result<Vec<RecentProject>, String> {
     state.list_projects()
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-fn save_project_step(
-    path: String,
-    step: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<(), String> {
-    state.set_project_step(Path::new(&path), &step)
 }
 
 #[tauri::command]
@@ -5958,16 +5880,6 @@ fn stage_key(stage: Option<&str>) -> String {
 }
 
 #[tauri::command]
-fn check_docker() -> Result<ProviderCheck, String> {
-    docker::check_engine().map_err(public_error)
-}
-
-#[tauri::command]
-fn discover_ssh_identities() -> Vec<ssh::SshIdentity> {
-    ssh::discover_identities()
-}
-
-#[tauri::command]
 fn generate_ssh_identity() -> Result<ssh::GeneratedSshIdentity, String> {
     ssh::generate_managed_identity().map_err(public_error)
 }
@@ -8840,7 +8752,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            get_preflight,
             resolve_local_folder_source,
             create_managed_local_run_workspace,
             verify_managed_local_run,
@@ -8853,7 +8764,6 @@ pub fn run() {
             reset_project_deployment,
             relink_project,
             list_recent_projects,
-            save_project_step,
             forget_project,
             list_servers,
             get_project_server,
@@ -8912,11 +8822,7 @@ pub fn run() {
             list_recent_successful_deployment_runs,
             list_current_deployment_runs,
             sync_external_deployments,
-            preview_manifest,
-            apply_manifest,
             save_manifest_draft,
-            check_docker,
-            discover_ssh_identities,
             generate_ssh_identity,
             check_server,
             install_server_key_with_password,
