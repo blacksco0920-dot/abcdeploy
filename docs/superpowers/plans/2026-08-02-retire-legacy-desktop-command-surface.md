@@ -388,7 +388,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 6: 退役旧 staging/production、路由修复和外部同步命令
 
-- [ ] Task 6 完成：旧部署控制、路由修复和外部同步命令完成退役
+- [x] Task 6 完成：旧部署控制、路由修复和外部同步命令完成退役
 
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
@@ -403,13 +403,13 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: `create_deployment_task/begin_deployment_attempt/list_deployment_attempts/pause_deployment_task/prepare_deployment_path_retry/start_staging_deployment/start_deployment_path/resume_staging_deployment/promote_production_deployment/retry_deployment_certificates/open_staging_preview_tunnel/sync_external_deployments/bootstrap_server_caddy/inspect_server_route_conflicts/take_over_server_routes/take_over_deployment_path_routes/reapply_deployment_routes/detect_dns_provider/rollback_environment`。
 - Produces: `prepare_managed_server_deployment`、`project_managed_deployment_evidence`、`refresh_deployment`、`check_deployment_routes`、`redeploy_deployment_path_version` 与共享部署执行器/路由状态转换保持不变。
 
-- [ ] **Step 1: 记录命令面 Red，并固化服务器、更新和路由恢复不变量**
+- [x] **Step 1: 记录命令面 Red，并固化服务器、更新和路由恢复不变量**
 
   Run: `node scripts/check-desktop-command-surface.mjs --mode source`
 
   Expected: FAIL，`registeredOnly` 包含本任务列出的旧 staging/production、路由和同步命令。随后逐个确认这些现有内部测试覆盖对应不变量：`runtime_dependency_failures_resume_the_same_server_deploy`、`route_reconciliation_failures_resume_without_redeploying_the_application`、`public_route_failures_pause_without_rebuilding`、`repaired_deployment_path_routes_keep_existing_artifacts_on_the_server`、`interrupted_first_route_check_preserves_the_deployed_version`。发现具体缺口时先增加会失败的共享内部函数或持久化结果断言，不要求旧 command 存在。
 
-- [ ] **Step 2: 运行目标测试并确认保护测试有效**
+- [x] **Step 2: 运行目标测试并确认保护测试有效**
 
   Run: `cargo test -p abcdeploy-desktop route -- --nocapture`
 
@@ -417,11 +417,11 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: 所有当前主线断言 PASS；新增断言只针对 Step 1 识别出的真实覆盖缺口。
 
-- [ ] **Step 3: 删除旧 IPC，internalize 共享执行器**
+- [x] **Step 3: 删除旧 IPC，internalize 共享执行器**
 
   删除列出的 handler 项和薄 command 适配器。仍由 `prepare_managed_server_deployment`、更新、恢复或路由验证调用的执行器、Provider、错误映射、状态转换和 `*_inner` 保持原文件与签名；本任务不得迁移到新 commands/application 目录。
 
-- [ ] **Step 4: Green 与 Refactor**
+- [x] **Step 4: Green 与 Refactor**
 
   Run: `cargo fmt --all`
 
@@ -433,7 +433,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；服务器部署、更新和恢复的稳定错误代码与脱敏输出不变。
 
-- [ ] **Step 5: 提交共享内核边界清理**
+- [x] **Step 5: 提交共享内核边界清理**
 
   ```bash
   git add apps/desktop/src-tauri/src/lib.rs apps/desktop/src-tauri/src/deployment_route_verification.rs apps/desktop/src-tauri/src/deployment_state.rs apps/desktop/src-tauri/src/tests.rs apps/desktop/src-tauri/src/tests/deployment_error_tests.rs apps/desktop/src-tauri/src/tests/deployment_route_capability_tests.rs openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md
