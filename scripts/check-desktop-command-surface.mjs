@@ -2,20 +2,24 @@
 
 import { fileURLToPath } from "node:url";
 
-import { auditDesktopCommandSurface } from "./lib/desktop-command-surface.mjs";
+import {
+  auditDesktopCommandSurface,
+  commandSurfaceFailures,
+} from "./lib/desktop-command-surface.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 
 try {
   const options = parseArguments(process.argv.slice(2));
   const result = await auditDesktopCommandSurface({ root, mode: options.mode });
+  const failures = commandSurfaceFailures(result);
 
   process.stdout.write(
     options.json
       ? `${JSON.stringify(result, null, 2)}\n`
-      : formatResult(result),
+      : formatResult(result, failures),
   );
-  if (hasFailures(result)) {
+  if (failures.length > 0) {
     process.exitCode = 1;
   }
 } catch (error) {
@@ -48,14 +52,7 @@ function parseArguments(args) {
   return { mode, json };
 }
 
-function hasFailures(result) {
-  return (
-    (result.dynamicInvocations?.length ?? 0) > 0 ||
-    Object.values(result.differences).some((commands) => commands.length > 0)
-  );
-}
-
-function formatResult(result) {
+function formatResult(result, failures) {
   const lines = [
     "桌面命令面审计",
     `mode=${result.mode}`,
@@ -74,6 +71,12 @@ function formatResult(result) {
 
   for (const [name, commands] of Object.entries(result.differences)) {
     lines.push(formatList(name, commands));
+  }
+  if (failures.length > 0) {
+    lines.push(
+      "命令面契约失败：",
+      ...failures.map((failure) => `- ${failure}`),
+    );
   }
 
   return `${lines.join("\n")}\n`;

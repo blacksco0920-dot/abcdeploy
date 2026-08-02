@@ -2,6 +2,11 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+import {
+  auditDesktopCommandSurface,
+  commandSurfaceFailures,
+} from "./lib/desktop-command-surface.mjs";
+
 const root = process.cwd();
 const failures = [];
 const requiredFiles = [
@@ -116,6 +121,18 @@ for (const file of frontendRuntime) {
       failures.push(`${file} 绕过类型化 API 直接依赖 Tauri invoke`);
     }
   }
+}
+
+try {
+  const commandSurface = await auditDesktopCommandSurface({
+    root,
+    mode: "source",
+  });
+  failures.push(...commandSurfaceFailures(commandSurface));
+} catch (error) {
+  failures.push(
+    `桌面命令面审计失败：${error instanceof Error ? error.message : String(error)}`,
+  );
 }
 
 checkMarkdownLinks(files.filter((file) => file.endsWith(".md")));

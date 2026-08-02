@@ -15,6 +15,7 @@
   "scripts": {
     "build": "pnpm --filter @abcdeploy/desktop build",
     "check": "pnpm check:project && pnpm check:secrets && cargo fmt --all -- --check && pnpm lint && pnpm test && pnpm build && pnpm site:build",
+    "check:desktop-command-surface": "node scripts/check-desktop-command-surface.mjs --mode source",
     "check:project": "node scripts/check-project-quality.mjs",
     "check:secrets": "node scripts/check-tracked-secrets.mjs",
     "codegraph:index": "node scripts/index-codegraph-worktree.mjs",

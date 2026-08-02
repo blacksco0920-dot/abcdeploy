@@ -4,6 +4,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  realpath,
   rm,
   symlink,
   writeFile,
@@ -15,6 +16,8 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  auditDesktopCommandSurface,
+  commandSurfaceFailures,
   compareCommandSets,
   extractBundledCommands,
   extractRegisteredCommands,
@@ -102,20 +105,107 @@ invoke("gamma");
     );
   }
 
-  return root;
+  return realpath(root);
 }
 
 async function runAudit(root, mode) {
-  return run(
-    process.execPath,
-    [
-      join(root, "scripts", "check-desktop-command-surface.mjs"),
-      "--mode",
-      mode,
-      "--json",
-    ],
-    { cwd: tmpdir(), stdio: ["ignore", "pipe", "pipe"] },
+  return runAuditWithOptions(root, mode, { json: true });
+}
+
+async function runAuditWithOptions(root, mode, { json }) {
+  const args = [
+    join(root, "scripts", "check-desktop-command-surface.mjs"),
+    "--mode",
+    mode,
+  ];
+  if (json) args.push("--json");
+
+  return run(process.execPath, args, {
+    cwd: tmpdir(),
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+async function createProjectGateFixture() {
+  const root = await createAuditFixture({ bundle: false });
+  const requiredDocuments = [
+    "ARCHITECTURE.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "SECURITY.md",
+    "docs/architecture.md",
+    "docs/engineering-quality.md",
+    "docs/frontend-design-guidelines.md",
+    "docs/implementation-acceptance.md",
+    "docs/product-contract.md",
+    "docs/internal/README.md",
+    "docs/internal/codegraph.md",
+    "docs/internal/implementation-inventory.md",
+  ];
+
+  await rm(join(root, "apps", "desktop", "src", "commands.ts"));
+  await mkdir(join(root, "apps", "desktop", "src", "api"), {
+    recursive: true,
+  });
+  await mkdir(join(root, "docs", "internal"), { recursive: true });
+  await copyFile(
+    new URL("./check-project-quality.mjs", import.meta.url),
+    join(root, "scripts", "check-project-quality.mjs"),
   );
+  await writeFile(
+    join(root, "apps", "desktop", "src-tauri", "src", "lib.rs"),
+    "tauri::generate_handler![]",
+  );
+  await writeFile(
+    join(root, "apps", "desktop", "src", "api", "commands.ts"),
+    `import { invoke } from "@tauri-apps/api/core";
+export const command = "dynamic_command";
+invoke(command);
+`,
+  );
+  await writeFile(
+    join(root, "apps", "desktop", "src", "main.tsx"),
+    'import { command } from "./api/commands";\nvoid command;\n',
+  );
+  await writeFile(
+    join(root, "apps", "desktop", "package.json"),
+    '{"dependencies":{},"devDependencies":{}}\n',
+  );
+  await writeFile(
+    join(root, "AGENTS.md"),
+    `## 一分钟冷启动
+1. 先读 docs/README.md
+2. 再读 docs/current-state.md
+OpenSpec Comet CodeGraph
+.comet/current-change.json docs/comet/changes/ openspec/changes/
+`,
+  );
+  await writeFile(
+    join(root, "README.md"),
+    "[当前状态](docs/current-state.md)\n",
+  );
+  await writeFile(
+    join(root, "docs", "README.md"),
+    `[当前状态](current-state.md)
+[产品合同](product-contract.md)
+[架构](architecture.md)
+[工程质量](engineering-quality.md)
+[前端规范](frontend-design-guidelines.md)
+[实施验收](implementation-acceptance.md)
+.comet/current-change.json docs/comet/changes/ openspec/changes/
+`,
+  );
+  await writeFile(
+    join(root, "docs", "current-state.md"),
+    "VERIFIED IMPLEMENTED_UNVERIFIED NEXT TARGET OUT_OF_SCOPE\n",
+  );
+  await writeFile(join(root, ".editorconfig"), "root = true\n");
+  await Promise.all(
+    requiredDocuments.map((file) => writeFile(join(root, file), "\n")),
+  );
+
+  return root;
 }
 
 test("extractSourceCommands 收集 invoke 的泛型、多行与别名静态命令", async () => {
@@ -209,6 +299,72 @@ test("compareCommandSets 报告四类去重且排序的命令面差集", () => {
   });
 });
 
+test("commandSurfaceFailures 报告精确的未注册命令", () => {
+  const failures = commandSurfaceFailures({
+    dynamicInvocations: [],
+    differences: {
+      missingRegistrations: ["missing_command"],
+      registeredOnly: [],
+    },
+  });
+
+  assert.deepEqual(failures, ["桌面命令未注册：missing_command"]);
+});
+
+test("commandSurfaceFailures 报告精确的无消费者注册命令", () => {
+  const failures = commandSurfaceFailures({
+    dynamicInvocations: [],
+    differences: {
+      missingRegistrations: [],
+      registeredOnly: ["orphan_command"],
+    },
+  });
+
+  assert.deepEqual(failures, ["Tauri 注册命令没有当前消费者：orphan_command"]);
+});
+
+test("commandSurfaceFailures 报告动态调用的精确文件和行号", () => {
+  const failures = commandSurfaceFailures({
+    dynamicInvocations: [{ file: "/virtual/src/api.ts", line: 42 }],
+    differences: {
+      missingRegistrations: [],
+      registeredOnly: [],
+    },
+  });
+
+  assert.deepEqual(failures, [
+    "桌面命令调用必须使用字符串字面量：/virtual/src/api.ts:42",
+  ]);
+});
+
+test("commandSurfaceFailures 在注册与消费者完全相等时返回空数组", () => {
+  const failures = commandSurfaceFailures({
+    dynamicInvocations: [],
+    differences: {
+      missingRegistrations: [],
+      registeredOnly: [],
+    },
+  });
+
+  assert.deepEqual(failures, []);
+});
+
+test("commandSurfaceFailures 保留构建审计的两类差异", () => {
+  const failures = commandSurfaceFailures({
+    differences: {
+      missingRegistrations: [],
+      registeredOnly: [],
+      bundleOnly: ["bundle_only_command"],
+      sourceNotBundled: ["source_only_command"],
+    },
+  });
+
+  assert.deepEqual(failures, [
+    "桌面命令只存在于生产 bundle：bundle_only_command",
+    "桌面源码命令未进入生产 bundle：source_only_command",
+  ]);
+});
+
 test("CLI source 模式只以注册表和生产源码计算快速门禁", async () => {
   const root = await createAuditFixture({ bundle: false });
 
@@ -275,6 +431,67 @@ test("CLI all 模式从脚本位置完整审计三集合并报告四类差异", 
         sourceNotBundled: ["gamma"],
       },
     });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("CLI 与项目门禁输出共享的命令面诊断", async () => {
+  const root = await createProjectGateFixture();
+
+  try {
+    const audit = await auditDesktopCommandSurface({ root, mode: "source" });
+    const expectedFailures = commandSurfaceFailures(audit);
+    const cli = await runAuditWithOptions(root, "source", { json: false });
+    const projectGate = await run(
+      process.execPath,
+      [join(root, "scripts", "check-project-quality.mjs")],
+      { cwd: root, stdio: ["ignore", "pipe", "pipe"] },
+    );
+    const diagnosticLines = (output) =>
+      output
+        .split("\n")
+        .filter((line) => line.startsWith("- "))
+        .map((line) => line.slice(2));
+
+    assert.deepEqual(expectedFailures, [
+      `桌面命令调用必须使用字符串字面量：${join(
+        root,
+        "apps",
+        "desktop",
+        "src",
+        "api",
+        "commands.ts",
+      )}:3`,
+    ]);
+    assert.equal(cli.code, 1);
+    assert.deepEqual(diagnosticLines(cli.stdout), expectedFailures);
+    assert.equal(projectGate.code, 1);
+    assert.deepEqual(diagnosticLines(projectGate.stderr), expectedFailures);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("项目门禁把命令面审计异常转成可操作诊断", async () => {
+  const root = await createProjectGateFixture();
+
+  try {
+    await writeFile(
+      join(root, "apps", "desktop", "src-tauri", "src", "lib.rs"),
+      "fn main() {}\n",
+    );
+    const projectGate = await run(
+      process.execPath,
+      [join(root, "scripts", "check-project-quality.mjs")],
+      { cwd: root, stdio: ["ignore", "pipe", "pipe"] },
+    );
+
+    assert.equal(projectGate.code, 1);
+    assert.match(
+      projectGate.stderr,
+      /- 桌面命令面审计失败：只能存在一个可判定的 generate_handler/,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }

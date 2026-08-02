@@ -137,6 +137,26 @@ export function compareCommandSets({
   };
 }
 
+export function commandSurfaceFailures(result) {
+  const failures = (result.dynamicInvocations ?? []).map(
+    ({ file, line }) => `桌面命令调用必须使用字符串字面量：${file}:${line}`,
+  );
+  const differenceMessages = [
+    ["missingRegistrations", "桌面命令未注册"],
+    ["registeredOnly", "Tauri 注册命令没有当前消费者"],
+    ["bundleOnly", "桌面命令只存在于生产 bundle"],
+    ["sourceNotBundled", "桌面源码命令未进入生产 bundle"],
+  ];
+
+  for (const [name, message] of differenceMessages) {
+    for (const command of result.differences[name] ?? []) {
+      failures.push(`${message}：${command}`);
+    }
+  }
+
+  return failures;
+}
+
 export async function auditDesktopCommandSurface({ root, mode }) {
   if (!new Set(["source", "bundle", "all"]).has(mode)) {
     throw new Error(`未知审计模式: ${mode}`);
