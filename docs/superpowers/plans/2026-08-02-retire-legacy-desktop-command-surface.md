@@ -268,7 +268,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Run: `pnpm --filter @abcdeploy/desktop build`
 
-  Expected: PASS；生产源码和 bundle 命令都收敛到 45，Rust 注册仍为 111，因此 CLI 仍只因 `registeredOnly` 失败。
+  Expected: PASS；生产源码和 bundle 命令都收敛到 45，`check_registry_credentials` endpoint 同步退役后 Rust 注册为 110，因此 CLI 仍只因 65 个 `registeredOnly` 失败。
 
 - [ ] **Step 6: Refactor 与矩阵更新**
 

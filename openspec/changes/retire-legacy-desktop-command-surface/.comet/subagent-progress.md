@@ -2,26 +2,20 @@
 
 - Change: `retire-legacy-desktop-command-surface`
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
-- Current task: `Task 2 完成：仓库 CLI 与逐命令证据矩阵通过审查`
-- OpenSpec mapping: `1.2 为所有候选旧命令建立生产调用、内部调用、迁移职责、测试依据和处置结论矩阵`; `1.3 通过 CodeGraph、rg 和动态注册源码复核命令簇影响范围，标出必须保留的 Workspace、Provider 与恢复逻辑`
-- Stage: `done`
+- Current task: `Task 3 完成：前端空壳、无用依赖和权限完成清理`
+- OpenSpec mapping: `2.1 删除无生产消费者的 api.ts 再导出和仅服务退役入口的 API 模块代码，并调整对应测试`; `2.2 删除确认无生产用途的前端依赖、Tauri 权限或配置，并验证当前剪贴板、对话框和打开链接能力不受影响`; `2.3 运行 TypeScript 严格未使用检查、前端测试和生产构建，确认类型化客户端调用集合稳定`
+- Stage: `implementing`
 - Review mode: `thorough`
-- Review/fix round: `1/2`
-- Implementer: `/root/task_2_command_audit`
-- Implementation commit: `1ad26ad`
-- Changed files: `scripts/check-desktop-command-surface.mjs`, `scripts/lib/desktop-command-surface.mjs`, `scripts/desktop-command-surface.test.mjs`, `openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md`
-- RED evidence: Node suite failed 8/9 with expected `CLI 尚不存在` assertion.
-- GREEN evidence: Node suite passed 9/9; desktop Vite build, project/secrets checks, Prettier, diff check and CodeGraph passed. Real all-mode audit reported 111/56/46 and exited 1 by design.
-- Task review: thorough review passed after one fix round; all 21 internalize rationales and all three CLI mode contracts are approved.
-- Reviewer: `/root/review_task_2_command_audit`
-- Open findings: no blocking findings. Minor deferred to final review — missing bundle directory leaks ENOENT.
-- Fix agent: `/root/fix_task_2_audit_contract`
-- Fix commit: `7bc6c93`
-- Fix RED/GREEN: three mode-contract tests and matrix-specific rationale test failed on old behavior; Node suite passed 12/12 after source/bundle/all semantics were separated and all 21 internalize rationales were made decision-specific.
-- Re-reviewer: `/root/rereview_task_2_audit_contract`
-- Re-review result: both Important findings addressed; no new Critical/Important breakage.
-- Checkoff: plan Task 2 and OpenSpec 1.2/1.3 checked; directed CLI verification pending commit.
-- Risk signals: cross-module, security-sensitive surface, concurrency duties, data/schema duties, public IPC contract, and diff >200 all reported true; no DONE_WITH_CONCERNS.
-- Context: Task 1's four pure extract/compare functions are complete; Task 2 owns `auditDesktopCommandSurface`, the repository CLI, and the 111-row evidence matrix. Task 1 deferred Minor: replace ambient-locale `localeCompare` with a fixed lexical ordering rule; final review will triage.
+- Review/fix round: `0/2`
+- Implementer: pending dispatch
+- Implementation commit: pending
+- Changed files: pending
+- RED evidence: pending
+- GREEN evidence: pending
+- Task review: pending
+- Reviewer: pending
+- Open findings: none
+- Risk signals: pending
+- Context: Task 2 baseline is 111/56/46 with decisions 45 keep-ipc, 21 internalize, 45 delete. Task 3 removes 11 frontend wrappers, one Rust endpoint (`check_registry_credentials`), and three unused frontend/runtime dependencies; expected post-task counts are 110/45/45.
+- Deferred minors: fixed lexical sorting rule; actionable missing-bundle-directory error. Final review will triage.
 - Checkoff: pending
-- Progress: implementation complete; 111-row matrix decisions are 45 keep-ipc, 21 internalize, 45 delete; thorough task review pending.
