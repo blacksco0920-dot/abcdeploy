@@ -20,7 +20,8 @@ export function extractSourceCommands(sourceText, filePath) {
     true,
     ts.ScriptKind.TSX,
   );
-  const invokeBindings = new Set();
+  const bindingKinds = new Map();
+  const aliasWrites = new Map();
   const commands = [];
   const dynamicInvocations = [];
 
@@ -33,25 +34,74 @@ export function extractSourceCommands(sourceText, filePath) {
     }
 
     const bindings = statement.importClause?.namedBindings;
-    if (!bindings || !ts.isNamedImports(bindings)) {
+    if (!bindings) {
+      continue;
+    }
+
+    if (ts.isNamespaceImport(bindings)) {
+      bindingKinds.set(bindings.name, { kind: "namespace", depth: 0 });
       continue;
     }
 
     for (const element of bindings.elements) {
       if ((element.propertyName?.text ?? element.name.text) === "invoke") {
-        invokeBindings.add(element.name.text);
+        bindingKinds.set(element.name, { kind: "invoke", depth: 0 });
       }
     }
   }
 
+  function discoverAliases(node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer
+    ) {
+      const target = resolveInvokeReference(node.initializer, bindingKinds);
+      if (target?.role.kind === "invoke" && target.role.depth === 0) {
+        bindingKinds.set(node.name, { kind: "invoke", depth: 1 });
+        aliasWrites.set(node.name, []);
+      }
+    }
+
+    ts.forEachChild(node, discoverAliases);
+  }
+
+  discoverAliases(sourceFile);
+
+  function collectAliasWrites(node) {
+    if (
+      ts.isBinaryExpression(node) &&
+      isAssignmentOperator(node.operatorToken.kind) &&
+      ts.isIdentifier(node.left)
+    ) {
+      const binding = resolveBinding(node.left);
+      const writes = binding && aliasWrites.get(binding);
+      if (writes) {
+        const target =
+          node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+            ? resolveInvokeReference(node.right, bindingKinds)
+            : undefined;
+        writes.push({
+          position: node.getStart(sourceFile),
+          invokes: target?.role.kind === "invoke",
+        });
+      }
+    }
+
+    ts.forEachChild(node, collectAliasWrites);
+  }
+
+  collectAliasWrites(sourceFile);
+
   function visit(node) {
-    const scope = scopeFor(node, invokeBindings);
+    const target = ts.isCallExpression(node)
+      ? resolveInvokeReference(node.expression, bindingKinds)
+      : undefined;
 
     if (
       ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      invokeBindings.has(node.expression.text) &&
-      !scope.has(node.expression.text)
+      target?.role.kind === "invoke" &&
+      aliasInvokesAt(target.binding, node.getStart(sourceFile), aliasWrites)
     ) {
       const command = node.arguments[0];
       if (command && ts.isStringLiteral(command)) {
@@ -62,16 +112,6 @@ export function extractSourceCommands(sourceText, filePath) {
     }
 
     ts.forEachChild(node, visit);
-  }
-
-  function scopeFor(node, invokeBindings) {
-    const bindings = new Set();
-
-    for (let parent = node.parent; parent; parent = parent.parent) {
-      addScopeBindings(parent, bindings, invokeBindings);
-    }
-
-    return bindings;
   }
 
   visit(sourceFile);
@@ -300,91 +340,121 @@ async function productionSourceFiles(directory) {
   return files.sort();
 }
 
-function addScopeBindings(node, bindings, invokeBindings) {
+function resolveInvokeReference(expression, bindingKinds) {
+  if (ts.isIdentifier(expression)) {
+    const binding = resolveBinding(expression);
+    const role = binding && bindingKinds.get(binding);
+    return role ? { binding, role } : undefined;
+  }
+
+  if (
+    ts.isPropertyAccessExpression(expression) &&
+    expression.name.text === "invoke" &&
+    ts.isIdentifier(expression.expression)
+  ) {
+    const binding = resolveBinding(expression.expression);
+    const role = binding && bindingKinds.get(binding);
+    if (role?.kind === "namespace") {
+      return { binding, role: { kind: "invoke", depth: 0 } };
+    }
+  }
+
+  return undefined;
+}
+
+function resolveBinding(identifier) {
+  for (let parent = identifier.parent; parent; parent = parent.parent) {
+    const declarations = scopeBindingDeclarations(parent, identifier.text);
+    if (declarations.length > 0) {
+      return declarations.length === 1 ? declarations[0] : undefined;
+    }
+  }
+
+  return undefined;
+}
+
+function scopeBindingDeclarations(node, bindingName) {
+  const declarations = [];
+
   if (ts.isSourceFile(node)) {
-    collectVarBindings(node, bindings, invokeBindings);
-    addLexicalBindings(node.statements, bindings, invokeBindings);
+    collectVarBindings(node, declarations, bindingName);
+    addLexicalBindings(node.statements, declarations, bindingName);
     for (const statement of node.statements) {
       if (ts.isImportDeclaration(statement)) {
-        addImportBindings(statement, bindings, invokeBindings);
+        addImportBindings(statement, declarations, bindingName);
       }
     }
   } else if (ts.isFunctionLike(node)) {
     for (const parameter of node.parameters) {
-      addBindingName(parameter.name, bindings, invokeBindings);
+      addBindingName(parameter.name, declarations, bindingName);
     }
     if (ts.isFunctionExpression(node) && node.name) {
-      addBindingName(node.name, bindings, invokeBindings);
+      addBindingName(node.name, declarations, bindingName);
     }
     if (node.body) {
-      collectVarBindings(node.body, bindings, invokeBindings);
+      collectVarBindings(node.body, declarations, bindingName);
     }
   } else if (ts.isBlock(node) || ts.isModuleBlock(node)) {
-    addLexicalBindings(node.statements, bindings, invokeBindings);
+    addLexicalBindings(node.statements, declarations, bindingName);
   } else if (ts.isCatchClause(node) && node.variableDeclaration) {
-    addBindingName(node.variableDeclaration.name, bindings, invokeBindings);
+    addBindingName(node.variableDeclaration.name, declarations, bindingName);
   } else if (
     ts.isForStatement(node) ||
     ts.isForInStatement(node) ||
     ts.isForOfStatement(node)
   ) {
     if (node.initializer && ts.isVariableDeclarationList(node.initializer)) {
-      addVariableBindings(node.initializer, bindings, invokeBindings);
+      addVariableBindings(node.initializer, declarations, bindingName);
     }
   } else if (ts.isCaseBlock(node)) {
     for (const clause of node.clauses) {
-      addLexicalBindings(clause.statements, bindings, invokeBindings);
+      addLexicalBindings(clause.statements, declarations, bindingName);
     }
   }
+
+  return declarations;
 }
 
-function addLexicalBindings(statements, bindings, invokeBindings) {
+function addLexicalBindings(statements, declarations, bindingName) {
   for (const statement of statements) {
     if (
       ts.isVariableStatement(statement) &&
       isBlockScopedVariableDeclarationList(statement.declarationList)
     ) {
-      addVariableBindings(statement.declarationList, bindings, invokeBindings);
+      addVariableBindings(statement.declarationList, declarations, bindingName);
     } else if (
       (ts.isFunctionDeclaration(statement) ||
         ts.isClassDeclaration(statement)) &&
       statement.name
     ) {
-      addBindingName(statement.name, bindings, invokeBindings);
+      addBindingName(statement.name, declarations, bindingName);
     }
   }
 }
 
-function addImportBindings(statement, bindings, invokeBindings) {
+function addImportBindings(statement, declarations, bindingName) {
   const clause = statement.importClause;
   if (!clause) {
     return;
   }
 
   if (clause.name) {
-    addBindingName(clause.name, bindings, invokeBindings);
+    addBindingName(clause.name, declarations, bindingName);
   }
   if (!clause.namedBindings) {
     return;
   }
   if (ts.isNamespaceImport(clause.namedBindings)) {
-    addBindingName(clause.namedBindings.name, bindings, invokeBindings);
+    addBindingName(clause.namedBindings.name, declarations, bindingName);
     return;
   }
 
   for (const element of clause.namedBindings.elements) {
-    const importedName = element.propertyName?.text ?? element.name.text;
-    if (
-      statement.moduleSpecifier.text === CORE_MODULE &&
-      importedName === "invoke"
-    ) {
-      continue;
-    }
-    addBindingName(element.name, bindings, invokeBindings);
+    addBindingName(element.name, declarations, bindingName);
   }
 }
 
-function collectVarBindings(node, bindings, invokeBindings) {
+function collectVarBindings(node, declarations, bindingName) {
   function visit(child) {
     if (
       child !== node &&
@@ -398,7 +468,7 @@ function collectVarBindings(node, bindings, invokeBindings) {
       ts.isVariableDeclaration(child) &&
       !isBlockScopedVariableDeclarationList(child.parent)
     ) {
-      addBindingName(child.name, bindings, invokeBindings);
+      addBindingName(child.name, declarations, bindingName);
     }
     ts.forEachChild(child, visit);
   }
@@ -412,25 +482,48 @@ function isBlockScopedVariableDeclarationList(declarationList) {
   );
 }
 
-function addVariableBindings(declarationList, bindings, invokeBindings) {
+function addVariableBindings(declarationList, declarations, bindingName) {
   for (const declaration of declarationList.declarations) {
-    addBindingName(declaration.name, bindings, invokeBindings);
+    addBindingName(declaration.name, declarations, bindingName);
   }
 }
 
-function addBindingName(name, bindings, invokeBindings) {
+function addBindingName(name, declarations, bindingName) {
   if (ts.isIdentifier(name)) {
-    if (invokeBindings.has(name.text)) {
-      bindings.add(name.text);
+    if (name.text === bindingName) {
+      declarations.push(name);
     }
     return;
   }
 
   for (const element of name.elements) {
     if (ts.isBindingElement(element)) {
-      addBindingName(element.name, bindings, invokeBindings);
+      addBindingName(element.name, declarations, bindingName);
     }
   }
+}
+
+function isAssignmentOperator(kind) {
+  return (
+    kind >= ts.SyntaxKind.FirstAssignment &&
+    kind <= ts.SyntaxKind.LastAssignment
+  );
+}
+
+function aliasInvokesAt(binding, position, aliasWrites) {
+  const writes = aliasWrites.get(binding);
+  if (!writes) {
+    return true;
+  }
+
+  let invokes = true;
+  for (const write of writes) {
+    if (write.position >= position) {
+      break;
+    }
+    invokes = write.invokes;
+  }
+  return invokes;
 }
 
 function sourceLocation(node, sourceFile) {

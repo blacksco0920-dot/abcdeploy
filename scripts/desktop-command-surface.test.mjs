@@ -310,6 +310,71 @@ function invokeLocally(invoke) {
   assert.deepEqual(result.dynamicInvocations, []);
 });
 
+test("extractSourceCommands 收集命名空间 invoke 的静态命令并报告动态命令", () => {
+  const filePath = "/virtual/namespace-invoke.ts";
+  const result = extractSourceCommands(
+    `import * as desktopCore from "@tauri-apps/api/core";
+desktopCore.invoke("namespace_static");
+desktopCore.invoke(namespaceCommand);`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, ["namespace_static"]);
+  assert.deepEqual(
+    result.dynamicInvocations.map(({ file, line }) => ({ file, line })),
+    [{ file: filePath, line: 3 }],
+  );
+});
+
+test("extractSourceCommands 传播一跳本地 invoke 别名的静态与动态调用", () => {
+  const filePath = "/virtual/local-invoke-alias.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+const callDesktop = invoke;
+callDesktop("alias_static");
+callDesktop(aliasCommand);`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, ["alias_static"]);
+  assert.deepEqual(
+    result.dynamicInvocations.map(({ file, line }) => ({ file, line })),
+    [{ file: filePath, line: 4 }],
+  );
+});
+
+test("extractSourceCommands 忽略遮蔽命名空间与本地别名的非 Tauri 调用", () => {
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+import * as desktopCore from "@tauri-apps/api/core";
+const callDesktop = invoke;
+callDesktop("real_alias");
+desktopCore.invoke("real_namespace");
+function runWithLocalBindings(callDesktop, desktopCore) {
+  callDesktop("shadowed_alias");
+  desktopCore.invoke("shadowed_namespace");
+}`,
+    "/virtual/shadowed-invoke-forms.ts",
+  );
+
+  assert.deepEqual(result.commands, ["real_alias", "real_namespace"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+});
+
+test("extractSourceCommands 在本地别名重赋值后不把普通函数调用算作 Tauri 命令", () => {
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+let callDesktop = invoke;
+callDesktop("before_reassignment");
+callDesktop = localInvoke;
+callDesktop("after_reassignment");`,
+    "/virtual/reassigned-invoke-alias.ts",
+  );
+
+  assert.deepEqual(result.commands, ["before_reassignment"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+});
+
 test("extractRegisteredCommands 提取唯一 generate_handler 中的标识符", async () => {
   const result = extractRegisteredCommands(await fixture("handler-valid.rs"));
 
