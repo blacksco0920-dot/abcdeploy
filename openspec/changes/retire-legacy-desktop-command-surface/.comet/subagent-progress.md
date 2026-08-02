@@ -2,20 +2,20 @@
 
 - Change: `retire-legacy-desktop-command-surface`
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
-- Current task: `Task 3 完成：前端空壳、无用依赖和权限完成清理`
-- OpenSpec mapping: `2.1 删除无生产消费者的 api.ts 再导出和仅服务退役入口的 API 模块代码，并调整对应测试`; `2.2 删除确认无生产用途的前端依赖、Tauri 权限或配置，并验证当前剪贴板、对话框和打开链接能力不受影响`; `2.3 运行 TypeScript 严格未使用检查、前端测试和生产构建，确认类型化客户端调用集合稳定`
-- Stage: `done`
+- Current task: `Task 4 完成：旧预检、Manifest 与项目步骤命令完成退役`
+- OpenSpec mapping: `3.1 删除无当前消费者的旧预检、Manifest 与项目步骤命令簇，同时保留当前源码快照和项目恢复入口`
+- Stage: `preflight`
 - Review mode: `thorough`
 - Review/fix round: `0/2`
-- Implementer: `/root/task_3_frontend_cleanup` (complete)
-- Implementation commit: `a6257f5`
-- Changed files: `Cargo.lock`; desktop package/Cargo manifests and lockfiles; Tauri capability, `lib.rs`, `credentials.rs`; root API, API modules/tests; command evidence matrix; deleted `config-profiles.ts`.
-- RED evidence: root API contract test failed 1/195 and enumerated all 11 still-exported legacy wrappers; Rust Clippy `-D warnings` exposed the now-unregistered endpoint as dead code.
-- GREEN evidence: 195/195 desktop tests; strict TypeScript and desktop build pass; audit 110/45/45 with only expected 65 registered-only commands; Rust fmt, locked check, Clippy `-D warnings`, locked build pass; project/secrets/diff/CodeGraph gates pass.
-- Task review: clean; no Critical/Important/Minor findings; all listed gates independently reproduced.
-- Reviewer: `/root/review_task_3_frontend_cleanup`
+- Implementer: pending dispatch
+- Implementation commit: pending
+- Changed files: pending
+- RED evidence: pending
+- GREEN evidence: pending
+- Task review: pending
+- Reviewer: pending
 - Open findings: none
-- Risk signals: cross-module; security-sensitive credentials/clipboard surface; intentional public API removal; diff > 200 lines. No concurrency or data/schema change.
-- Context: Task 2 baseline is 111/56/46 with decisions 45 keep-ipc, 21 internalize, 45 delete. Task 3 removes 11 frontend wrappers, one Rust endpoint (`check_registry_credentials`), and three unused frontend/runtime dependencies; expected post-task counts are 110/45/45.
+- Risk signals: Rust public command surface; manifest/project recovery behavior; diff unknown.
+- Context: Task 3 is clean and complete at implementation commit `a6257f5`; current audit is 110/45/45 with 65 registered-only commands. Task 4 removes six handlers and expects 104/45/45 with 59 registered-only commands.
 - Deferred minors: fixed lexical sorting rule; actionable missing-bundle-directory error. Final review will triage.
-- Checkoff: Task 3 plan checkbox and OpenSpec 2.1/2.2/2.3 checked; exact runtime validation pending coordination commit.
+- Checkoff: pending
