@@ -49,7 +49,7 @@
 | 项目治理 | `pnpm check:project` 内的 `auditDesktopCommandSurface({ mode: "source" })` | 复用同一解析器和诊断适配器，与项目文档、前端边界和恢复路径检查在同一 Node 进程内失败收口。 |
 | 生产 bundle 审计 | `apps/desktop/package.json` 的 `build` 在 `tsc --noEmit && vite build` 之后运行 `--mode bundle` | 拒绝只存在源码回退分支、但被 tree-shaking 移出实际桌面产物的包装作为生产消费证据。 |
 
-命令数量、逐项去留和实施期回归证据保存在 [桌面命令面证据矩阵](../../openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md)；本稳定索引不复制逐命令矩阵。公开 IPC 收缩后仍保留的内部边界为：
+命令数量、逐项去留和实施期回归证据保存在 [桌面命令面证据矩阵](../../openspec/changes/archive/2026-08-02-retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md)；本稳定索引不复制逐命令矩阵。公开 IPC 收缩后仍保留的内部边界为：
 
 - `WorkspaceState::open`、`workspace.rs` 与 `workspace/` 保留 schema 升级、旧记录恢复、任务/尝试/版本追加和 `current_run_id` 指针不变量；部分 Profile、绑定和版本验证方法只作为精确 `#[cfg(test)]` 兼容接缝，不是仍支持的 CRUD 命令。
 - `prepare_deployment_path_retry_inner`、`start_deployment_path_inner`、`take_over_deployment_path_routes_inner` 和 `take_over_caddy_routes` 保留当前 pilot 的服务器部署、制品复用和只续路由验证能力；它们不恢复已退役的手工 staging/production 控制面。

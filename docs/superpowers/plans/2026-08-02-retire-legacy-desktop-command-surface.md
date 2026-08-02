@@ -2,6 +2,7 @@
 change: retire-legacy-desktop-command-surface
 design-doc: docs/superpowers/specs/2026-08-02-retire-legacy-desktop-command-surface-design.md
 base-ref: 24e0fc79f9bda0401362b4e93cb570774b4abfa8
+archived-with: 2026-08-02-retire-legacy-desktop-command-surface
 ---
 
 # 退役旧桌面命令面实施计划

@@ -4,5 +4,6 @@
   "openspec_tasks": "openspec/changes/retire-legacy-desktop-command-surface/tasks.md",
   "openspec_delta_spec": "openspec/changes/retire-legacy-desktop-command-surface/specs/desktop-command-surface-governance/spec.md",
   "handoff_context": "openspec/changes/retire-legacy-desktop-command-surface/.comet/handoff/design-context.json",
-  "handoff_markdown": "openspec/changes/retire-legacy-desktop-command-surface/.comet/handoff/design-context.md"
+  "handoff_markdown": "openspec/changes/retire-legacy-desktop-command-surface/.comet/handoff/design-context.md",
+  "archive_directory": "openspec/changes/archive/2026-08-02-retire-legacy-desktop-command-surface"
 }

@@ -2,6 +2,8 @@
 comet_change: retire-legacy-desktop-command-surface
 role: technical-design
 canonical_spec: openspec
+archived-with: 2026-08-02-retire-legacy-desktop-command-surface
+status: final
 ---
 
 # 退役旧桌面命令面：深度技术设计
