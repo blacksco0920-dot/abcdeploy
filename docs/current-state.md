@@ -26,7 +26,10 @@
 - 桌面命令面：2026-08-02 在变更工作树运行 `node scripts/check-desktop-command-surface.mjs --mode all --json` 通过，Rust 注册、生产 TypeScript 源码与 Vite bundle 三个集合均为 45，动态调用与所有差异集均为 0。根 `check:desktop-command-surface` 和 `check:project` 保护 source 面，桌面 `build` 在 Vite 之后保护 bundle 面；精确入口与保留的迁移/恢复内核见 [实现证据索引](internal/implementation-inventory.md#4-桌面生产命令面与保留边界)。
 - 净收缩：相对实施计划 base `24e0fc79f9bda0401362b4e93cb570774b4abfa8`，Task 11 最终工作树的跟踪差异为 45 个文件、2,611 行新增、5,602 行删除，净减少 2,991 行；该统计包含 change 证据、门禁与测试资产，不用作功能完成度或用户验收依据。
 - CodeGraph：在实际变更工作树运行 `pnpm codegraph:index`、`pnpm codegraph:sync` 与 `pnpm codegraph:status` 于 2026-08-02 通过；索引为最新状态，共 216 个文件、3,006 个节点和 8,936 条边。`.codegraph/` 是忽略的本机索引，没有作为产品或验收资产提交。
-- 证据边界：本次只记录静态审计、构建产物审计和自动回归；本任务未执行桌面客户端启动或当前主线的无副作用烟测，因此不新增用户验收。服务器正向主线仍保持原 `VERIFIED`；本机运行、更新部署和版本恢复仍为 `IMPLEMENTED_UNVERIFIED`。
+- Task 12 完整门禁：2026-08-02 18:03–18:32 CST 在绑定 worktree fresh 运行 project、secrets、OpenSpec strict、命令面 Node 测试与完整 `pnpm check`，最终均 exit 0；Rust workspace 245 项、Vitest 36 files / 195 tests、release-manifest 2 项通过。desktop build 与独立 JSON 审计均为 `registered/source/bundled=45/45/45`，动态调用和四类差异为 0。命令面 Node 测试初次发现矩阵中一处具名证据文字缺口，只修正文档后 fresh 23/23 通过，未修改生产代码。
+- 本机测试包：`pnpm tauri:build:app` exit 0，生成 thin arm64 `/Users/chanjack/Documents/DeployWorkspace/deploydesk/.worktrees/retire-legacy-desktop-command-surface/target/release/bundle/macos/ABCDeploy.app`（mtime 2026-08-02 18:08:40 CST）。独立 `codesign --verify --deep --strict --verbose=2` exit 0，Identifier `cloud.finagent.abcdeploy`，Authority `Apple Development: blacksco@163.com (PGL5DHKHQH)`；本地测试包按设计未 notarize，未生成 DMG、版本、标签或发布资产。
+- 无副作用烟测：Computer Use 以精确 `.app` 路径启动到“我的部署”为 `PASS`；5 条已有记录可见，且一条在线服务器部署的只读详情恢复为 `PASS`。系统文件夹选择器的取消、外部准备链接、复制非敏感文本、本机入口实际打开和服务器入口实际打开因 Mac 随后锁定而为 `NOT_TESTED`；没有选择目录、打开外链、复制敏感内容、启动服务、连接 Provider/服务器或触发部署、更新、恢复、设置、删除。显示名读取曾命中另一同名 legacy 窗口及其既有数据库 toast，该窗口明确不是当前精确构建 app 的回归证据。
+- 证据边界：Task 12 只新增 fresh 自动门禁、签名本地测试包和有限 smoke 证据，不新增用户验收。服务器正向主线仍保持原 `VERIFIED`；本机运行、更新部署和版本恢复仍为 `IMPLEMENTED_UNVERIFIED`，所有锁屏阻断项保持 `NOT_TESTED` 而不是 PASS。
 
 ## 关键用户能力
 
