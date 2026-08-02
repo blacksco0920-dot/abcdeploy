@@ -90,6 +90,9 @@ export function extractSourceCommands(sourceText, filePath) {
 
   function visit(node) {
     if (ts.isExpressionWithTypeArguments(node)) {
+      if (ts.isPartOfTypeNode(node)) {
+        return;
+      }
       visit(node.expression);
       return;
     }

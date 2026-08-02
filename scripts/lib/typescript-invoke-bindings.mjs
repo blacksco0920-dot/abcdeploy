@@ -91,6 +91,7 @@ export function valueSymbolForIdentifier(checker, identifier) {
 function isTransparentExpression(node) {
   return (
     ts.isParenthesizedExpression(node) ||
+    ts.isExpressionWithTypeArguments(node) ||
     ts.isAsExpression(node) ||
     ts.isTypeAssertionExpression(node) ||
     ts.isNonNullExpression(node) ||
