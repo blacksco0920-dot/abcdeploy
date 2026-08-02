@@ -223,7 +223,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 3: 删除前端空壳并清理无生产用途依赖
 
-- [ ] Task 3 完成：前端空壳、无用依赖和权限完成清理
+- [x] Task 3 完成：前端空壳、无用依赖和权限完成清理
 
 **Files:**
 - Delete: `apps/desktop/src/api/config-profiles.ts`
@@ -233,8 +233,10 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Modify: `apps/desktop/src/api.test.ts`
 - Modify: `apps/desktop/package.json`
 - Modify: `pnpm-lock.yaml`
+- Modify: `Cargo.lock`
 - Modify: `apps/desktop/src-tauri/Cargo.toml`
 - Modify: `apps/desktop/src-tauri/capabilities/default.json`
+- Modify: `apps/desktop/src-tauri/src/credentials.rs`
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
 - Modify: `openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md`
 
@@ -242,25 +244,25 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: 当前 Feature 直接使用的 `replaceRegistryCredentials(...)`、`checkSavedRegistryCredentials(...)`、`getAppSetting(...)`、`setAppSetting(...)`。
 - Produces: 相同签名的四个 API；浏览器校验由私有 `validateRegistryCredentials(registry, username, password): ProviderCheck` 完成，不再调用 `check_registry_credentials`。
 
-- [ ] **Step 1: 把待退役前端导出写成 Red 契约**
+- [x] **Step 1: 把待退役前端导出写成 Red 契约**
 
   修改 `apps/desktop/src/api.test.ts`：通过动态导入断言根 API 不再导出 Config Profile CRUD、`getAppSettings`、旧 Secret CRUD 和 `checkRegistryCredentials`。同时保留并收紧 `replaceRegistryCredentials(...)` 的浏览器契约：空密码返回 `AD-IMG-201` 且不能写入 verified 时间，完整输入仍写入非秘密验证时间。删除只证明旧包装行为存在的测试。
 
-- [ ] **Step 2: 运行目标前端测试并确认 Red**
+- [x] **Step 2: 运行目标前端测试并确认 Red**
 
   Run: `pnpm --filter @abcdeploy/desktop test -- src/api.test.ts`
 
   Expected: FAIL，诊断列出当前仍存在的待退役根 API 导出；浏览器凭据行为断言保持可执行。
 
-- [ ] **Step 3: 删除 11 个无生产消费者包装**
+- [x] **Step 3: 删除 11 个无生产消费者包装**
 
   删除 Config Profile 六个包装；删除 `getSecretStatus/storeSecret/deleteSecret`；删除 `getAppSettings`；删除 `checkRegistryCredentials` IPC 并保留纯浏览器校验。同步删掉 `api.ts` 的旧再导出，不能保留测试专用 facade。
 
-- [ ] **Step 4: 移除已证实无生产引用的依赖与权限**
+- [x] **Step 4: 移除已证实无生产引用的依赖与权限**
 
   从前端依赖移除 `@radix-ui/react-collapsible`、`@radix-ui/react-dropdown-menu`、`@tauri-apps/plugin-clipboard-manager`。从 Rust 移除 `tauri-plugin-clipboard-manager`、`.plugin(tauri_plugin_clipboard_manager::init())` 与 `clipboard-manager:allow-write-text`；保留当前仍使用的 dialog/opener。执行 `pnpm install --lockfile-only` 更新锁文件。
 
-- [ ] **Step 5: 运行 Green 验证**
+- [x] **Step 5: 运行 Green 验证**
 
   Run: `pnpm --filter @abcdeploy/desktop test -- src/api.test.ts src/features/deployment-editor/server-deployment-authorization.test.ts src/features/deployment-editor/server-deployment-setup-service.test.ts`
 
@@ -270,11 +272,11 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；生产源码和 bundle 命令都收敛到 45，`check_registry_credentials` endpoint 同步退役后 Rust 注册为 110，因此 CLI 仍只因 65 个 `registeredOnly` 失败。
 
-- [ ] **Step 6: Refactor 与矩阵更新**
+- [x] **Step 6: Refactor 与矩阵更新**
 
   确认 `navigator.clipboard.writeText`、dialog `open` 和 opener `openUrl` 的生产引用仍存在；把 11 个包装、`check_registry_credentials` 和三个前端依赖/clipboard runtime 的处置写回矩阵。
 
-- [ ] **Step 7: 提交前端空壳清理**
+- [x] **Step 7: 提交前端空壳清理**
 
   ```bash
   git add apps/desktop/src/api.ts apps/desktop/src/api/secrets.ts apps/desktop/src/api/settings.ts apps/desktop/src/api.test.ts apps/desktop/package.json apps/desktop/src-tauri/Cargo.toml apps/desktop/src-tauri/capabilities/default.json apps/desktop/src-tauri/src/lib.rs pnpm-lock.yaml openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md
