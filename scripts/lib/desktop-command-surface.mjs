@@ -1,4 +1,6 @@
 import { createRequire } from "node:module";
+import { readFile, readdir } from "node:fs/promises";
+import { join } from "node:path";
 
 const require = createRequire(
   new URL("../../apps/desktop/package.json", import.meta.url),
@@ -135,12 +137,100 @@ export function compareCommandSets({
   };
 }
 
+export async function auditDesktopCommandSurface({ root, mode }) {
+  if (!new Set(["source", "bundle", "all"]).has(mode)) {
+    throw new Error(`未知审计模式: ${mode}`);
+  }
+
+  const registeredSource = await readFile(
+    join(root, "apps", "desktop", "src-tauri", "src", "lib.rs"),
+    "utf8",
+  );
+  const { commands: registeredCommands } =
+    extractRegisteredCommands(registeredSource);
+  const sourceFiles = await productionSourceFiles(
+    join(root, "apps", "desktop", "src"),
+  );
+  const sourceCommands = [];
+  const dynamicInvocations = [];
+
+  for (const file of sourceFiles) {
+    const extracted = extractSourceCommands(await readFile(file, "utf8"), file);
+    sourceCommands.push(...extracted.commands);
+    dynamicInvocations.push(...extracted.dynamicInvocations);
+  }
+
+  const sortedSourceCommands = sortedUnique(sourceCommands);
+  let bundledCommands = [];
+
+  if (mode !== "source") {
+    const bundleDirectory = join(root, "apps", "desktop", "dist", "assets");
+    const entries = await readdir(bundleDirectory, { withFileTypes: true });
+    const bundleFiles = entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".js"))
+      .map((entry) => join(bundleDirectory, entry.name))
+      .sort();
+
+    if (bundleFiles.length === 0) {
+      throw new Error("生产 bundle 不存在，请先运行桌面 Vite build");
+    }
+
+    for (const file of bundleFiles) {
+      bundledCommands.push(
+        ...extractBundledCommands(
+          await readFile(file, "utf8"),
+          registeredCommands,
+        ).commands,
+      );
+    }
+    bundledCommands = sortedUnique(bundledCommands);
+  }
+
+  return {
+    registeredCommands,
+    sourceCommands: sortedSourceCommands,
+    bundledCommands,
+    dynamicInvocations,
+    differences: compareCommandSets({
+      registeredCommands,
+      sourceCommands: sortedSourceCommands,
+      bundledCommands:
+        mode === "source" ? sortedSourceCommands : bundledCommands,
+    }),
+  };
+}
+
 function difference(left, right) {
   return sortedUnique([...left].filter((value) => !right.has(value)));
 }
 
 function sortedUnique(values) {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
+
+async function productionSourceFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== "test") {
+        files.push(...(await productionSourceFiles(path)));
+      }
+      continue;
+    }
+    if (
+      entry.isFile() &&
+      /\.(?:ts|tsx)$/.test(entry.name) &&
+      !/\.(?:test|spec)\.(?:ts|tsx)$/.test(entry.name) &&
+      entry.name !== "vite-env.d.ts"
+    ) {
+      files.push(path);
+    }
+  }
+
+  return files.sort();
 }
 
 function addScopeBindings(node, bindings, invokeBindings) {

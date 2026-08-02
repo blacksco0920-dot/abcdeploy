@@ -1,5 +1,16 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawn } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -17,6 +28,25 @@ const fixtures = new URL(
 
 async function fixture(name) {
   return readFile(new URL(name, fixtures), "utf8");
+}
+
+async function run(command, args, options) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, options);
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", reject);
+    child.on("close", (code) => resolve({ code, stdout, stderr }));
+  });
 }
 
 test("extractSourceCommands 收集 invoke 的泛型、多行与别名静态命令", async () => {
@@ -108,4 +138,80 @@ test("compareCommandSets 报告四类去重且排序的命令面差集", () => {
     bundleOnly: ["delta"],
     sourceNotBundled: ["gamma"],
   });
+});
+
+test("CLI 从脚本位置审计仓库并以稳定 JSON 报告四类差异", async () => {
+  const root = await mkdtemp(join(tmpdir(), "desktop-command-surface-"));
+
+  try {
+    await mkdir(join(root, "scripts", "lib"), { recursive: true });
+    await mkdir(join(root, "apps", "desktop", "src-tauri", "src"), {
+      recursive: true,
+    });
+    await mkdir(join(root, "apps", "desktop", "src"), { recursive: true });
+    await mkdir(join(root, "apps", "desktop", "dist", "assets"), {
+      recursive: true,
+    });
+    const cliSource = await readFile(
+      new URL("./check-desktop-command-surface.mjs", import.meta.url),
+      "utf8",
+    ).catch(() => assert.fail("CLI 尚不存在"));
+    await writeFile(
+      join(root, "scripts", "check-desktop-command-surface.mjs"),
+      cliSource,
+    );
+    await copyFile(
+      new URL("./lib/desktop-command-surface.mjs", import.meta.url),
+      join(root, "scripts", "lib", "desktop-command-surface.mjs"),
+    );
+    await symlink(
+      fileURLToPath(new URL("../apps/desktop/node_modules", import.meta.url)),
+      join(root, "apps", "desktop", "node_modules"),
+      "dir",
+    );
+    await writeFile(
+      join(root, "apps", "desktop", "src", "commands.ts"),
+      `import { invoke } from "@tauri-apps/api/core";
+invoke("gamma");
+invoke("alpha");
+invoke("gamma");
+`,
+    );
+    await writeFile(
+      join(root, "apps", "desktop", "src-tauri", "src", "lib.rs"),
+      "tauri::generate_handler![beta, alpha, beta]",
+    );
+    await writeFile(
+      join(root, "apps", "desktop", "dist", "assets", "index.js"),
+      'const command = "alpha";',
+    );
+
+    const result = await run(
+      process.execPath,
+      [
+        join(root, "scripts", "check-desktop-command-surface.mjs"),
+        "--mode",
+        "all",
+        "--json",
+      ],
+      { cwd: tmpdir(), stdio: ["ignore", "pipe", "pipe"] },
+    );
+
+    assert.equal(result.code, 1);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(JSON.parse(result.stdout), {
+      registeredCommands: ["alpha", "beta"],
+      sourceCommands: ["alpha", "gamma"],
+      bundledCommands: ["alpha"],
+      dynamicInvocations: [],
+      differences: {
+        missingRegistrations: ["gamma"],
+        registeredOnly: ["beta"],
+        bundleOnly: [],
+        sourceNotBundled: ["gamma"],
+      },
+    });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
