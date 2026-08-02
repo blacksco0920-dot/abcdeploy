@@ -7,7 +7,7 @@
 - Stage: `implementing`
 - Review mode: `thorough`
 - Review/fix round: `0/2`
-- Implementer: pending dispatch
+- Implementer: `/root/task_1_command_parser`
 - Implementation commit: pending
 - Changed files: pending
 - RED evidence: pending
