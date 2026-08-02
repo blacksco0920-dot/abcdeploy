@@ -120,7 +120,7 @@
 
 - 18:03–18:32 CST 在绑定 worktree 根目录完成 fresh 验证。`pnpm check:project` exit 0（354 个文件、17 个必需文档），`pnpm check:secrets` exit 0（352 个跟踪文件），OpenSpec strict exit 0。命令面 Node 测试初次暴露本矩阵 `save_config_profile` 理由未重复具名证据；只修正允许范围内的矩阵文字后 fresh 重跑为 23/23、exit 0，未修改生产代码。
 - 完整 `pnpm check` exit 0：Rust desktop 134 项、deploy-core 108 项、integration 3 项，Vitest 36 files / 195 tests，release-manifest 2 项，desktop/site build、TypeScript、格式和 Clippy 均通过。desktop build 内再次得到 `registered/source/bundled=45/45/45`；fresh `--mode all --json` 同样 exit 0，`dynamicInvocations` 与四类差异均为 0。
-- 最终命令面相对初始 `registered=111` 删除 66 个公开注册 endpoint，保留 45 个生产 IPC；删除 4 个无生产用途的 runtime 依赖（3 个前端包和 `tauri-plugin-clipboard-manager`）。相对计划 base `24e0fc79f9bda0401362b4e93cb570774b4abfa8` 的最终跟踪差异为 45 个文件、2,637 行新增、5,604 行删除，净减少 2,967 行；该统计包含变更证据、门禁和测试资产。
+- 最终命令面相对初始 `registered=111` 删除 66 个公开注册 endpoint，保留 45 个生产 IPC；删除 4 个无生产用途的 runtime 依赖（3 个前端包和 `tauri-plugin-clipboard-manager`）。相对计划 base `24e0fc79f9bda0401362b4e93cb570774b4abfa8` 的最终跟踪差异为 45 个文件、2,638 行新增、5,604 行删除，净减少 2,966 行；该统计包含变更证据、门禁和测试资产。
 - worktree-local `pnpm codegraph:index`、`pnpm codegraph:sync`、`pnpm codegraph:status` 均 exit 0：216 个文件、3,006 个节点、8,936 条边，无 pending/stale 文件；忽略的 `.codegraph/` 没有进入跟踪状态。
 - `pnpm tauri:build:app` 于 18:05:38 CST 开始并 exit 0，构建产物 mtime 为 18:08:40 CST。精确路径为 `/Users/chanjack/Documents/DeployWorkspace/deploydesk/.worktrees/retire-legacy-desktop-command-surface/target/release/bundle/macos/ABCDeploy.app`；可执行文件为 thin arm64。`codesign --verify --deep --strict --verbose=2` exit 0，Identifier 为 `cloud.finagent.abcdeploy`，Authority 为 `Apple Development: blacksco@163.com (PGL5DHKHQH)`；本地测试包按设计未 notarize，未生成 DMG 或任何发布资产。
 
