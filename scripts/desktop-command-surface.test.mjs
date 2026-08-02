@@ -332,7 +332,85 @@ invoke("after_catch");`,
   assert.deepEqual(result.unsupportedInvocations, []);
 });
 
-test("extractSourceCommands 收集命名空间 invoke 的静态命令并报告动态命令", () => {
+test("extractSourceCommands 不把普通对象、绑定和 JSX 的 invoke 属性名当成导入引用", () => {
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+const options = { invoke: ordinaryInvoke };
+const { invoke: localInvoke } = options;
+const view = <Widget invoke={localInvoke} />;
+void view;
+invoke("real_command");`,
+    "/virtual/ordinary-invoke-properties.tsx",
+  );
+
+  assert.deepEqual(result.commands, ["real_command"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, []);
+});
+
+test("extractSourceCommands 拒绝导入 invoke 的可选直接调用", () => {
+  const filePath = "/virtual/optional-invoke.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+invoke?.("optional_command");
+invoke("direct_command");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, ["direct_command"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 2,
+      reason: "导入的 invoke 绑定不支持可选调用",
+    },
+  ]);
+});
+
+test("extractSourceCommands 在计算属性的命名空间 invoke 访问前就拒绝命名空间导入", () => {
+  const filePath = "/virtual/namespace-element-access.ts";
+  const result = extractSourceCommands(
+    `import * as desktopCore from "@tauri-apps/api/core";
+const member = "invoke";
+desktopCore[member]("element_access");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 1,
+      reason: "不支持 @tauri-apps/api/core 的命名空间导入；请具名导入 invoke",
+    },
+  ]);
+});
+
+test("extractSourceCommands 以命名空间导入诊断覆盖别名、回调和重赋值", () => {
+  const filePath = "/virtual/namespace-value-flows.ts";
+  const result = extractSourceCommands(
+    `import * as desktopCore from "@tauri-apps/api/core";
+const desktopAlias = desktopCore;
+registerCallback(desktopCore);
+desktopCore = ordinaryCore;
+desktopAlias.invoke("not_proven");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 1,
+      reason: "不支持 @tauri-apps/api/core 的命名空间导入；请具名导入 invoke",
+    },
+  ]);
+});
+
+test("extractSourceCommands 拒绝命名空间导入而不猜测其静态或动态调用", () => {
   const filePath = "/virtual/namespace-invoke.ts";
   const result = extractSourceCommands(
     `import * as desktopCore from "@tauri-apps/api/core";
@@ -341,14 +419,18 @@ desktopCore.invoke(namespaceCommand);`,
     filePath,
   );
 
-  assert.deepEqual(result.commands, ["namespace_static"]);
-  assert.deepEqual(
-    result.dynamicInvocations.map(({ file, line }) => ({ file, line })),
-    [{ file: filePath, line: 3 }],
-  );
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 1,
+      reason: "不支持 @tauri-apps/api/core 的命名空间导入；请具名导入 invoke",
+    },
+  ]);
 });
 
-test("extractSourceCommands 传播一跳本地 invoke 别名的静态与动态调用", () => {
+test("extractSourceCommands 拒绝把具名导入的 invoke 保存为本地别名", () => {
   const filePath = "/virtual/local-invoke-alias.ts";
   const result = extractSourceCommands(
     `import { invoke } from "@tauri-apps/api/core";
@@ -358,15 +440,18 @@ callDesktop(aliasCommand);`,
     filePath,
   );
 
-  assert.deepEqual(result.commands, ["alias_static"]);
-  assert.deepEqual(
-    result.dynamicInvocations.map(({ file, line }) => ({ file, line })),
-    [{ file: filePath, line: 4 }],
-  );
-  assert.deepEqual(result.unsupportedInvocations, []);
+  assert.deepEqual(result.commands, []);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 2,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
+    },
+  ]);
 });
 
-test("extractSourceCommands 解开直接调用和一跳 const 别名的 TypeScript 透明表达式", () => {
+test("extractSourceCommands 只解开具名导入直接调用的 TypeScript 透明表达式", () => {
   const result = extractSourceCommands(
     `import { invoke } from "@tauri-apps/api/core";
 (invoke)("parenthesized");
@@ -385,13 +470,53 @@ callDesktop("wrapped_alias");`,
     "parenthesized",
     "satisfies_expression",
     "type_assertion",
-    "wrapped_alias",
   ]);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: "/virtual/transparent-invoke.ts",
+      line: 7,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
+    },
+  ]);
+});
+
+test("extractSourceCommands 忽略 type-only export 中的导入 invoke 引用", () => {
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+type InvokeType = typeof invoke;
+export type { invoke };
+export { type invoke as ExportedInvoke };
+invoke("real_command");`,
+    "/virtual/type-only-invoke-exports.ts",
+  );
+
+  assert.deepEqual(result.commands, ["real_command"]);
   assert.deepEqual(result.dynamicInvocations, []);
   assert.deepEqual(result.unsupportedInvocations, []);
 });
 
-test("extractSourceCommands 在嵌套块和函数中保持精确的一跳 const 来源", () => {
+test("extractSourceCommands 拒绝通过 value export 转发导入的 invoke 绑定", () => {
+  const filePath = "/virtual/exported-invoke-value.ts";
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+export { invoke };
+invoke("real_command");`,
+    filePath,
+  );
+
+  assert.deepEqual(result.commands, ["real_command"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: filePath,
+      line: 2,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
+    },
+  ]);
+});
+
+test("extractSourceCommands 在嵌套块和函数中拒绝保存导入 invoke 的本地别名", () => {
   const result = extractSourceCommands(
     `import { invoke } from "@tauri-apps/api/core";
 {
@@ -410,12 +535,23 @@ runNested();`,
     "/virtual/nested-const-alias.ts",
   );
 
-  assert.deepEqual(result.commands, ["nested_block", "nested_function"]);
+  assert.deepEqual(result.commands, []);
   assert.deepEqual(result.dynamicInvocations, []);
-  assert.deepEqual(result.unsupportedInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: "/virtual/nested-const-alias.ts",
+      line: 3,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
+    },
+    {
+      file: "/virtual/nested-const-alias.ts",
+      line: 7,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
+    },
+  ]);
 });
 
-test("extractSourceCommands 忽略遮蔽命名空间与本地别名的非 Tauri 调用", () => {
+test("extractSourceCommands 拒绝命名空间和本地别名但仍忽略遮蔽的非 Tauri 调用", () => {
   const result = extractSourceCommands(
     `import { invoke } from "@tauri-apps/api/core";
 import * as desktopCore from "@tauri-apps/api/core";
@@ -429,8 +565,20 @@ function runWithLocalBindings(callDesktop, desktopCore) {
     "/virtual/shadowed-invoke-forms.ts",
   );
 
-  assert.deepEqual(result.commands, ["real_alias", "real_namespace"]);
+  assert.deepEqual(result.commands, []);
   assert.deepEqual(result.dynamicInvocations, []);
+  assert.deepEqual(result.unsupportedInvocations, [
+    {
+      file: "/virtual/shadowed-invoke-forms.ts",
+      line: 2,
+      reason: "不支持 @tauri-apps/api/core 的命名空间导入；请具名导入 invoke",
+    },
+    {
+      file: "/virtual/shadowed-invoke-forms.ts",
+      line: 3,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
+    },
+  ]);
 });
 
 test("extractSourceCommands 对可变和重赋值别名给出精确拒绝位置", () => {
@@ -450,12 +598,7 @@ callDesktop("after_reassignment");`,
     {
       file: filePath,
       line: 2,
-      reason: "invoke 别名必须使用单一 const 声明",
-    },
-    {
-      file: filePath,
-      line: 4,
-      reason: "invoke 别名不能重新赋值",
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
   ]);
 });
@@ -478,12 +621,7 @@ callDesktop("not_proven");`,
     {
       file: filePath,
       line: 2,
-      reason: "invoke 别名必须使用单一 const 声明",
-    },
-    {
-      file: filePath,
-      line: 4,
-      reason: "invoke 别名不能重新赋值",
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
   ]);
 });
@@ -505,8 +643,8 @@ callDesktop("not_proven_anywhere");`,
   assert.deepEqual(result.unsupportedInvocations, [
     {
       file: filePath,
-      line: 4,
-      reason: "invoke 别名不能重新赋值",
+      line: 2,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
   ]);
 });
@@ -526,8 +664,8 @@ callDesktop("must_not_be_counted");`,
   assert.deepEqual(result.unsupportedInvocations, [
     {
       file: filePath,
-      line: 3,
-      reason: "invoke 别名不能重新赋值",
+      line: 2,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
   ]);
 });
@@ -552,18 +690,18 @@ deferredAlias("deferred_command");`,
   assert.deepEqual(result.unsupportedInvocations, [
     {
       file: filePath,
-      line: 3,
-      reason: "invoke 别名不支持解构",
+      line: 2,
+      reason: "不支持 @tauri-apps/api/core 的命名空间导入；请具名导入 invoke",
     },
     {
       file: filePath,
-      line: 4,
-      reason: "invoke 别名不支持解构",
+      line: 3,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
     {
       file: filePath,
       line: 6,
-      reason: "invoke 别名必须在 const 声明中直接初始化",
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
   ]);
 });
@@ -586,12 +724,12 @@ secondHopAlias("second_hop_command");`,
     {
       file: filePath,
       line: 2,
-      reason: "invoke 别名必须直接引用导入绑定",
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
     {
       file: filePath,
-      line: 4,
-      reason: "invoke 别名只支持一跳 const 引用",
+      line: 3,
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
   ]);
 });
@@ -612,18 +750,18 @@ desktopCore["invoke"]("element_access");`,
   assert.deepEqual(result.unsupportedInvocations, [
     {
       file: filePath,
+      line: 2,
+      reason: "不支持 @tauri-apps/api/core 的命名空间导入；请具名导入 invoke",
+    },
+    {
+      file: filePath,
       line: 3,
-      reason: "invoke 引用只能用于直接调用或一跳 const 别名",
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
     {
       file: filePath,
       line: 4,
-      reason: "invoke 引用只能用于直接调用或一跳 const 别名",
-    },
-    {
-      file: filePath,
-      line: 5,
-      reason: "命名空间 invoke 必须使用 .invoke 直接访问",
+      reason: "导入的 invoke 绑定只能作为非可选直接调用的被调用方",
     },
   ]);
 });

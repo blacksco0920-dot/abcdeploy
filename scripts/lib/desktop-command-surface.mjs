@@ -3,17 +3,9 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
-  addUnsupportedBindingNames,
-  assignmentPatternSelectsNamespaceInvoke,
-  bindingPatternSelectsNamespaceInvoke,
-  expressionContainsInvokeReference,
-  isAllowedInvokeReferenceUse,
-  isAssignmentOperator,
-  isConstVariableDeclaration,
-  isDeclarationBindingName,
-  resolveAssignedBindings,
-  resolveInvokeReference,
-  resolveUnsupportedNamespaceInvokeReference,
+  createTypeScriptBindingContext,
+  directCallForIdentifier,
+  valueSymbolForIdentifier,
 } from "./typescript-invoke-bindings.mjs";
 
 const require = createRequire(
@@ -25,25 +17,24 @@ const CORE_MODULE = "@tauri-apps/api/core";
 const MISSING_BUNDLE_MESSAGE = "生产 bundle 构建产物缺失，请先运行 Vite build";
 const HANDLER_PATTERN = /tauri\s*::\s*generate_handler\s*!\s*\[([^\]]*)\]/g;
 const RUST_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const NAMESPACE_IMPORT_REASON =
+  "不支持 @tauri-apps/api/core 的命名空间导入；请具名导入 invoke";
+const OPTIONAL_CALL_REASON = "导入的 invoke 绑定不支持可选调用";
+const UNSUPPORTED_VALUE_USE_REASON =
+  "导入的 invoke 绑定只能作为非可选直接调用的被调用方";
 
 export function extractSourceCommands(sourceText, filePath) {
-  const sourceFile = ts.createSourceFile(
-    filePath,
+  const { checker, sourceFile } = createTypeScriptBindingContext(
     sourceText,
-    ts.ScriptTarget.Latest,
-    true,
-    filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    filePath,
   );
-  const bindingKinds = new Map();
-  const invalidInvokeBindings = new Set();
+  const importedInvokeSymbols = new Set();
   const commands = [];
   const dynamicInvocations = [];
   const unsupportedInvocations = new Map();
-  const unsupportedContainers = new WeakSet();
 
   function reportUnsupported(node, reason) {
     const position = node.getStart(sourceFile);
-    unsupportedContainers.add(node);
     unsupportedInvocations.set(`${position}:${reason}`, {
       ...sourceLocation(node, sourceFile),
       position,
@@ -65,194 +56,60 @@ export function extractSourceCommands(sourceText, filePath) {
     }
 
     if (ts.isNamespaceImport(bindings)) {
-      bindingKinds.set(bindings.name, { kind: "namespace", depth: 0 });
+      reportUnsupported(bindings.name, NAMESPACE_IMPORT_REASON);
       continue;
     }
 
+    if (statement.importClause?.isTypeOnly) {
+      continue;
+    }
     for (const element of bindings.elements) {
-      if ((element.propertyName?.text ?? element.name.text) === "invoke") {
-        bindingKinds.set(element.name, { kind: "invoke", depth: 0 });
-      }
-    }
-  }
-
-  function discoverConstAliases(node) {
-    if (
-      ts.isVariableDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.initializer
-    ) {
-      const target = resolveInvokeReference(node.initializer, bindingKinds);
       if (
-        target?.role.kind === "invoke" &&
-        target.role.depth === 0 &&
-        isConstVariableDeclaration(node)
+        !element.isTypeOnly &&
+        (element.propertyName?.text ?? element.name.text) === "invoke"
       ) {
-        bindingKinds.set(node.name, { kind: "invoke", depth: 1 });
+        const symbol = checker.getSymbolAtLocation(element.name);
+        if (symbol) {
+          importedInvokeSymbols.add(symbol);
+        }
       }
     }
-
-    ts.forEachChild(node, discoverConstAliases);
   }
 
-  discoverConstAliases(sourceFile);
-
-  function findUnsupportedInvokeForms(node) {
-    if (ts.isVariableDeclaration(node) && node.initializer) {
-      const target = resolveInvokeReference(node.initializer, bindingKinds);
-      const role = ts.isIdentifier(node.name)
-        ? bindingKinds.get(node.name)
-        : undefined;
-      const destructuresNamespaceInvoke =
-        bindingPatternSelectsNamespaceInvoke(
-          node.name,
-          node.initializer,
-          bindingKinds,
-        );
-
-      if (
-        role?.kind === "invoke" &&
-        role.depth === 1 &&
-        target?.role.kind === "invoke" &&
-        target.role.depth === 0 &&
-        isConstVariableDeclaration(node)
-      ) {
-        // This is the sole supported alias form.
-      } else if (
-        target?.role.kind === "invoke" ||
-        expressionContainsInvokeReference(node.initializer, bindingKinds) ||
-        destructuresNamespaceInvoke
-      ) {
-        let reason;
-        if (!ts.isIdentifier(node.name)) {
-          reason = "invoke 别名不支持解构";
-        } else if (target?.role.kind === "invoke" && target.role.depth === 1) {
-          reason = "invoke 别名只支持一跳 const 引用";
-        } else if (
-          target?.role.kind === "invoke" &&
-          target.role.depth === 0 &&
-          !isConstVariableDeclaration(node)
-        ) {
-          reason = "invoke 别名必须使用单一 const 声明";
-        } else {
-          reason = "invoke 别名必须直接引用导入绑定";
-        }
-
-        reportUnsupported(node, reason);
-        addUnsupportedBindingNames(node.name, bindingKinds);
-      }
+  function visit(node) {
+    if (ts.isTypeNode(node)) {
+      return;
     }
-
     if (
-      ts.isBinaryExpression(node) &&
-      isAssignmentOperator(node.operatorToken.kind)
+      (ts.isExportDeclaration(node) || ts.isExportSpecifier(node)) &&
+      node.isTypeOnly
     ) {
-      const assignedBindings = resolveAssignedBindings(node.left);
-      const knownInvokeBindings = assignedBindings.filter((binding) => {
-        const role = bindingKinds.get(binding);
-        return role?.kind === "invoke" || role?.kind === "unsupported";
-      });
-
-      if (knownInvokeBindings.length > 0) {
-        reportUnsupported(node, "invoke 别名不能重新赋值");
-        for (const binding of knownInvokeBindings) {
-          invalidInvokeBindings.add(binding);
-        }
-      } else if (
-        expressionContainsInvokeReference(node.right, bindingKinds) ||
-        assignmentPatternSelectsNamespaceInvoke(
-          node.left,
-          node.right,
-          bindingKinds,
-        )
-      ) {
-        reportUnsupported(
-          node,
-          "invoke 别名必须在 const 声明中直接初始化",
-        );
-        for (const binding of assignedBindings) {
-          bindingKinds.set(binding, { kind: "unsupported" });
-        }
-      }
-    } else if (
-      (ts.isPrefixUnaryExpression(node) ||
-        ts.isPostfixUnaryExpression(node)) &&
-      (node.operator === ts.SyntaxKind.PlusPlusToken ||
-        node.operator === ts.SyntaxKind.MinusMinusToken)
-    ) {
-      const assignedBindings = resolveAssignedBindings(node.operand);
-      const knownInvokeBindings = assignedBindings.filter((binding) => {
-        const role = bindingKinds.get(binding);
-        return role?.kind === "invoke" || role?.kind === "unsupported";
-      });
-      if (knownInvokeBindings.length > 0) {
-        reportUnsupported(node, "invoke 别名不能重新赋值");
-        for (const binding of knownInvokeBindings) {
-          invalidInvokeBindings.add(binding);
-        }
-      }
-    }
-
-    ts.forEachChild(node, findUnsupportedInvokeForms);
-  }
-
-  findUnsupportedInvokeForms(sourceFile);
-
-  function validateInvokeReferenceUses(node) {
-    if (unsupportedContainers.has(node) || ts.isTypeNode(node)) {
       return;
     }
     if (ts.isImportDeclaration(node)) {
       return;
     }
 
-    if (resolveUnsupportedNamespaceInvokeReference(node, bindingKinds)) {
-      reportUnsupported(
-        node,
-        "命名空间 invoke 必须使用 .invoke 直接访问",
-      );
-      return;
-    }
-
-    const target = resolveInvokeReference(node, bindingKinds);
     if (
-      target?.role.kind === "invoke" ||
-      target?.role.kind === "unsupported"
+      ts.isIdentifier(node) &&
+      importedInvokeSymbols.has(valueSymbolForIdentifier(checker, node))
     ) {
-      if (
-        isDeclarationBindingName(node) ||
-        isAllowedInvokeReferenceUse(node, target, bindingKinds)
-      ) {
+      const call = directCallForIdentifier(node);
+      if (!call) {
+        reportUnsupported(node, UNSUPPORTED_VALUE_USE_REASON);
         return;
       }
-      reportUnsupported(
-        node,
-        "invoke 引用只能用于直接调用或一跳 const 别名",
-      );
-      return;
-    }
-
-    ts.forEachChild(node, validateInvokeReferenceUses);
-  }
-
-  validateInvokeReferenceUses(sourceFile);
-
-  function visit(node) {
-    const target = ts.isCallExpression(node)
-      ? resolveInvokeReference(node.expression, bindingKinds)
-      : undefined;
-
-    if (
-      ts.isCallExpression(node) &&
-      target?.role.kind === "invoke" &&
-      !invalidInvokeBindings.has(target.binding)
-    ) {
-      const command = node.arguments[0];
+      if (call.questionDotToken) {
+        reportUnsupported(node, OPTIONAL_CALL_REASON);
+        return;
+      }
+      const command = call.arguments[0];
       if (command && ts.isStringLiteral(command)) {
         commands.push(command.text);
       } else {
-        dynamicInvocations.push(sourceLocation(node, sourceFile));
+        dynamicInvocations.push(sourceLocation(call, sourceFile));
       }
+      return;
     }
 
     ts.forEachChild(node, visit);
@@ -501,7 +358,6 @@ async function productionSourceFiles(directory) {
 
   return files.sort();
 }
-
 
 function sourceLocation(node, sourceFile) {
   const { line } = sourceFile.getLineAndCharacterOfPosition(
