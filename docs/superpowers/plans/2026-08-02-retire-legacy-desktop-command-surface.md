@@ -635,7 +635,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 11: 同步实现文档、OpenSpec 证据与 CodeGraph
 
-- [ ] Task 11 完成：实现文档、OpenSpec 证据与 CodeGraph 完成同步
+- [x] Task 11 完成：实现文档、OpenSpec 证据与 CodeGraph 完成同步
 
 **Files:**
 - Modify: `docs/internal/implementation-inventory.md`
@@ -647,7 +647,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: 最终 CLI JSON、`git diff --stat base-ref`、测试结果与 CodeGraph 状态。
 - Produces: 新会话能从稳定文档定位最终生产命令入口、门禁位置、保留迁移债务和自动验证证据；不复制整张调用图到长期文档。
 
-- [ ] **Step 1: 运行文档事实采集**
+- [x] **Step 1: 运行文档事实采集**
 
   Run: `node scripts/check-desktop-command-surface.mjs --mode all --json`
 
@@ -661,19 +661,19 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: 三集合相等；CodeGraph 无 pending/stale 文件。
 
-- [ ] **Step 2: 更新实现证据索引**
+- [x] **Step 2: 更新实现证据索引**
 
   在 `docs/internal/implementation-inventory.md` 写入最终数量、`lib.rs` handler、`api.ts/api/` 客户端、静态门禁、bundle 门禁和仍保留的迁移/恢复入口；删除所有指向已退役命令的稳定入口描述。
 
-- [ ] **Step 3: 更新当前状态但不升级验收**
+- [x] **Step 3: 更新当前状态但不升级验收**
 
   在 `docs/current-state.md` 添加带日期的自动审计事实、净删除规模和门禁结果；本机运行、更新、恢复仍为 `IMPLEMENTED_UNVERIFIED`，服务器正向主线仍保持原 `VERIFIED`，不把本次测试写成新用户验收。
 
-- [ ] **Step 4: 完成矩阵并复核 OpenSpec 任务账本**
+- [x] **Step 4: 完成矩阵并复核 OpenSpec 任务账本**
 
   矩阵记录最终三集合数量、每个命令的最终处置和验证命令；复核主协调会话已按各 Task 的审查结果增量勾选 `openspec/.../tasks.md` 1.1–4.3，发现不一致时只报告缺口，不由实现者修改复选框。4.4–4.5 留到 Task 12 验证后由主协调会话勾选。
 
-- [ ] **Step 5: 运行文档 Green**
+- [x] **Step 5: 运行文档 Green**
 
   Run: `pnpm check:project`
 
@@ -683,7 +683,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；长期文档没有复制 111 行矩阵，也没有新增用户验收声明。
 
-- [ ] **Step 6: 提交文档和图谱同步**
+- [x] **Step 6: 提交文档和图谱同步**
 
   ```bash
   git add docs/internal/implementation-inventory.md docs/current-state.md openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md openspec/changes/retire-legacy-desktop-command-surface/tasks.md .codegraph
