@@ -1,8 +1,8 @@
 use super::{
-    Arc, BTreeMap, BTreeSet, Command, DeploymentPlan, Duration, InspectionReport, Instant,
-    LOCAL_START_CANCELLED, LOCAL_START_PROCESSES, LocalPreviewService, LocalPreviewStatus,
-    ManagedLocalPortOwner, Mutex, Path, PathBuf, ProjectManifest, Read, ServiceKind, Stdio,
-    TcpListener, WorkspaceState, fs, local_compose_path, public_error, system_command,
+    Arc, BTreeMap, BTreeSet, Command, Duration, InspectionReport, Instant, LOCAL_START_CANCELLED,
+    LOCAL_START_PROCESSES, LocalPreviewService, LocalPreviewStatus, ManagedLocalPortOwner, Mutex,
+    Path, PathBuf, ProjectManifest, Read, ServiceKind, Stdio, TcpListener, WorkspaceState, fs,
+    local_compose_path, public_error, system_command,
 };
 
 #[derive(Clone, Copy)]
@@ -30,6 +30,25 @@ pub(super) fn local_start_cancelled(task_key: &str) -> bool {
         .get_or_init(|| Mutex::new(BTreeSet::new()))
         .lock()
         .is_ok_and(|cancelled| cancelled.contains(task_key))
+}
+
+#[cfg(test)]
+pub(super) fn cancel_local_start(root: &Path) -> Result<bool, String> {
+    let key = root.to_string_lossy().into_owned();
+    let active = LOCAL_START_PROCESSES
+        .get_or_init(|| Mutex::new(BTreeMap::new()))
+        .lock()
+        .map_err(|_| "AD-LOC-105：无法读取本机启动任务状态，请重新尝试".to_string())?
+        .contains_key(&key);
+    if !active {
+        return Ok(false);
+    }
+    LOCAL_START_CANCELLED
+        .get_or_init(|| Mutex::new(BTreeSet::new()))
+        .lock()
+        .map_err(|_| "AD-LOC-105：无法停止本机启动任务，请重新尝试".to_string())?
+        .insert(key);
+    Ok(true)
 }
 
 pub(super) fn set_local_start_pid(task_key: &str, pid: Option<u32>) -> std::io::Result<()> {
@@ -726,33 +745,4 @@ pub(super) fn runnable_local_service_ids(status: &LocalPreviewStatus) -> Vec<Str
         .filter(|service| service.build_strategy != "needs_input")
         .map(|service| service.id.clone())
         .collect()
-}
-
-pub(super) fn planned_local_preview_status(
-    root: &Path,
-    inspection: &InspectionReport,
-    manifest: &deploy_core::ProjectManifest,
-    plan: &DeploymentPlan,
-    written_files: Vec<String>,
-) -> LocalPreviewStatus {
-    let mut status = local_preview_status(root, inspection, manifest, written_files);
-    let blocked_services = plan
-        .blockers
-        .iter()
-        .filter(|blocker| blocker.code == "AD-CTR-101")
-        .filter_map(|blocker| blocker.service.clone())
-        .collect::<BTreeSet<_>>();
-    apply_planned_local_build_strategies(&mut status, &blocked_services);
-    status
-}
-
-pub(super) fn apply_planned_local_build_strategies(
-    status: &mut LocalPreviewStatus,
-    blocked_services: &BTreeSet<String>,
-) {
-    for service in &mut status.services {
-        if service.build_strategy == "needs_input" && !blocked_services.contains(&service.id) {
-            service.build_strategy = "generated".to_string();
-        }
-    }
 }

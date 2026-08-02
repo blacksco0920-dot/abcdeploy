@@ -11,16 +11,15 @@ use super::{
     CnbTokenResolutionError, DeploymentArtifact, DeploymentPath, DeploymentRun,
     LocalPreviewService, LocalPreviewStatus, ProjectRelinkIdentity, REMOTE_DEPENDENCY_SCRIPT,
     RegistryConfig, ServerRouteProblem, ServerRouteProblemKind, StoredCnbToken, WorkspaceState,
-    apply_container_log_diagnostic, apply_deployed_service_states,
-    apply_planned_local_build_strategies, apply_public_route_checks, apply_runner_log_diagnostic,
-    apply_server_route_problem, apply_server_route_problems, apply_server_route_takeover_problem,
-    apply_version_title, build_environment_for_event, build_serial_for_revision, cache_secret,
-    cached_cnb_account, cached_secret, caddy_certificate_reload_script,
-    caddy_main_route_rewrite_shell_function, caddy_route_declared_shell_function,
-    certificate_retry_allowed, cloud_setup_required, cnb_account_from_responses,
-    cnb_build_history_error, cnb_keyring_issue, cnb_public_error, cnb_secret_filename,
-    container_runtime_env, create_deployment_git_snapshot, deployment_manifest,
-    deployment_needs_public_route_recheck, deployment_owned_paths,
+    apply_container_log_diagnostic, apply_deployed_service_states, apply_public_route_checks,
+    apply_runner_log_diagnostic, apply_server_route_problem, apply_server_route_problems,
+    apply_server_route_takeover_problem, apply_version_title, build_environment_for_event,
+    build_serial_for_revision, cache_secret, cached_cnb_account, cached_secret,
+    caddy_certificate_reload_script, caddy_main_route_rewrite_shell_function,
+    caddy_route_declared_shell_function, certificate_retry_allowed, cloud_setup_required,
+    cnb_account_from_responses, cnb_build_history_error, cnb_keyring_issue, cnb_public_error,
+    cnb_secret_filename, container_runtime_env, create_deployment_git_snapshot,
+    deployment_manifest, deployment_needs_public_route_recheck, deployment_owned_paths,
     deployment_path_managed_runtime_variables, deployment_path_manifest,
     deployment_path_owns_history_reconciliation, deployment_routing_manifest,
     ensure_git_repository_for_sync, ensure_runtime_template_variables, evict_cached_secret,
@@ -29,23 +28,22 @@ use super::{
     interrupted_route_check_message, is_deployment_internal_path, is_deployment_owned_path,
     is_production_approval_build, latest_success_serials_by_environment,
     load_existing_project_config, local_build_failure_summary, local_build_proxy_attempts,
-    local_database_name, local_git_title, local_infrastructure_compose, local_start_failure,
-    looks_like_dependency_network_text, ordered_build_records, overlay_server_route_problems,
-    parse_deploy_environment, parse_deployed_service_states, parse_deployment_artifacts,
-    parse_local_container_readiness, parse_managed_local_port_owner, parse_runtime_environment,
-    pause_deployment_path_after_deploy_error, pause_public_route_inspection,
-    pilot_can_resume_existing_artifacts, prepare_deployment_path_retry_inner,
-    provider_check_failure, readable_version_title, remember_cnb_account, remote_dependency_error,
-    replace_managed_runtime_dependencies, repository_identity, required_runtime_variables,
-    resolve_cnb_token_sources, rollback_script, run_git_command, run_local_build_with_recovery,
-    runnable_local_service_ids, runtime_config_key, runtime_config_template, runtime_defaults,
-    runtime_secret_key, safe_postgres_identifier, same_artifact_digests,
-    save_cnb_connection_metadata_best_effort, serialize_manifest, server_route_activation_script,
-    services_use_public_generated_dockerfiles, split_deployment_error,
-    stage_deployment_owned_files, stage_key, system_command, update_run_from_cnb,
-    url_encode_userinfo, valid_registry_host, validate_deployment_routing_manifest,
-    validate_git_branch, validate_project_relink, validate_repository_slug, verify_public_routes,
-    write_project_local_env,
+    local_git_title, local_start_failure, looks_like_dependency_network_text,
+    ordered_build_records, overlay_server_route_problems, parse_deploy_environment,
+    parse_deployed_service_states, parse_deployment_artifacts, parse_managed_local_port_owner,
+    parse_runtime_environment, pause_deployment_path_after_deploy_error,
+    pause_public_route_inspection, pilot_can_resume_existing_artifacts,
+    prepare_deployment_path_retry_inner, provider_check_failure, readable_version_title,
+    remember_cnb_account, remote_dependency_error, replace_managed_runtime_dependencies,
+    repository_identity, required_runtime_variables, resolve_cnb_token_sources, rollback_script,
+    run_git_command, run_local_build_with_recovery, runnable_local_service_ids, runtime_config_key,
+    runtime_config_template, runtime_defaults, runtime_secret_key, safe_postgres_identifier,
+    same_artifact_digests, save_cnb_connection_metadata_best_effort, serialize_manifest,
+    server_route_activation_script, services_use_public_generated_dockerfiles,
+    split_deployment_error, stage_deployment_owned_files, stage_key, system_command,
+    update_run_from_cnb, url_encode_userinfo, valid_registry_host,
+    validate_deployment_routing_manifest, validate_git_branch, validate_project_relink,
+    validate_repository_slug, verify_public_routes,
 };
 use deploy_core::error::DeployError;
 use deploy_core::model::{EnvironmentName, PackageManager, ProviderCheck, PublicRouteStatus};
@@ -275,32 +273,6 @@ fn provider_failures_keep_the_bootstrap_error_code() {
 }
 
 #[test]
-fn local_status_reports_files_the_plan_can_reliably_generate_as_runnable() {
-    let service = |id: &str| LocalPreviewService {
-        id: id.to_string(),
-        kind: "web".to_string(),
-        build_strategy: "needs_input".to_string(),
-        dockerfile: format!(".deploydesk/generated/build/Dockerfile.{id}"),
-        host_port: Some(4300),
-        url: None,
-        running: false,
-    };
-    let mut status = LocalPreviewStatus {
-        state: "not_prepared".to_string(),
-        message: String::new(),
-        compose_path: "/tmp/compose.yml".to_string(),
-        env_ready: false,
-        services: vec![service("api"), service("toolbox")],
-        written_files: Vec::new(),
-    };
-
-    apply_planned_local_build_strategies(&mut status, &BTreeSet::from(["toolbox".to_string()]));
-
-    assert_eq!(status.services[0].build_strategy, "generated");
-    assert_eq!(status.services[1].build_strategy, "needs_input");
-}
-
-#[test]
 fn registry_validation_accepts_hosts_but_rejects_urls_and_paths() {
     assert!(valid_registry_host("ccr.ccs.tencentyun.com"));
     assert!(valid_registry_host("registry.example.com"));
@@ -480,41 +452,6 @@ fn recovers_a_version_title_from_local_git_history() {
     assert_eq!(
         local_git_title(project.path(), revision.trim()).as_deref(),
         Some("修复登录并优化首页速度")
-    );
-}
-
-#[test]
-fn local_infrastructure_is_loopback_only_and_project_databases_are_isolated() {
-    let compose = local_infrastructure_compose();
-    serde_yaml_ng::from_str::<serde_yaml_ng::Value>(compose).expect("valid Compose YAML");
-    assert!(compose.contains("127.0.0.1:${POSTGRES_PORT}:5432"));
-    assert!(compose.contains("127.0.0.1:${REDIS_PORT}:6379"));
-    assert!(!compose.contains("password="));
-
-    let first = local_database_name(Path::new("/tmp/project-a"), EnvironmentName::Development);
-    let second = local_database_name(Path::new("/tmp/project-b"), EnvironmentName::Development);
-    let production = local_database_name(Path::new("/tmp/project-a"), EnvironmentName::Production);
-    assert_ne!(first, second);
-    assert_ne!(first, production);
-    assert!(
-        first
-            .bytes()
-            .all(|byte| { byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_' })
-    );
-}
-
-#[test]
-fn reads_all_local_infrastructure_states_from_one_docker_listing() {
-    let output = concat!(
-        "abcdeploy-local-redis\trunning\tUp 2 hours (healthy)\n",
-        "abcdeploy-local-postgres\trunning\tUp 2 hours (health: starting)\n",
-    );
-    assert_eq!(parse_local_container_readiness(output), (false, true));
-    assert_eq!(
-        parse_local_container_readiness(
-            "abcdeploy-local-postgres\texited\tExited (0) 1 minute ago\n"
-        ),
-        (false, false)
     );
 }
 
@@ -2612,36 +2549,6 @@ fn reusable_connections_only_fill_empty_runtime_values() {
 }
 
 #[test]
-fn local_env_generation_requires_confirmation_and_keeps_a_backup() {
-    let project = tempdir().expect("project");
-    fs::write(project.path().join(".env"), "OLD=value\n").expect("existing env");
-
-    let preview =
-        write_project_local_env(project.path(), "NEW=value\n", false).expect("preview overwrite");
-    assert!(preview.requires_confirmation);
-    assert!(!preview.written);
-    assert_eq!(
-        fs::read_to_string(project.path().join(".env")).expect("unchanged"),
-        "OLD=value\n"
-    );
-
-    let result =
-        write_project_local_env(project.path(), "NEW=value\n", true).expect("confirmed write");
-    assert!(result.written);
-    assert!(result.backup_path.is_some());
-    assert_eq!(
-        fs::read_to_string(project.path().join(".env")).expect("new env"),
-        "NEW=value\n"
-    );
-    assert!(
-        fs::read_to_string(project.path().join(".gitignore"))
-            .expect("gitignore")
-            .lines()
-            .any(|line| line == ".env")
-    );
-}
-
-#[test]
 fn recognizes_a_broken_docker_proxy_for_automatic_retry() {
     assert_eq!(local_build_proxy_attempts(false), [false, true]);
     assert_eq!(local_build_proxy_attempts(true), [true, false]);
@@ -2803,7 +2710,7 @@ fn stops_a_silent_local_command_instead_of_waiting_forever() {
 }
 
 #[test]
-fn lets_the_user_cancel_a_running_local_command() {
+fn retained_local_run_cancellation_stops_a_running_child_process() {
     let project = tempdir().expect("project");
     let task = super::LocalStartTask::begin(project.path()).expect("start task");
     let task_key = task.key.clone();
@@ -2820,10 +2727,7 @@ fn lets_the_user_cancel_a_running_local_command() {
         )
     });
     std::thread::sleep(std::time::Duration::from_millis(100));
-    assert!(
-        super::cancel_local_preview_start(project.path().to_string_lossy().into_owned())
-            .expect("cancel task")
-    );
+    assert!(super::cancel_local_start(project.path()).expect("cancel task"));
     let error = process
         .join()
         .expect("command thread")

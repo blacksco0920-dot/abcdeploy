@@ -72,18 +72,15 @@ use deployment_state::{
     resume_deployment_from_verified_server_state,
 };
 use local_process::{
-    compose_output_text, ensure_local_service_ports_available, local_build_failure,
-    local_command_error, local_preview_status, local_start_command_limits, local_start_failure,
-    managed_local_port_owner, planned_local_preview_status, preferred_local_build_clear_proxy,
-    remember_local_build_proxy_mode, run_local_compose_build_with_recovery,
-    run_tracked_local_command, runnable_local_service_ids,
+    ensure_local_service_ports_available, local_build_failure, local_command_error,
+    local_preview_status, local_start_command_limits, local_start_failure,
+    preferred_local_build_clear_proxy, remember_local_build_proxy_mode,
+    run_local_compose_build_with_recovery, run_tracked_local_command, runnable_local_service_ids,
     services_use_public_generated_dockerfiles, stop_local_start_processes,
 };
 use local_runtime::{
-    local_compose_path, local_development_build_services, local_development_services,
-    local_infrastructure_compose, local_infrastructure_failure, local_infrastructure_port,
-    local_infrastructure_secret, local_infrastructure_status, local_project_plan,
-    save_local_infrastructure_profiles, write_local_development_compose,
+    local_compose_path, local_development_build_services, local_infrastructure_secret,
+    local_project_plan, write_local_development_compose,
 };
 use mvp_environment::{
     prepare_managed_server_deployment, prepare_managed_server_environment,
@@ -104,12 +101,12 @@ use source_snapshots::{
 
 #[cfg(test)]
 use local_process::{
-    LocalCommandLimits, apply_planned_local_build_strategies, local_build_failure_summary,
+    LocalCommandLimits, cancel_local_start, local_build_failure_summary,
     local_build_proxy_attempts, looks_like_dependency_network_text, parse_managed_local_port_owner,
     run_local_build_with_recovery,
 };
 #[cfg(test)]
-use local_runtime::{development_package_command, parse_local_container_readiness};
+use local_runtime::development_package_command;
 #[cfg(test)]
 use pilot_validation::pilot_can_resume_existing_artifacts;
 #[cfg(test)]
@@ -132,8 +129,6 @@ const CNB_ACCOUNT_CACHE_KEY: &str = "cnb.account.summary";
 const CNB_KEYCHAIN_UNAVAILABLE_ERROR: &str =
     "AD-CNB-108：无法读取系统密钥库中的 CNB 授权，请重新打开应用；仍未恢复时更新 CNB 授权";
 const CNB_LOGIN_MISSING_ERROR: &str = "CNB 登录已失效，请重新连接后继续";
-const LOCAL_POSTGRES_PROFILE_ID: &str = "profile-local-postgres";
-const LOCAL_REDIS_PROFILE_ID: &str = "profile-local-redis";
 const REMOTE_INFRA_NETWORK: &str = "abcdeploy-infra";
 static SECRET_CACHE: OnceLock<Mutex<BTreeMap<String, Zeroizing<String>>>> = OnceLock::new();
 static PREVIEW_TUNNELS: OnceLock<Mutex<BTreeMap<String, PreviewTunnelProcess>>> = OnceLock::new();
@@ -381,23 +376,6 @@ fn default_profile_scope() -> String {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct RuntimeConfigRecommendation {
-    content: String,
-    applied_profiles: Vec<String>,
-    filled_variables: Vec<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct LocalEnvWriteResult {
-    path: String,
-    written: bool,
-    requires_confirmation: bool,
-    backup_path: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct LocalPreviewService {
     id: String,
     kind: String,
@@ -419,14 +397,6 @@ struct LocalPreviewStatus {
     written_files: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct LocalDevelopmentSupport {
-    available: bool,
-    service_count: usize,
-    message: String,
-}
-
 struct LocalDevelopmentService {
     id: String,
     command: String,
@@ -440,18 +410,6 @@ struct LocalDevelopmentService {
 struct ManagedLocalPortOwner {
     container_id: String,
     project: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct LocalInfrastructureStatus {
-    state: String,
-    message: String,
-    postgres_running: bool,
-    redis_running: bool,
-    postgres_port: u16,
-    redis_port: u16,
-    profiles_ready: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -1366,220 +1324,6 @@ fn set_environment_config_bindings(
 }
 
 #[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned command arguments.
-fn recommend_runtime_config(
-    path: String,
-    environment: String,
-    profile_ids: Vec<String>,
-    content: Option<String>,
-    state: State<'_, WorkspaceState>,
-) -> Result<RuntimeConfigRecommendation, String> {
-    let runtime_environment = parse_runtime_environment(&environment)?;
-    let stored_content = if content.is_none() {
-        Some(load_runtime_config(
-            path.clone(),
-            environment.clone(),
-            true,
-        )?)
-    } else {
-        None
-    };
-    let all_profiles = list_config_profiles(state)?;
-    let selected = if profile_ids.is_empty() {
-        all_profiles
-            .iter()
-            .filter(|profile| {
-                profile.is_default && profile_scope_supports(profile, runtime_environment)
-            })
-            .collect::<Vec<_>>()
-    } else {
-        profile_ids
-            .iter()
-            .map(|id| {
-                all_profiles
-                    .iter()
-                    .find(|profile| &profile.id == id)
-                    .ok_or_else(|| "所选配置中心连接已不存在".to_string())
-                    .and_then(|profile| {
-                        profile_scope_supports(profile, runtime_environment)
-                            .then_some(profile)
-                            .ok_or_else(|| "所选连接不适用于当前运行环境".to_string())
-                    })
-            })
-            .collect::<Result<Vec<_>, _>>()?
-    };
-    let mut suggestions = BTreeMap::new();
-    let mut applied_profiles = Vec::new();
-    for profile in selected {
-        let profile_values =
-            runtime_values_from_profile(profile, Path::new(&path), runtime_environment)?;
-        if !profile_values.is_empty() {
-            suggestions.extend(profile_values);
-            applied_profiles.push(profile.name.clone());
-        }
-    }
-    let source = content
-        .as_deref()
-        .or_else(|| {
-            stored_content
-                .as_ref()
-                .map(|current| current.content.as_str())
-        })
-        .ok_or_else(|| "无法读取当前运行配置".to_string())?;
-    for variable in empty_runtime_variables(source) {
-        if internal_runtime_secret(&variable) && !suggestions.contains_key(&variable) {
-            let value = load_or_generate_runtime_secret(Path::new(&path), &environment, &variable)?;
-            suggestions.insert(variable, value.to_string());
-        }
-    }
-    let (content, filled_variables) = fill_empty_runtime_values(source, &suggestions);
-    Ok(RuntimeConfigRecommendation {
-        content,
-        applied_profiles,
-        filled_variables,
-    })
-}
-
-fn profile_scope_supports(profile: &ConfigProfile, environment: EnvironmentName) -> bool {
-    profile.scope == "any"
-        || (profile.scope == "local" && environment == EnvironmentName::Development)
-        || (profile.scope == "remote" && environment != EnvironmentName::Development)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned command arguments.
-fn write_local_env(
-    path: String,
-    content: String,
-    overwrite: bool,
-) -> Result<LocalEnvWriteResult, String> {
-    write_project_local_env(Path::new(&path), &content, overwrite)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri injects app and managed state by value.
-async fn get_local_infrastructure_status(
-    app: tauri::AppHandle,
-) -> Result<LocalInfrastructureStatus, String> {
-    let directory = app.path().app_data_dir().map_err(public_error)?;
-    tokio::task::spawn_blocking(move || {
-        let state = app.state::<WorkspaceState>();
-        local_infrastructure_status(&directory, &state)
-    })
-    .await
-    .map_err(|_| "AD-INF-101：读取本机运行依赖状态时任务意外中断".to_string())?
-}
-
-#[tauri::command]
-async fn prepare_local_infrastructure(
-    app: tauri::AppHandle,
-    state: State<'_, WorkspaceState>,
-) -> Result<LocalInfrastructureStatus, String> {
-    let directory = app.path().app_data_dir().map_err(public_error)?;
-    let infra_directory = directory.join("local-infrastructure");
-    fs::create_dir_all(&infra_directory).map_err(public_error)?;
-    let compose_path = infra_directory.join("docker-compose.yml");
-    fs::write(&compose_path, local_infrastructure_compose()).map_err(public_error)?;
-
-    let postgres_port = local_infrastructure_port(
-        &state,
-        "local.infra.postgres.port",
-        55_432,
-        "abcdeploy-local-postgres",
-    )?;
-    let redis_port = local_infrastructure_port(
-        &state,
-        "local.infra.redis.port",
-        56_379,
-        "abcdeploy-local-redis",
-    )?;
-    let postgres_password = local_infrastructure_secret("local.infra.postgres.password")?;
-    let redis_password = local_infrastructure_secret("local.infra.redis.password")?;
-    let command_directory = infra_directory.clone();
-    let command_compose = compose_path.clone();
-    let postgres_secret = postgres_password.clone();
-    let redis_secret = redis_password.clone();
-    let output = tokio::task::spawn_blocking(move || {
-        system_command("docker")
-            .current_dir(command_directory)
-            .args(["compose", "-f"])
-            .arg(command_compose)
-            .args(["up", "-d", "--wait", "--wait-timeout", "180"])
-            .env("POSTGRES_PORT", postgres_port.to_string())
-            .env("REDIS_PORT", redis_port.to_string())
-            .env("POSTGRES_USER", "abcdeploy")
-            .env("POSTGRES_PASSWORD", postgres_secret.as_str())
-            .env("REDIS_PASSWORD", redis_secret.as_str())
-            .output()
-    })
-    .await
-    .map_err(|_| "AD-INF-101：本机基础服务启动任务意外中断".to_string())?
-    .map_err(|error| format!("AD-INF-101：无法运行 Docker：{}", public_error(error)))?;
-    if !output.status.success() {
-        return Err(local_infrastructure_failure(&output));
-    }
-    save_local_infrastructure_profiles(
-        &state,
-        postgres_port,
-        redis_port,
-        &postgres_password,
-        &redis_password,
-    )?;
-    local_infrastructure_status(&directory, &state)
-}
-
-#[tauri::command]
-fn prepare_local_preview(path: String) -> Result<LocalPreviewStatus, String> {
-    let root = PathBuf::from(path);
-    let (inspection, manifest, plan) = local_project_plan(&root)?;
-    let written_files = apply_local_plan(&root, &plan).map_err(public_error)?;
-    Ok(local_preview_status(
-        &root,
-        &inspection,
-        &manifest,
-        written_files,
-    ))
-}
-
-#[tauri::command]
-fn get_local_development_support(path: String) -> Result<LocalDevelopmentSupport, String> {
-    let root = PathBuf::from(path);
-    let (inspection, manifest, _) = local_project_plan(&root)?;
-    let services = local_development_services(&root, &inspection, &manifest);
-    let runnable_count = manifest.services.len();
-    let available = runnable_count > 0 && services.len() == runnable_count;
-    Ok(LocalDevelopmentSupport {
-        available,
-        service_count: services.len(),
-        message: if available {
-            "修改代码后会自动重启后端或刷新网页，仅影响本机运行。".to_string()
-        } else {
-            "项目没有为全部服务提供可靠的开发命令，继续使用稳定运行。".to_string()
-        },
-    })
-}
-
-#[tauri::command]
-fn prepare_local_development(path: String) -> Result<LocalDevelopmentSupport, String> {
-    let root = PathBuf::from(path);
-    let (inspection, manifest, plan) = local_project_plan(&root)?;
-    apply_local_plan(&root, &plan).map_err(public_error)?;
-    let services = local_development_services(&root, &inspection, &manifest);
-    if services.len() != manifest.services.len() {
-        return Err("AD-LOC-115：项目没有为全部服务提供可靠的开发命令，请使用稳定运行".to_string());
-    }
-    write_local_development_compose(&root, &inspection, &manifest)?;
-    Ok(LocalDevelopmentSupport {
-        available: true,
-        service_count: services.len(),
-        message: format!(
-            "已为 {} 个服务准备自动刷新，仅影响本机运行。",
-            services.len()
-        ),
-    })
-}
-
-#[tauri::command]
 async fn start_local_preview(
     state: State<'_, WorkspaceState>,
     path: String,
@@ -1672,296 +1416,6 @@ async fn start_local_preview(
         &manifest,
         written_files,
     ))
-}
-
-#[tauri::command]
-async fn start_local_preview_service(
-    state: State<'_, WorkspaceState>,
-    path: String,
-    service_id: String,
-    development_mode: bool,
-) -> Result<LocalPreviewStatus, String> {
-    let root = PathBuf::from(path);
-    let (inspection, manifest, plan) = local_project_plan(&root)?;
-    if !manifest
-        .services
-        .iter()
-        .any(|service| service.id == service_id)
-    {
-        return Err("AD-LOC-114：找不到要启动的项目服务，请重新识别项目".to_string());
-    }
-    let written_files = apply_local_plan(&root, &plan).map_err(public_error)?;
-    if !root.join(".env").is_file() {
-        return Err("AD-LOC-104：项目还没有 .env，请先保存本机配置".to_string());
-    }
-    write_container_runtime_env(&root)?;
-    let compose_path = if development_mode {
-        write_local_development_compose(&root, &inspection, &manifest)?
-    } else {
-        local_compose_path(&root)
-    };
-    ensure_local_service_ports_available(
-        &root,
-        &inspection,
-        &manifest,
-        std::slice::from_ref(&service_id),
-    )?;
-    let local_task = LocalStartTask::begin(&root)?;
-    let task_key = local_task.key.clone();
-    let build_services = if development_mode {
-        local_development_build_services(&root, &inspection, &manifest)
-            .into_iter()
-            .filter(|candidate| candidate == &service_id)
-            .collect::<Vec<_>>()
-    } else {
-        vec![service_id.clone()]
-    };
-    if !build_services.is_empty() {
-        let use_public_generated_images =
-            services_use_public_generated_dockerfiles(&manifest, &build_services);
-        let preferred_clear_proxy = preferred_local_build_clear_proxy(&state);
-        let build_root = root.clone();
-        let build_compose = compose_path.clone();
-        let build_task_key = task_key.clone();
-        let build_result = tokio::task::spawn_blocking(move || {
-            run_local_compose_build_with_recovery(
-                &build_root,
-                &build_compose,
-                &build_task_key,
-                preferred_clear_proxy,
-                true,
-                &build_services,
-                use_public_generated_images,
-            )
-        })
-        .await
-        .map_err(|_| "AD-LOC-105：本地服务构建任务意外中断".to_string())?
-        .map_err(local_command_error)?;
-        remember_local_build_proxy_mode(&state, &build_result);
-        if !build_result.output.status.success() {
-            return Err(local_build_failure(&build_result.output));
-        }
-    }
-    let root_for_command = root.clone();
-    let compose_for_command = compose_path.clone();
-    let up_task_key = task_key.clone();
-    let output = tokio::task::spawn_blocking(move || {
-        let mut command = system_command("docker");
-        command
-            .current_dir(root_for_command)
-            .args(["compose", "-f"])
-            .arg(compose_for_command)
-            .args(["up", "-d", "--no-build"]);
-        command
-            .args(["--wait", "--wait-timeout", "180"])
-            .arg(service_id);
-        run_tracked_local_command(&up_task_key, &mut command, local_start_command_limits())
-    })
-    .await
-    .map_err(|_| "AD-LOC-105：本地服务启动任务意外中断".to_string())?
-    .map_err(local_command_error)?;
-    if !output.status.success() {
-        return Err(local_start_failure(&output));
-    }
-    Ok(local_preview_status(
-        &root,
-        &inspection,
-        &manifest,
-        written_files,
-    ))
-}
-
-#[tauri::command]
-fn get_local_preview_status(path: String) -> Result<LocalPreviewStatus, String> {
-    let root = PathBuf::from(path);
-    let (inspection, manifest, plan) = local_project_plan(&root)?;
-    Ok(planned_local_preview_status(
-        &root,
-        &inspection,
-        &manifest,
-        &plan,
-        Vec::new(),
-    ))
-}
-
-#[tauri::command]
-fn cancel_local_preview_start(path: String) -> Result<bool, String> {
-    let key = PathBuf::from(path).to_string_lossy().into_owned();
-    let active = LOCAL_START_PROCESSES
-        .get_or_init(|| Mutex::new(BTreeMap::new()))
-        .lock()
-        .map_err(|_| "AD-LOC-105：无法读取本机启动任务状态，请重新尝试".to_string())?
-        .contains_key(&key);
-    if !active {
-        return Ok(false);
-    }
-    LOCAL_START_CANCELLED
-        .get_or_init(|| Mutex::new(BTreeSet::new()))
-        .lock()
-        .map_err(|_| "AD-LOC-105：无法停止本机启动任务，请重新尝试".to_string())?
-        .insert(key);
-    Ok(true)
-}
-
-#[tauri::command]
-fn stop_managed_local_port_owner(port: u16) -> Result<String, String> {
-    let owner = managed_local_port_owner(port).ok_or_else(|| {
-        format!("AD-LOC-116：本机端口 {port} 仍被其他程序占用，请关闭占用程序后重新启动")
-    })?;
-    let output = system_command("docker")
-        .args(["stop", &owner.container_id])
-        .output()
-        .map_err(|_| "AD-LOC-121：无法自动停止占用端口的本机服务，请稍后重试".to_string())?;
-    if !output.status.success() {
-        return Err("AD-LOC-121：无法自动停止占用端口的本机服务，请稍后重试".to_string());
-    }
-    Ok(owner.project)
-}
-
-#[tauri::command]
-async fn stop_local_preview(path: String) -> Result<LocalPreviewStatus, String> {
-    let root = PathBuf::from(path);
-    let inspection = inspect_project(&root).map_err(public_error)?;
-    let manifest_path = root.join(MANIFEST_FILE);
-    let mut manifest = if manifest_path.is_file() {
-        load_manifest(&manifest_path).map_err(public_error)?
-    } else {
-        create_default_manifest(&inspection)
-    };
-    reconcile_detected_services(&inspection, &mut manifest);
-    let compose_path = local_compose_path(&root);
-    if compose_path.is_file() {
-        let root_for_command = root.clone();
-        let compose_for_command = compose_path.clone();
-        let output = tokio::task::spawn_blocking(move || {
-            system_command("docker")
-                .current_dir(&root_for_command)
-                .args(["compose", "-f"])
-                .arg(&compose_for_command)
-                .args(["down", "--remove-orphans"])
-                .output()
-        })
-        .await
-        .map_err(|_| "AD-LOC-108：停止本地容器时任务意外中断".to_string())?
-        .map_err(|error| format!("AD-LOC-106：无法运行 Docker：{}", public_error(error)))?;
-        if !output.status.success() {
-            return Err("AD-LOC-109：本地容器没有全部停止，请检查 Docker 状态".to_string());
-        }
-    }
-    Ok(local_preview_status(
-        &root,
-        &inspection,
-        &manifest,
-        Vec::new(),
-    ))
-}
-
-#[tauri::command]
-async fn stop_local_preview_service(
-    path: String,
-    service_id: String,
-) -> Result<LocalPreviewStatus, String> {
-    let root = PathBuf::from(path);
-    let inspection = inspect_project(&root).map_err(public_error)?;
-    let manifest_path = root.join(MANIFEST_FILE);
-    let mut manifest = if manifest_path.is_file() {
-        load_manifest(&manifest_path).map_err(public_error)?
-    } else {
-        create_default_manifest(&inspection)
-    };
-    reconcile_detected_services(&inspection, &mut manifest);
-    if !manifest
-        .services
-        .iter()
-        .any(|service| service.id == service_id)
-    {
-        return Err("AD-LOC-114：找不到要停止的项目服务，请重新识别项目".to_string());
-    }
-    let compose_path = local_compose_path(&root);
-    if compose_path.is_file() {
-        let root_for_command = root.clone();
-        let compose_for_command = compose_path.clone();
-        let output = tokio::task::spawn_blocking(move || {
-            system_command("docker")
-                .current_dir(root_for_command)
-                .args(["compose", "-f"])
-                .arg(compose_for_command)
-                .arg("stop")
-                .arg(service_id)
-                .output()
-        })
-        .await
-        .map_err(|_| "AD-LOC-108：停止本地服务时任务意外中断".to_string())?
-        .map_err(|error| format!("AD-LOC-106：无法运行 Docker：{}", public_error(error)))?;
-        if !output.status.success() {
-            return Err("AD-LOC-109：本地服务没有停止，请检查 Docker 状态".to_string());
-        }
-    }
-    Ok(local_preview_status(
-        &root,
-        &inspection,
-        &manifest,
-        Vec::new(),
-    ))
-}
-
-#[tauri::command]
-async fn set_local_infrastructure_service(
-    app: tauri::AppHandle,
-    state: State<'_, WorkspaceState>,
-    service: String,
-    running: bool,
-) -> Result<LocalInfrastructureStatus, String> {
-    if !matches!(service.as_str(), "postgres" | "redis") {
-        return Err("AD-INF-106：找不到要控制的本机基础服务".to_string());
-    }
-    let directory = app.path().app_data_dir().map_err(public_error)?;
-    let infra_directory = directory.join("local-infrastructure");
-    let compose_path = infra_directory.join("docker-compose.yml");
-    if !compose_path.is_file() {
-        return Err("AD-INF-107：请先自动准备本机运行依赖".to_string());
-    }
-    let postgres_port = local_infrastructure_port(
-        &state,
-        "local.infra.postgres.port",
-        55_432,
-        "abcdeploy-local-postgres",
-    )?;
-    let redis_port = local_infrastructure_port(
-        &state,
-        "local.infra.redis.port",
-        56_379,
-        "abcdeploy-local-redis",
-    )?;
-    let postgres_password = local_infrastructure_secret("local.infra.postgres.password")?;
-    let redis_password = local_infrastructure_secret("local.infra.redis.password")?;
-    let output = tokio::task::spawn_blocking(move || {
-        let mut command = system_command("docker");
-        command
-            .current_dir(infra_directory)
-            .args(["compose", "-f"])
-            .arg(compose_path);
-        if running {
-            command.args(["up", "-d", "--wait", "--wait-timeout", "180"]);
-        } else {
-            command.arg("stop");
-        }
-        command
-            .arg(service)
-            .env("POSTGRES_PORT", postgres_port.to_string())
-            .env("REDIS_PORT", redis_port.to_string())
-            .env("POSTGRES_USER", "abcdeploy")
-            .env("POSTGRES_PASSWORD", postgres_password.as_str())
-            .env("REDIS_PASSWORD", redis_password.as_str())
-            .output()
-    })
-    .await
-    .map_err(|_| "AD-INF-101：本机基础服务任务意外中断".to_string())?
-    .map_err(|error| format!("AD-INF-101：无法运行 Docker：{}", public_error(error)))?;
-    if !output.status.success() {
-        return Err(local_infrastructure_failure(&output));
-    }
-    local_infrastructure_status(&directory, &state)
 }
 
 #[tauri::command]
@@ -7864,196 +7318,6 @@ fn valid_config_identifier(value: &str) -> bool {
             .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
 }
 
-fn runtime_values_from_profile(
-    profile: &ConfigProfile,
-    project_path: &Path,
-    environment: EnvironmentName,
-) -> Result<BTreeMap<String, String>, String> {
-    let mut values = BTreeMap::new();
-    match (profile.kind.as_str(), profile.provider.as_str()) {
-        ("ai", "minimax") => {
-            values.insert("AI_PROVIDER".to_string(), "minimax".to_string());
-            copy_profile_value(profile, "base_url", "MINIMAX_BASE_URL", &mut values);
-            copy_profile_value(profile, "model", "MINIMAX_MODEL", &mut values);
-            copy_profile_secret(profile, "api_key", "MINIMAX_API_KEY", &mut values)?;
-        }
-        ("database", "abcdeploy_local_postgres") => {
-            let Some(mut password) = read_config_profile_secret(profile, "password")? else {
-                return Ok(values);
-            };
-            let database = local_database_name(project_path, environment);
-            ensure_local_postgres_database(&database)?;
-            let host = profile
-                .values
-                .get("host")
-                .map_or("127.0.0.1", String::as_str);
-            let port = profile.values.get("port").map_or("55432", String::as_str);
-            let user = profile
-                .values
-                .get("user")
-                .map_or("abcdeploy", String::as_str);
-            values.insert(
-                "DATABASE_URL".to_string(),
-                format!(
-                    "postgresql://{user}:{}@{host}:{port}/{database}",
-                    password.as_str()
-                ),
-            );
-            password.zeroize();
-        }
-        ("redis", "abcdeploy_local_redis") => {
-            let Some(mut password) = read_config_profile_secret(profile, "password")? else {
-                return Ok(values);
-            };
-            let host = profile
-                .values
-                .get("host")
-                .map_or("127.0.0.1", String::as_str);
-            let port = profile.values.get("port").map_or("56379", String::as_str);
-            values.insert(
-                "REDIS_URL".to_string(),
-                format!("redis://:{}@{host}:{port}/0", password.as_str()),
-            );
-            password.zeroize();
-        }
-        ("database", _) => {
-            copy_profile_secret(profile, "url", "DATABASE_URL", &mut values)?;
-        }
-        ("redis", _) => {
-            copy_profile_secret(profile, "url", "REDIS_URL", &mut values)?;
-        }
-        ("custom", _) => {
-            if let (Some(variable), Some(value)) = (
-                profile.values.get("env_name"),
-                profile.values.get("env_value"),
-            ) && valid_environment_variable(variable)
-                && !value.is_empty()
-            {
-                values.insert(variable.clone(), value.clone());
-            }
-            for field in &profile.secret_fields {
-                if valid_environment_variable(field) {
-                    copy_profile_secret(profile, field, field, &mut values)?;
-                }
-            }
-        }
-        _ => {}
-    }
-    Ok(values)
-}
-
-fn read_config_profile_secret(
-    profile: &ConfigProfile,
-    field: &str,
-) -> Result<Option<Zeroizing<String>>, String> {
-    if !profile
-        .secret_fields
-        .iter()
-        .any(|candidate| candidate == field)
-    {
-        return Ok(None);
-    }
-    match read_keyring_secret(&config_profile_secret_key(&profile.id, field)) {
-        Ok(value) if !value.is_empty() => Ok(Some(Zeroizing::new(value))),
-        Ok(_) => Ok(None),
-        Err(error) if error == "missing" => Ok(None),
-        Err(error) => Err(error),
-    }
-}
-
-fn local_database_name(project_path: &Path, environment: EnvironmentName) -> String {
-    let mut digest = Sha256::new();
-    digest.update(
-        project_path
-            .canonicalize()
-            .unwrap_or_else(|_| project_path.to_path_buf())
-            .to_string_lossy()
-            .as_bytes(),
-    );
-    let digest = format!("{:x}", digest.finalize());
-    format!("abc_{}_{}", &digest[..16], environment.as_str())
-}
-
-fn ensure_local_postgres_database(database: &str) -> Result<(), String> {
-    if !database
-        .bytes()
-        .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_')
-    {
-        return Err("AD-INF-105：本机数据库名称不安全，已停止创建".to_string());
-    }
-    let query = format!("SELECT 1 FROM pg_database WHERE datname = '{database}'");
-    let exists = system_command("docker")
-        .args([
-            "exec",
-            "abcdeploy-local-postgres",
-            "psql",
-            "-U",
-            "abcdeploy",
-            "-d",
-            "postgres",
-            "-tAc",
-            &query,
-        ])
-        .output()
-        .map_err(|error| format!("AD-INF-101：无法检查本机数据库：{}", public_error(error)))?;
-    if exists.status.success() && String::from_utf8_lossy(&exists.stdout).trim() == "1" {
-        return Ok(());
-    }
-    let created = system_command("docker")
-        .args([
-            "exec",
-            "abcdeploy-local-postgres",
-            "createdb",
-            "-U",
-            "abcdeploy",
-            database,
-        ])
-        .output()
-        .map_err(|error| format!("AD-INF-101：无法创建本机数据库：{}", public_error(error)))?;
-    if created.status.success() {
-        Ok(())
-    } else {
-        Err("AD-INF-105：无法为当前项目创建隔离的本机数据库".to_string())
-    }
-}
-
-fn copy_profile_value(
-    profile: &ConfigProfile,
-    field: &str,
-    variable: &str,
-    values: &mut BTreeMap<String, String>,
-) {
-    if let Some(value) = profile.values.get(field).filter(|value| !value.is_empty()) {
-        values.insert(variable.to_string(), value.clone());
-    }
-}
-
-fn copy_profile_secret(
-    profile: &ConfigProfile,
-    field: &str,
-    variable: &str,
-    values: &mut BTreeMap<String, String>,
-) -> Result<(), String> {
-    if !profile
-        .secret_fields
-        .iter()
-        .any(|candidate| candidate == field)
-    {
-        return Ok(());
-    }
-    match read_keyring_secret(&config_profile_secret_key(&profile.id, field)) {
-        Ok(mut value) => {
-            if !value.is_empty() {
-                values.insert(variable.to_string(), value.clone());
-            }
-            value.zeroize();
-            Ok(())
-        }
-        Err(error) if error == "missing" => Ok(()),
-        Err(error) => Err(error),
-    }
-}
-
 fn empty_runtime_variables(content: &str) -> Vec<String> {
     let mut variables = content
         .lines()
@@ -8202,70 +7466,6 @@ fn dotenv_value(value: &str) -> String {
     serde_json::to_string(value).unwrap_or_else(|_| "\"\"".to_string())
 }
 
-fn write_project_local_env(
-    root: &Path,
-    content: &str,
-    overwrite: bool,
-) -> Result<LocalEnvWriteResult, String> {
-    if !root.is_dir() {
-        return Err("AD-LOC-101：项目目录不存在，请重新选择项目".to_string());
-    }
-    if content.trim().is_empty() || content.contains('\0') {
-        return Err("AD-LOC-102：本地运行配置为空或包含无效字符".to_string());
-    }
-    let tracked = system_command("git")
-        .arg("-C")
-        .arg(root)
-        .args(["ls-files", "--error-unmatch", "--", ".env"])
-        .output()
-        .is_ok_and(|output| output.status.success());
-    if tracked {
-        return Err("AD-LOC-103：项目正在跟踪 .env，请先从 Git 中移除真实配置再生成".to_string());
-    }
-    let target = root.join(".env");
-    let existing = fs::read_to_string(&target).ok();
-    if existing.as_deref() == Some(content) {
-        return Ok(LocalEnvWriteResult {
-            path: target.to_string_lossy().into_owned(),
-            written: false,
-            requires_confirmation: false,
-            backup_path: None,
-        });
-    }
-    if existing.is_some() && !overwrite {
-        return Ok(LocalEnvWriteResult {
-            path: target.to_string_lossy().into_owned(),
-            written: false,
-            requires_confirmation: true,
-            backup_path: None,
-        });
-    }
-    let backup_path = if let Some(existing) = existing {
-        let backup_directory = root.join(".deploydesk/backups/local-env");
-        fs::create_dir_all(&backup_directory).map_err(public_error)?;
-        let backup = backup_directory.join(format!("{}.env", Utc::now().format("%Y%m%d%H%M%S%3f")));
-        fs::write(&backup, existing).map_err(public_error)?;
-        Some(backup.to_string_lossy().into_owned())
-    } else {
-        None
-    };
-    let temporary = root.join(".env.abcdeploy.tmp");
-    fs::write(&temporary, content).map_err(public_error)?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt as _;
-        fs::set_permissions(&temporary, fs::Permissions::from_mode(0o600)).map_err(public_error)?;
-    }
-    fs::rename(&temporary, &target).map_err(public_error)?;
-    ensure_local_env_ignored(root)?;
-    Ok(LocalEnvWriteResult {
-        path: target.to_string_lossy().into_owned(),
-        written: true,
-        requires_confirmation: false,
-        backup_path,
-    })
-}
-
 fn write_container_runtime_env(root: &Path) -> Result<(), String> {
     let content = fs::read_to_string(root.join(".env"))
         .map_err(|error| format!("AD-LOC-102：无法读取项目 .env：{}", public_error(error)))?;
@@ -8310,22 +7510,6 @@ fn container_runtime_env(content: &str) -> String {
         output.push_str(newline);
     }
     output
-}
-
-fn ensure_local_env_ignored(root: &Path) -> Result<(), String> {
-    let path = root.join(".gitignore");
-    let mut content = fs::read_to_string(&path).unwrap_or_default();
-    let already_ignored = content
-        .lines()
-        .any(|line| matches!(line.trim(), ".env" | "/.env" | ".env*" | ".env.*" | "*.env"));
-    if already_ignored {
-        return Ok(());
-    }
-    if !content.is_empty() && !content.ends_with('\n') {
-        content.push('\n');
-    }
-    content.push_str("\n# ABCDeploy 本地运行配置\n.env\n");
-    fs::write(path, content).map_err(public_error)
 }
 
 fn validate_repository_slug(value: &str) -> Result<(), String> {
@@ -8784,21 +7968,7 @@ pub fn run() {
             bind_config_profile,
             list_config_profile_bindings,
             set_environment_config_bindings,
-            recommend_runtime_config,
-            write_local_env,
-            get_local_infrastructure_status,
-            prepare_local_infrastructure,
-            set_local_infrastructure_service,
-            prepare_local_preview,
-            get_local_development_support,
-            prepare_local_development,
             start_local_preview,
-            start_local_preview_service,
-            cancel_local_preview_start,
-            stop_managed_local_port_owner,
-            get_local_preview_status,
-            stop_local_preview,
-            stop_local_preview_service,
             create_deployment_task,
             begin_deployment_attempt,
             list_deployment_attempts,
