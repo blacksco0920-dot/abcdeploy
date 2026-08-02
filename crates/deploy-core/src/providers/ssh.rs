@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -107,70 +106,11 @@ const fn default_port() -> u16 {
     22
 }
 
-#[must_use]
-pub fn discover_identities() -> Vec<SshIdentity> {
-    let Some(home) = dirs::home_dir() else {
-        return Vec::new();
-    };
-    discover_identities_in(&home)
-}
-
 pub fn generate_managed_identity() -> Result<GeneratedSshIdentity> {
     let home = dirs::home_dir().ok_or_else(|| {
         DeployError::MissingCredential("无法确定当前用户目录，不能创建 SSH 身份".to_string())
     })?;
     generate_managed_identity_in(&home)
-}
-
-fn discover_identities_in(home: &Path) -> Vec<SshIdentity> {
-    let ssh_directory = home.join(".ssh");
-    let mut candidates = BTreeSet::new();
-    for name in [
-        "abcdeploy_ed25519",
-        "id_ed25519",
-        "id_ecdsa",
-        "id_rsa",
-        "id_dsa",
-    ] {
-        candidates.insert(ssh_directory.join(name));
-    }
-
-    let config_path = ssh_directory.join("config");
-    if let Ok(config) = fs::read_to_string(config_path) {
-        for line in config.lines() {
-            let mut parts = line.split_whitespace();
-            if parts
-                .next()
-                .is_some_and(|value| value.eq_ignore_ascii_case("IdentityFile"))
-                && let Some(raw) = parts.next()
-                && !raw.contains('%')
-            {
-                candidates.insert(expand_home(raw, home));
-            }
-        }
-    }
-
-    if let Ok(entries) = fs::read_dir(&ssh_directory) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            let name = entry.file_name().to_string_lossy().into_owned();
-            let extension = path.extension().and_then(|value| value.to_str());
-            if path.is_file()
-                && !extension.is_some_and(|value| value.eq_ignore_ascii_case("pub"))
-                && (name.starts_with("id_")
-                    || name.starts_with("abcdeploy_")
-                    || extension.is_some_and(|value| value.eq_ignore_ascii_case("pem")))
-            {
-                candidates.insert(path);
-            }
-        }
-    }
-
-    candidates
-        .into_iter()
-        .filter(|path| path.is_file())
-        .map(|path| identity_from_path(path, "本机 SSH 目录"))
-        .collect()
 }
 
 fn generate_managed_identity_in(home: &Path) -> Result<GeneratedSshIdentity> {
@@ -309,19 +249,6 @@ fn identity_public_key(private_path: &Path) -> Result<String> {
                 redact_text(&error.to_string())
             ))
         })
-}
-
-fn expand_home(value: &str, home: &Path) -> PathBuf {
-    if value == "~" {
-        return home.to_path_buf();
-    }
-    if let Some(relative) = value
-        .strip_prefix("~/")
-        .or_else(|| value.strip_prefix("~\\"))
-    {
-        return home.join(relative);
-    }
-    PathBuf::from(value)
 }
 
 pub async fn check_connection(profile: &SshProfile) -> Result<ProviderCheck> {
@@ -725,13 +652,13 @@ fn ssh_error(action: &str, error: &russh::Error) -> DeployError {
 #[cfg(test)]
 mod tests {
     use super::{
-        AUTHORIZED_KEYS_INSTALL_COMMAND, SshProfile, client_config, discover_identities_in,
-        generate_managed_identity_in, host_key_gate, identity_public_key,
+        AUTHORIZED_KEYS_INSTALL_COMMAND, SshProfile, client_config, generate_managed_identity_in,
+        host_key_gate, identity_public_key,
     };
     use std::path::PathBuf;
 
     #[test]
-    fn creates_and_rediscovers_a_managed_ed25519_identity() {
+    fn creates_and_reuses_a_managed_ed25519_identity() {
         let home = tempfile::tempdir().expect("temp home");
         let generated = generate_managed_identity_in(home.path()).expect("generate identity");
         assert!(generated.created);
@@ -744,9 +671,6 @@ mod tests {
         assert!(!reused.created);
         assert_eq!(reused.public_key, generated.public_key);
 
-        let identities = discover_identities_in(home.path());
-        assert_eq!(identities.len(), 1);
-        assert_eq!(identities[0].path, generated.identity.path);
         let public_key = identity_public_key(&generated.identity.path).expect("public key");
         assert!(public_key.starts_with("ssh-ed25519 "));
         assert!(!AUTHORIZED_KEYS_INSTALL_COMMAND.contains(&public_key));

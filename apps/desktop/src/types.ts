@@ -213,22 +213,6 @@ export interface WorkspaceAdoption {
   freshDraft: boolean;
 }
 
-export interface ToolStatus {
-  name: string;
-  available: boolean;
-  version: string | null;
-  required_for: string;
-  resolution: string | null;
-}
-
-export interface SystemPreflight {
-  operating_system: string;
-  architecture: string;
-  tools: ToolStatus[];
-  ready_for_cloud_deploy: boolean;
-  ready_for_local_preview: boolean;
-}
-
 export interface ProviderCheck {
   provider: string;
   ok: boolean;
