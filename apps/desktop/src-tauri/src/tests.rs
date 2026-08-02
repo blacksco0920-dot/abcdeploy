@@ -2709,6 +2709,48 @@ fn stops_a_silent_local_command_instead_of_waiting_forever() {
     assert!(started.elapsed() < std::time::Duration::from_secs(2));
 }
 
+#[cfg(unix)]
+fn wait_for_tracked_local_start_pid(task_key: &str) -> u32 {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+    loop {
+        if let Some(pid) = super::local_process::tracked_local_start_pid(task_key)
+            .expect("read tracked local process")
+        {
+            return pid;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "local command did not publish its child pid before the synchronization deadline"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+}
+
+#[cfg(unix)]
+fn local_process_group_exists(pid: u32) -> bool {
+    Command::new("kill")
+        .arg("-0")
+        .arg("--")
+        .arg(format!("-{pid}"))
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .is_ok_and(|status| status.success())
+}
+
+#[cfg(unix)]
+fn wait_for_local_process_group_exit(pid: u32) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+    while local_process_group_exists(pid) {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "tracked local process group {pid} was still running after cancellation"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+}
+
+#[cfg(unix)]
 #[test]
 fn retained_local_run_cancellation_stops_a_running_child_process() {
     let project = tempdir().expect("project");
@@ -2726,13 +2768,22 @@ fn retained_local_run_cancellation_stops_a_running_child_process() {
             },
         )
     });
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    let pid = wait_for_tracked_local_start_pid(&task.key);
+    assert!(
+        local_process_group_exists(pid),
+        "tracked local process group {pid} should be running before cancellation"
+    );
     assert!(super::cancel_local_start(project.path()).expect("cancel task"));
+    wait_for_local_process_group_exit(pid);
     let error = process
         .join()
         .expect("command thread")
         .expect_err("cancelled command should stop");
     assert_eq!(error.kind(), std::io::ErrorKind::Interrupted);
+    assert!(
+        !local_process_group_exists(pid),
+        "tracked local process group {pid} should remain stopped after the command returns"
+    );
 }
 
 #[test]

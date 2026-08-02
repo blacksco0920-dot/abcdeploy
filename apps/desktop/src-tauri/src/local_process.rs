@@ -62,6 +62,15 @@ pub(super) fn set_local_start_pid(task_key: &str, pid: Option<u32>) -> std::io::
     Ok(())
 }
 
+#[cfg(test)]
+pub(super) fn tracked_local_start_pid(task_key: &str) -> std::io::Result<Option<u32>> {
+    LOCAL_START_PROCESSES
+        .get_or_init(|| Mutex::new(BTreeMap::new()))
+        .lock()
+        .map_err(|_| std::io::Error::other("local start task state is unavailable"))
+        .map(|processes| processes.get(task_key).copied().flatten())
+}
+
 pub(super) fn terminate_local_process_group(pid: u32, force: bool) {
     #[cfg(unix)]
     {
