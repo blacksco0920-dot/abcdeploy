@@ -44,6 +44,18 @@ test("extractSourceCommands 为动态 invoke 保留文件和起始行号", async
   );
 });
 
+test("extractSourceCommands 可解析包含普通 const 声明的源码", () => {
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+const local = 1;
+invoke("alpha");`,
+    "/virtual/ordinary-const.ts",
+  );
+
+  assert.deepEqual(result.commands, ["alpha"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+});
+
 test("extractSourceCommands 忽略遮蔽导入绑定的函数参数调用", () => {
   const result = extractSourceCommands(
     `import { invoke } from "@tauri-apps/api/core";

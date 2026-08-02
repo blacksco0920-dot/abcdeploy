@@ -185,7 +185,7 @@ function addLexicalBindings(statements, bindings, invokeBindings) {
   for (const statement of statements) {
     if (
       ts.isVariableStatement(statement) &&
-      ts.isBlockScopedVariableDeclarationList(statement.declarationList)
+      isBlockScopedVariableDeclarationList(statement.declarationList)
     ) {
       addVariableBindings(statement.declarationList, bindings, invokeBindings);
     } else if (
@@ -239,7 +239,7 @@ function collectVarBindings(node, bindings, invokeBindings) {
     }
     if (
       ts.isVariableDeclaration(child) &&
-      !ts.isBlockScopedVariableDeclarationList(child.parent)
+      !isBlockScopedVariableDeclarationList(child.parent)
     ) {
       addBindingName(child.name, bindings, invokeBindings);
     }
@@ -247,6 +247,12 @@ function collectVarBindings(node, bindings, invokeBindings) {
   }
 
   visit(node);
+}
+
+function isBlockScopedVariableDeclarationList(declarationList) {
+  return Boolean(
+    ts.getCombinedNodeFlags(declarationList) & ts.NodeFlags.BlockScoped,
+  );
 }
 
 function addVariableBindings(declarationList, bindings, invokeBindings) {
