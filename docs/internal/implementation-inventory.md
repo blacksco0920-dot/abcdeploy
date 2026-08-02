@@ -30,14 +30,31 @@
 | 部署列表 | `useDeploymentDashboard`、`ProjectGallery` | 从持久化任务与当前指针投影首页。 |
 | 部署编辑器 | `DeploymentEditorController`、`DeploymentEditorPage` | 编排来源、环境、待办、运行与证据的单页流程。 |
 | 部署详情 | `DeploymentDetailController`、`projectDeploymentDetail` | 投影当前在线、失败尝试、更新入口和可恢复版本。 |
-| 类型化 Tauri 边界 | `api.ts`、`api/` | 参数、返回值、兼容反序列化和错误归一化。 |
-| Tauri 应用入口 | `mvp_environment.rs`、`source_snapshots.rs`、`lib.rs` | 来源快照、环境准备、任务执行和动态命令注册。 |
+| 类型化 Tauri 边界 | `api.ts`、`api/` | 参数、返回值、兼容反序列化和错误归一化；当前生产调用集合由命令面门禁从这两个边界提取。 |
+| Tauri 应用入口 | `mvp_environment.rs`、`source_snapshots.rs`、`lib.rs` | 来源快照、环境准备和任务执行；`lib.rs` 的 `tauri::generate_handler!` 是当前 45 个生产 handler 的唯一注册面。 |
 | 仓储 | `WorkspaceState`、`workspace/` | SQLite 聚合、任务、线路、当前指针与兼容读取。 |
 | Provider | `deploy-core::providers` | CNB、版本仓库、Docker、SSH、Caddy 等具体适配。 |
 
 首页和详情必须读取同一部署聚合。秘密正文只进入系统密钥库；普通 SQLite 记录只保存秘密引用。Provider 和兼容 Manifest 只属于适配层，不进入用户产品模型。
 
-## 4. 已知迁移债务与棘轮预算
+## 4. 桌面生产命令面与保留边界
+
+2026-08-02 的最终自动审计从 `apps/desktop/src-tauri/src/lib.rs` 的 `tauri::generate_handler!`、`apps/desktop/src/api.ts` 与 `apps/desktop/src/api/` 的生产静态调用，以及 Vite 产物中实际保留的调用得到 `registered=45`、`source=45`、`bundled=45`。`dynamicInvocations`、`missingRegistrations`、`registeredOnly`、`bundleOnly` 和 `sourceNotBundled` 均为 0。该结论是静态与构建证据，不是用户验收。
+
+| 门禁 | 稳定入口 | 保护事实 |
+| --- | --- | --- |
+| 独立 source 审计 | 根脚本 `pnpm check:desktop-command-surface` | 直接校验生产 TypeScript 静态调用、Rust 注册集合和动态 `invoke` 禁止项。 |
+| 项目治理 | `pnpm check:project` 内的 `auditDesktopCommandSurface({ mode: "source" })` | 与项目文档、前端边界和恢复路径检查在同一 Node 进程内失败收口。 |
+| 生产 bundle 审计 | `apps/desktop/package.json` 的 `build` 在 `tsc --noEmit && vite build` 之后运行 `--mode bundle` | 拒绝只存在源码回退分支、但被 tree-shaking 移出实际桌面产物的包装作为生产消费证据。 |
+
+命令数量、逐项去留和实施期回归证据保存在 [桌面命令面证据矩阵](../../openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md)；本稳定索引不复制逐命令矩阵。公开 IPC 收缩后仍保留的内部边界为：
+
+- `WorkspaceState::open`、`workspace.rs` 与 `workspace/` 保留 schema 升级、旧记录恢复、任务/尝试/版本追加和 `current_run_id` 指针不变量；部分 Profile、绑定和版本验证方法只作为精确 `#[cfg(test)]` 兼容接缝，不是仍支持的 CRUD 命令。
+- `prepare_deployment_path_retry_inner`、`start_deployment_path_inner`、`take_over_deployment_path_routes_inner` 和 `take_over_caddy_routes` 保留当前 pilot 的服务器部署、制品复用和只续路由验证能力；它们不恢复已退役的手工 staging/production 控制面。
+- `source_snapshots.rs` 的受管快照/运行工作区与 `start_local_preview` 的进程、端口和连续验证内核保留；已退役的单服务启停和用户项目 `.env` 写入不再是稳定入口。
+- `deploy-core::providers::{cnb,registry}` 以及当前授权、同步和部署流程仍负责 CNB 与不可变版本存储；已退役的通用 Provider/secret 管理 endpoint 不得从这些内核存在倒推为可用功能。
+
+## 5. 已知迁移债务与棘轮预算
 
 以下文件仍是显式收缩目标，不接受新的横向职责：
 
@@ -51,11 +68,11 @@
 
 生产 TypeScript/TSX、Rust 和 CSS 的超限预算由 `scripts/check-project-quality.mjs` 固定；现有例外只能缩小，不能通过压缩格式或无意义包装绕过。
 
-## 5. 历史资产边界
+## 6. 历史资产边界
 
 `docs/product-prototype/index.html` 仍存在，但它是历史讨论资产，仅用于追溯，不代表当前产品、实现或完成状态。旧配置中心、旧工作区、四节点画布、运行配置独立页和旧原型都不得作为当前执行链或验收依据；是否删除历史资产必须由对应 change 明确决定，不能依据文件名或“看起来未引用”推断。
 
-## 6. 体积与维护规则
+## 7. 体积与维护规则
 
 仓库目录的大部分磁盘占用来自 Rust `target/` 和前端 `node_modules/`；它们是可重建缓存，不是业务代码。源码规模应按受版本控制文件、代码行数和运行可达性衡量。
 

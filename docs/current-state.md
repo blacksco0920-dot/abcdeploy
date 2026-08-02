@@ -23,7 +23,10 @@
 - 五题结果：唯一 `VERIFIED` 仍是本地文件夹 → Linux 服务器正向 MVP 主线；本机运行、完整待办与门禁、成功证据、更新部署和版本恢复均为 `IMPLEMENTED_UNVERIFIED`；仓库来源仍为 `TARGET`；已确认 change 的下一步从 selection、workflow 状态和 change brief 恢复；未获正式发布授权时的版本、标签、Release、全平台安装包与下载文件发布均为 `OUT_OF_SCOPE`。前端、Tauri/应用、仓储、Provider 与测试从实现证据索引的稳定跨层起点定位，目录边界见 `docs/architecture.md` §6–§7、§12。
 - 变更结构：2026-08-02 审计快照中，selection 指向 Native change `audit-project-documentation-assets`；实时状态必须用 `comet native status` 确认。此前的 Classic change `organize-canonical-project-assets` 已归档至 [`2026-07-31-organize-canonical-project-assets`](../openspec/changes/archive/2026-07-31-organize-canonical-project-assets/)，其 6 项需求已同步到 [Classic 项目上下文恢复规格](../openspec/specs/project-context-recovery/spec.md)。
 - 项目门禁：`pnpm check:project`、`pnpm check:secrets` 与 `git diff --check` 于 2026-08-02 通过；项目质量检查新增顶层文档可发现性、历史原型事实一致性以及 Native/Classic 恢复路径检查。
-- CodeGraph：`pnpm codegraph:status` 于 2026-08-02 通过；索引为最新状态，共 203 个文件、3,135 个节点和 9,728 条边。
+- 桌面命令面：2026-08-02 在变更工作树运行 `node scripts/check-desktop-command-surface.mjs --mode all --json` 通过，Rust 注册、生产 TypeScript 源码与 Vite bundle 三个集合均为 45，动态调用与所有差异集均为 0。根 `check:desktop-command-surface` 和 `check:project` 保护 source 面，桌面 `build` 在 Vite 之后保护 bundle 面；精确入口与保留的迁移/恢复内核见 [实现证据索引](internal/implementation-inventory.md#4-桌面生产命令面与保留边界)。
+- 净收缩：相对实施计划 base `24e0fc79f9bda0401362b4e93cb570774b4abfa8`，Task 11 最终工作树的跟踪差异为 45 个文件、2,611 行新增、5,602 行删除，净减少 2,991 行；该统计包含 change 证据、门禁与测试资产，不用作功能完成度或用户验收依据。
+- CodeGraph：在实际变更工作树运行 `pnpm codegraph:index`、`pnpm codegraph:sync` 与 `pnpm codegraph:status` 于 2026-08-02 通过；索引为最新状态，共 216 个文件、3,006 个节点和 8,936 条边。`.codegraph/` 是忽略的本机索引，没有作为产品或验收资产提交。
+- 证据边界：本次只记录静态审计、构建产物审计和自动回归；本任务未执行桌面客户端启动或当前主线的无副作用烟测，因此不新增用户验收。服务器正向主线仍保持原 `VERIFIED`；本机运行、更新部署和版本恢复仍为 `IMPLEMENTED_UNVERIFIED`。
 
 ## 关键用户能力
 
