@@ -100,7 +100,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 1: 以 TDD 建立命令面解析器与夹具
 
-- [ ] Task 1 完成：命令面解析器与夹具通过 TDD 验收
+- [x] Task 1 完成：命令面解析器与夹具通过 TDD 验收
 
 **Files:**
 - Create: `scripts/lib/desktop-command-surface.mjs`
@@ -115,7 +115,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: Node `fs/path/module` 与从 `apps/desktop/package.json` 创建的 `createRequire` 所解析的 TypeScript Compiler API。
 - Produces: “共享接口”中的四个纯函数；不访问网络、不修改仓库文件。
 
-- [ ] **Step 1: 写解析器失败测试**
+- [x] **Step 1: 写解析器失败测试**
 
   在 `scripts/desktop-command-surface.test.mjs` 中逐项断言：`source-valid.ts` 提取 `alpha/beta/gamma`；泛型、多行和 `invoke as callDesktop` 均可识别；`source-dynamic.ts` 的变量、模板拼接和函数返回值分别产生带文件与行号的 `dynamicInvocations`；Rust 夹具只允许一个 handler；bundle 只识别 AST 字符串字面量，不把 `alpha-suffix` 当作 `alpha`。
 
@@ -126,27 +126,27 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   assert.deepEqual(bundle.commands, ["alpha", "gamma"]);
   ```
 
-- [ ] **Step 2: 运行测试并确认 Red**
+- [x] **Step 2: 运行测试并确认 Red**
 
   Run: `node --test scripts/desktop-command-surface.test.mjs`
 
   Expected: FAIL，提示 `scripts/lib/desktop-command-surface.mjs` 不存在或导出函数未定义。
 
-- [ ] **Step 3: 实现最小 AST 与 handler 解析**
+- [x] **Step 3: 实现最小 AST 与 handler 解析**
 
   用 TypeScript AST 识别从 `@tauri-apps/api/core` 导入的 `invoke` 本地绑定，使用 `getStart()` 计算动态调用行号；Rust 解析先去除行注释，再定位唯一 `tauri::generate_handler![...]` 并校验标识符；bundle 以 JS AST 字符串节点和 `registeredCommands` 交集提取命令。
 
-- [ ] **Step 4: 运行测试并确认 Green**
+- [x] **Step 4: 运行测试并确认 Green**
 
   Run: `node --test scripts/desktop-command-surface.test.mjs`
 
   Expected: PASS，所有解析、拒绝和稳定排序断言通过。
 
-- [ ] **Step 5: Refactor 并检查格式**
+- [x] **Step 5: Refactor 并检查格式**
 
   抽取 `sortedUnique(values)` 与统一的 `sourceLocation(node, sourceFile)`，确保解析函数没有仓库路径常量；运行 `pnpm exec prettier --check scripts/lib/desktop-command-surface.mjs scripts/desktop-command-surface.test.mjs scripts/fixtures/desktop-command-surface/*`。
 
-- [ ] **Step 6: 提交解析器**
+- [x] **Step 6: 提交解析器**
 
   ```bash
   git add scripts/lib/desktop-command-surface.mjs scripts/desktop-command-surface.test.mjs scripts/fixtures/desktop-command-surface

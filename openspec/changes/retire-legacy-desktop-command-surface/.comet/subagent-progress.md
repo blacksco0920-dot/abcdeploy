@@ -4,14 +4,27 @@
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
 - Current task: `Task 1 完成：命令面解析器与夹具通过 TDD 验收`
 - OpenSpec mapping: `1.1 增加可重复的审计脚本，提取生产 TypeScript invoke 命令与 Rust generate_handler! 注册命令，并先用测试覆盖未注册调用和无说明注册入口`
-- Stage: `implementing`
+- Stage: `done`
 - Review mode: `thorough`
-- Review/fix round: `0/2`
+- Review/fix round: `2/2`
 - Implementer: `/root/task_1_command_parser`
-- Implementation commit: pending
-- Changed files: pending
-- RED evidence: pending
-- GREEN evidence: pending
-- Task review: pending
-- Open findings: none
+- Implementation commit: `0cfbd5bbb90763e2201f2d6b55e1016ebb134459`
+- Changed files: `scripts/lib/desktop-command-surface.mjs`, `scripts/desktop-command-surface.test.mjs`, `scripts/fixtures/desktop-command-surface/**`
+- RED evidence: `node --test scripts/desktop-command-surface.test.mjs` failed first with `ERR_MODULE_NOT_FOUND`; after the clarified comparison contract, 5 passed/1 failed on the expected missing/extra difference fields.
+- GREEN evidence: `node --test scripts/desktop-command-surface.test.mjs` passed 6/6; desktop-workspace Prettier, `pnpm check:project`, `pnpm check:secrets`, diff check, and CodeGraph sync/status passed.
+- Task review: thorough review passed after two fix rounds; original shadowing finding and new TypeScript API crash are addressed.
+- Reviewer: `/root/review_task_1_command_parser`
+- Open findings: no blocking findings. Minor deferred to final review — `localeCompare` relies on ambient locale.
+- Fix agent: `/root/fix_task_1_shadowed_invoke`
+- Fix commit: `c6130ab5e27be5cfbd8322369e9db5fa78f10db8`
+- Fix RED/GREEN: new shadowed-parameter test failed with actual `["alpha", "not-tauri"]` vs expected `["alpha"]`; after the fix, Node tests passed 7/7 and focused quality/security/format/CodeGraph checks passed.
+- Re-reviewer: `/root/rereview_task_1_shadow_fix`
+- Re-review result: findings remain open because the fix introduced the unavailable TypeScript API call; reviewer reproduced a `TypeError` on a normal `const` source file.
+- Fix agent round 2: `/root/fix_task_1_typescript_api`
+- Fix commit round 2: `d784d9d`
+- Fix round 2 RED/GREEN: ordinary `const` source reproduced the missing TypeScript API crash (7/8); public `getCombinedNodeFlags`/`NodeFlags.BlockScoped` helper restored 8/8 and all focused gates.
+- Re-reviewer round 2: `/root/rereview_task_1_typescript_fix`
+- Checkoff: plan Task 1 and OpenSpec 1.1 checked; directed CLI verification pending commit.
+- Risk signals: diff exceeds 200 lines (239 added); all other listed signals reported false.
+- Controller resolution: reviewer could not independently prove temporal RED/GREEN order from the diff; the required implementer report contains both commands, expected failure summaries, and final passing output, so no additional gap was confirmed.
 - Context resolution: Task 1 exports are `extractSourceCommands`, `extractRegisteredCommands`, `extractBundledCommands`, and `compareCommandSets`; `auditDesktopCommandSurface` starts in Task 2. The design's four difference classes are now explicit: `(source ∪ bundle) - registered`, `registered - (source ∪ bundle)`, `bundle - source`, and `source - bundle`.

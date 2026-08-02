@@ -1,6 +1,6 @@
 ## 1. 固化可达性证据
 
-- [ ] 1.1 增加可重复的审计脚本，提取生产 TypeScript `invoke` 命令与 Rust `generate_handler!` 注册命令，并先用测试覆盖未注册调用和无说明注册入口
+- [x] 1.1 增加可重复的审计脚本，提取生产 TypeScript `invoke` 命令与 Rust `generate_handler!` 注册命令，并先用测试覆盖未注册调用和无说明注册入口
 - [ ] 1.2 为所有候选旧命令建立生产调用、内部调用、迁移职责、测试依据和处置结论矩阵
 - [ ] 1.3 通过 CodeGraph、`rg` 和动态注册源码复核命令簇影响范围，标出必须保留的 Workspace、Provider 与恢复逻辑
 
