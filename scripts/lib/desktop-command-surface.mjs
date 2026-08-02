@@ -8,6 +8,7 @@ const require = createRequire(
 const ts = require("typescript");
 
 const CORE_MODULE = "@tauri-apps/api/core";
+const MISSING_BUNDLE_MESSAGE = "生产 bundle 构建产物缺失，请先运行 Vite build";
 const HANDLER_PATTERN = /tauri\s*::\s*generate_handler\s*!\s*\[([^\]]*)\]/g;
 const RUST_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
@@ -172,34 +173,37 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   let dynamicInvocations;
   let bundledCommands;
 
-  if (mode !== "bundle") {
-    const sourceFiles = await productionSourceFiles(
-      join(root, "apps", "desktop", "src"),
-    );
-    const extractedCommands = [];
-    dynamicInvocations = [];
+  const sourceFiles = await productionSourceFiles(
+    join(root, "apps", "desktop", "src"),
+  );
+  const extractedSourceCommands = [];
+  dynamicInvocations = [];
 
-    for (const file of sourceFiles) {
-      const extracted = extractSourceCommands(
-        await readFile(file, "utf8"),
-        file,
-      );
-      extractedCommands.push(...extracted.commands);
-      dynamicInvocations.push(...extracted.dynamicInvocations);
-    }
-    sourceCommands = sortedUnique(extractedCommands);
+  for (const file of sourceFiles) {
+    const extracted = extractSourceCommands(await readFile(file, "utf8"), file);
+    extractedSourceCommands.push(...extracted.commands);
+    dynamicInvocations.push(...extracted.dynamicInvocations);
   }
+  sourceCommands = sortedUnique(extractedSourceCommands);
 
   if (mode !== "source") {
     const bundleDirectory = join(root, "apps", "desktop", "dist", "assets");
-    const entries = await readdir(bundleDirectory, { withFileTypes: true });
+    let entries;
+    try {
+      entries = await readdir(bundleDirectory, { withFileTypes: true });
+    } catch (error) {
+      if (error && typeof error === "object" && error.code === "ENOENT") {
+        throw new Error(MISSING_BUNDLE_MESSAGE);
+      }
+      throw error;
+    }
     const bundleFiles = entries
       .filter((entry) => entry.isFile() && entry.name.endsWith(".js"))
       .map((entry) => join(bundleDirectory, entry.name))
       .sort();
 
     if (bundleFiles.length === 0) {
-      throw new Error("生产 bundle 不存在，请先运行桌面 Vite build");
+      throw new Error(MISSING_BUNDLE_MESSAGE);
     }
 
     const extractedCommands = [];
@@ -228,8 +232,14 @@ export async function auditDesktopCommandSurface({ root, mode }) {
     return {
       mode,
       registeredCommands,
+      sourceCommands,
       bundledCommands,
-      differences: compareRegistrationSet(bundledCommands, registeredCommands),
+      dynamicInvocations,
+      differences: compareCommandSets({
+        registeredCommands,
+        sourceCommands,
+        bundledCommands,
+      }),
     };
   }
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  chmod,
   copyFile,
   mkdir,
   mkdtemp,
@@ -124,6 +125,56 @@ async function runAuditWithOptions(root, mode, { json }) {
     cwd: tmpdir(),
     stdio: ["ignore", "pipe", "pipe"],
   });
+}
+
+async function createDesktopBuildFixture() {
+  const root = await mkdtemp(join(tmpdir(), "desktop-build-contract-"));
+  const desktopDirectory = join(root, "apps", "desktop");
+  const binaryDirectory = join(desktopDirectory, "node_modules", ".bin");
+  const orderFile = join(root, "build-order.txt");
+  const desktopPackage = JSON.parse(
+    await readFile(
+      new URL("../apps/desktop/package.json", import.meta.url),
+      "utf8",
+    ),
+  );
+
+  await mkdir(binaryDirectory, { recursive: true });
+  await mkdir(join(root, "scripts"), { recursive: true });
+  await writeFile(
+    join(desktopDirectory, "package.json"),
+    `${JSON.stringify({
+      name: "desktop-build-contract-fixture",
+      private: true,
+      scripts: { build: desktopPackage.scripts.build },
+    })}\n`,
+  );
+
+  for (const name of ["tsc", "vite"]) {
+    const executable = join(binaryDirectory, name);
+    await writeFile(
+      executable,
+      `#!/usr/bin/env node
+import("node:fs").then(({ appendFileSync }) => {
+  appendFileSync(process.env.BUILD_ORDER, ${JSON.stringify(`${name}\n`)});
+});
+`,
+    );
+    await chmod(executable, 0o755);
+  }
+
+  await writeFile(
+    join(root, "scripts", "check-desktop-command-surface.mjs"),
+    `import { appendFileSync } from "node:fs";
+appendFileSync(
+  process.env.BUILD_ORDER,
+  \`gate:\${process.argv.slice(2).join(" ")}\\n\`,
+);
+process.exit(23);
+`,
+  );
+
+  return { desktopDirectory, orderFile, root };
 }
 
 async function createProjectGateFixture() {
@@ -284,6 +335,17 @@ test("extractBundledCommands 只保留既注册又作为 AST 字符串字面量�
   assert.deepEqual(result.commands, ["alpha", "gamma"]);
 });
 
+test("extractBundledCommands 忽略注释和较长字符串中的命令子串", () => {
+  const result = extractBundledCommands(
+    `// "comment_only"
+const longer = "prefix-substring_only-suffix";
+const exact = "exact_command";`,
+    ["comment_only", "substring_only", "exact_command"],
+  );
+
+  assert.deepEqual(result.commands, ["exact_command"]);
+});
+
 test("compareCommandSets 报告四类去重且排序的命令面差集", () => {
   const result = compareCommandSets({
     sourceCommands: ["alpha", "gamma", "gamma"],
@@ -388,8 +450,8 @@ test("CLI source 模式只以注册表和生产源码计算快速门禁", async 
   }
 });
 
-test("CLI bundle 模式只以注册表和生产 bundle 计算构建后门禁", async () => {
-  const root = await createAuditFixture({ source: false });
+test("CLI bundle 模式同时拒绝没有进入生产 bundle 的源码命令", async () => {
+  const root = await createAuditFixture();
 
   try {
     const result = await runAudit(root, "bundle");
@@ -399,14 +461,73 @@ test("CLI bundle 模式只以注册表和生产 bundle 计算构建后门禁", a
     assert.deepEqual(JSON.parse(result.stdout), {
       mode: "bundle",
       registeredCommands: ["alpha", "beta"],
+      sourceCommands: ["alpha", "gamma"],
       bundledCommands: ["alpha"],
+      dynamicInvocations: [],
       differences: {
-        missingRegistrations: [],
+        missingRegistrations: ["gamma"],
         registeredOnly: ["beta"],
+        bundleOnly: [],
+        sourceNotBundled: ["gamma"],
       },
     });
   } finally {
     await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("CLI bundle 模式在 dist/assets 缺失时给出可操作诊断", async () => {
+  const root = await createAuditFixture({ bundle: false });
+
+  try {
+    const result = await runAuditWithOptions(root, "bundle", { json: false });
+
+    assert.equal(result.code, 1);
+    assert.equal(result.stdout, "");
+    assert.equal(
+      result.stderr,
+      "桌面命令面审计失败: 生产 bundle 构建产物缺失，请先运行 Vite build\n",
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("CLI bundle 缺失诊断不掩盖其他文件系统错误", async () => {
+  const root = await createAuditFixture({ bundle: false });
+
+  try {
+    await mkdir(join(root, "apps", "desktop", "dist"), { recursive: true });
+    await writeFile(join(root, "apps", "desktop", "dist", "assets"), "file");
+
+    const result = await runAuditWithOptions(root, "bundle", { json: false });
+
+    assert.equal(result.code, 1);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, /ENOTDIR/);
+    assert.doesNotMatch(result.stderr, /构建产物缺失/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("desktop build 在 Vite 后运行 bundle gate 并传播失败", async () => {
+  const fixture = await createDesktopBuildFixture();
+
+  try {
+    const result = await run("npm", ["run", "build", "--silent"], {
+      cwd: fixture.desktopDirectory,
+      env: { ...process.env, BUILD_ORDER: fixture.orderFile },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    assert.notEqual(result.code, 0);
+    assert.equal(
+      await readFile(fixture.orderFile, "utf8"),
+      "tsc\nvite\ngate:--mode bundle\n",
+    );
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
   }
 });
 
