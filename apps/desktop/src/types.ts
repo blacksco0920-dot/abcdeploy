@@ -353,19 +353,6 @@ export interface DeploymentPathInput {
   lastSuccessfulRevision?: string | null;
 }
 
-export interface DeploymentAttempt {
-  id: string;
-  taskId: string;
-  ordinal: number;
-  status: DeploymentRunStatus;
-  currentStage: string;
-  inputSnapshot: Record<string, unknown>;
-  output: Record<string, unknown>;
-  startedAt: string;
-  finishedAt: string | null;
-  updatedAt: string;
-}
-
 export type ConfigProfileKind =
   "ai" | "database" | "redis" | "dns" | "registry" | "custom";
 export type ConfigProfileScope = "any" | "local" | "remote";
@@ -589,15 +576,6 @@ export interface ManagedServerEnvironment {
   composeVersion: string;
   verifiedAtMs: number;
 }
-
-export interface RouteConflictCheck {
-  conflicts: Array<{
-    host: string;
-    source: "main" | "managed";
-  }>;
-  takeoverAvailable: boolean;
-}
-
 
 export type PublicRoutePhase =
   | "dns"
