@@ -2,25 +2,20 @@
 
 - Change: `retire-legacy-desktop-command-surface`
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
-- Current task: `Task 6 完成：旧部署控制、路由修复和外部同步命令完成退役`
-- OpenSpec mapping: `3.3 删除无当前消费者的旧 staging/production、路由修复和外部同步命令簇，同时保留当前 deployment-path 执行、更新和恢复内核`
-- Stage: `done`
+- Current task: `Task 7 完成：旧数据、配置、秘密和 Provider 管理命令完成退役`
+- OpenSpec mapping: `3.4 删除无当前消费者的旧配置、运行时秘密和 Provider 管理命令簇，同时保留当前授权、仓储迁移和部署准备所需共享能力`; `3.5 根据编译器和调用图继续删除只服务退役命令的类型、辅助函数与测试，不删除仍覆盖当前数据兼容行为的断言`
+- Stage: `preflight`
 - Review mode: `thorough`
-- Review/fix round: `1/2`
-- Implementer: `/root/task_6_deployment_command_cleanup` (complete)
-- Fix implementer: `/root/fix_task_6_typescript_residue`
-- Implementation commit: `6262ebda232f5f5ba7ef4e7ea93568d3b8c7ee92`
-- Fix commit: `c1d4813147864f72fc203f07a1824fdf15456fb2`
-- Changed files: `lib.rs`, `runtime_config.rs`, `tests.rs`, `workspace.rs`, `workspace/tests.rs`, desktop `types.ts`, deploy-core `health.rs`/`model.rs`, evidence matrix.
-- RED evidence: all-mode audit 90/45/45 with all 19 targets among 45 registered-only; route 18 and server_deploy 1 behavior baseline; five exact recovery tests each 1 pass.
-- GREEN evidence: audit 71/45/45 with only 26 registered-only and all other differences zero; five exact tests, route 18/server_deploy 1, 135 desktop + 108 core + 3 integration tests, locked Clippy/build, strict TS/bundle, project/secrets/diff/CodeGraph all pass.
-- Task review: clean after fix round 1/2; both endpoint-only TypeScript findings addressed; no new Critical/Important/Minor breakage.
-- Reviewer: `/root/rereview_task_6_typescript_residue` (scoped fix re-review)
-- Open findings: none.
-- Risk signals: deployment recovery/state machine; route/security/DNS; Workspace compatibility; intentional API/test deletion; >200-line diff; no schema/migration or external side effects.
-- Scope note: approved `runtime_config.rs` solely for the no-caller `rollback_environment` Tauri adapter and endpoint-only residue; shared runtime config logic is protected.
-- Scope note: approved deploy-core `health.rs`/`model.rs` and desktop `types.ts` solely for the `detect_dns_provider` endpoint-only helper/model/type chain; all current health/deployment checks are protected.
-- Scope note: approved `workspace.rs`; preserve attempt state compatibility/tests with a narrow documented internalize allowance, delete only three proven endpoint-only sync/rollback query helpers and pure tests, and do not change schema/migrations/current run queries.
-- Context: Task 5 clean and complete; current audit 90/45/45 with 45 registered-only. Task 6 removes 19 handlers and expects 71/45/45 with 26 registered-only.
+- Review/fix round: `0/2`
+- Implementer: pending dispatch
+- Implementation commit: pending
+- Changed files: pending
+- RED evidence: pending
+- GREEN evidence: pending
+- Task review: pending
+- Reviewer: pending
+- Open findings: none
+- Risk signals: secrets/security, Workspace schema compatibility/current pointers, Provider authorization, intentional API/test deletion, likely >200-line diff.
+- Context: Task 6 clean and complete; current audit 71/45/45 with exactly the 26 Task 7 targets registered-only. Expected Task 7 result is 45/45/45, all differences zero, all CLI modes exit 0.
 - Deferred minors: fixed lexical sorting rule; actionable missing-bundle-directory error; direct `open_project_preview` write-safety regression test; precise `apply_plan` caller wording. Final review will triage.
-- Checkoff: Task 6 plan checkbox and OpenSpec 3.3 checked; exact runtime validation pending coordination commit.
+- Checkoff: pending
