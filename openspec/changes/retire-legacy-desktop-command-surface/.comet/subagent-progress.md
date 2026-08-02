@@ -4,18 +4,18 @@
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
 - Current task: `Task 9 完成：静态命令契约接入项目快速门禁`
 - OpenSpec mapping: `4.1 把桌面命令面一致性检查接入 pnpm check:project，并要求所有保留例外具有逐项原因`
-- Stage: `preflight`
+- Stage: `done`
 - Review mode: `thorough`
 - Review/fix round: `0/2`
-- Implementer: pending dispatch
-- Implementation commit: pending
-- Changed files: pending
-- RED evidence: pending
-- GREEN evidence: pending
-- Task review: pending
-- Reviewer: pending
-- Open findings: none
-- Risk signals: project-wide quality gate and CLI exit semantics; no runtime product change expected.
+- Implementer: `/root/task_9_static_command_gate` (complete)
+- Implementation commit: `10a5d7bfbfbd9ee0df5ef7346014dbe9c6fc0552`
+- Changed files: root package; command-surface library/CLI/tests; project-quality gate.
+- RED evidence: missing shared export; CLI and project gate did not expose shared diagnostics; malformed handler produced raw stack instead of project failure.
+- GREEN evidence: 19/19 Node tests; CLI/project consume one adapter, same-process project audit with actionable error normalization; root script, 45/45/45, full `pnpm check`, project/secrets/OpenSpec/diff/CodeGraph pass.
+- Task review: clean; no Critical/Important/Minor findings; shared adapter and all gates independently reproduced.
+- Reviewer: `/root/review_task_9_static_command_gate`
+- Open findings: none.
+- Risk signals: project-wide quality gate and CLI exit/output semantics; no runtime product/dependency/schema change.
 - Context: command surface is 45/45/45 with all modes exit0. Task9 adds a shared source-mode diagnostic adapter and integrates it into root project checks without subprocess duplication.
 - Deferred minors: fixed lexical sorting rule; actionable missing-bundle-directory error; direct `open_project_preview` write-safety regression test; precise `apply_plan` caller wording; stale `save_config_profile` caller wording. Final review will triage.
-- Checkoff: pending
+- Checkoff: Task 9 plan checkbox and OpenSpec 4.1 checked; exact runtime validation pending coordination commit.

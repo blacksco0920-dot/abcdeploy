@@ -549,7 +549,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 9: 把静态命令契约接入快速项目门禁
 
-- [ ] Task 9 完成：静态命令契约接入项目快速门禁
+- [x] Task 9 完成：静态命令契约接入项目快速门禁
 
 **Files:**
 - Modify: `scripts/check-project-quality.mjs`
@@ -560,21 +560,21 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: `auditDesktopCommandSurface({ root, mode: "source" })`。
 - Produces: `pnpm check:desktop-command-surface` 与 `pnpm check:project` 都会拒绝动态命令、缺失注册和无源码消费者注册。
 
-- [ ] **Step 1: 写项目门禁诊断适配器的失败测试**
+- [x] **Step 1: 写项目门禁诊断适配器的失败测试**
 
   在 Node 测试中为共享的 `commandSurfaceFailures(result)` 诊断适配器写测试：未注册源码调用、无源码消费者注册、动态命令分别产生 failure；完全相等返回空数组。断言诊断包含精确命令名和源文件行号，CLI 与 `check-project-quality.mjs` 后续必须复用该适配器。
 
-- [ ] **Step 2: 运行测试并确认 Red**
+- [x] **Step 2: 运行测试并确认 Red**
 
   Run: `node --test scripts/desktop-command-surface.test.mjs`
 
   Expected: FAIL，因为共享诊断适配器尚未导出。
 
-- [ ] **Step 3: 接入静态门禁**
+- [x] **Step 3: 接入静态门禁**
 
   在根 `package.json` 增加 `"check:desktop-command-surface": "node scripts/check-desktop-command-surface.mjs --mode source"`；`scripts/check-project-quality.mjs` 顶层等待共享审计函数，把 `commandSurfaceFailures(result)` 并入现有 `failures`，避免启动第二个 Node 进程和重复实现诊断规则。
 
-- [ ] **Step 4: 运行 Green**
+- [x] **Step 4: 运行 Green**
 
   Run: `node --test scripts/desktop-command-surface.test.mjs`
 
@@ -584,7 +584,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；输出的 registered/source 数量完全相等且没有动态调用。
 
-- [ ] **Step 5: 提交静态门禁**
+- [x] **Step 5: 提交静态门禁**
 
   ```bash
   git add scripts/check-project-quality.mjs scripts/desktop-command-surface.test.mjs package.json
