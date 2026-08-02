@@ -32,7 +32,7 @@ pub(super) fn local_start_cancelled(task_key: &str) -> bool {
         .is_ok_and(|cancelled| cancelled.contains(task_key))
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(super) fn cancel_local_start(root: &Path) -> Result<bool, String> {
     let key = root.to_string_lossy().into_owned();
     let active = LOCAL_START_PROCESSES
@@ -62,7 +62,7 @@ pub(super) fn set_local_start_pid(task_key: &str, pid: Option<u32>) -> std::io::
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(super) fn tracked_local_start_pid(task_key: &str) -> std::io::Result<Option<u32>> {
     LOCAL_START_PROCESSES
         .get_or_init(|| Mutex::new(BTreeMap::new()))

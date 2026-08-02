@@ -99,10 +99,12 @@ use source_snapshots::{
     create_managed_local_run_workspace, resolve_local_folder_source, verify_managed_local_run,
 };
 
+#[cfg(all(test, unix))]
+use local_process::cancel_local_start;
 #[cfg(test)]
 use local_process::{
-    LocalCommandLimits, cancel_local_start, local_build_failure_summary,
-    local_build_proxy_attempts, looks_like_dependency_network_text, parse_managed_local_port_owner,
+    LocalCommandLimits, local_build_failure_summary, local_build_proxy_attempts,
+    looks_like_dependency_network_text, parse_managed_local_port_owner,
     run_local_build_with_recovery,
 };
 #[cfg(test)]
