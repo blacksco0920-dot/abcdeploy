@@ -50,7 +50,8 @@ const transitionalBudgets = new Map([
 
 for (const file of files.filter((candidate) => sourcePattern.test(candidate))) {
   const lines = lineCount(file);
-  const testFile = /(?:\.test\.|\.spec\.)/.test(file) || file.includes("/tests/");
+  const testFile =
+    /(?:\.test\.|\.spec\.)/.test(file) || file.includes("/tests/");
   const defaultBudget = file.endsWith(".rs") ? 1200 : testFile ? 1200 : 800;
   const budget = transitionalBudgets.get(file) ?? defaultBudget;
   if (lines > budget) {
@@ -82,7 +83,9 @@ const legacyDependencies = [
   "@flowgram.ai/free-layout-editor",
   "@flowgram.ai/free-snap-plugin",
 ];
-const desktopPackage = JSON.parse(readFileSync("apps/desktop/package.json", "utf8"));
+const desktopPackage = JSON.parse(
+  readFileSync("apps/desktop/package.json", "utf8"),
+);
 const desktopDependencies = {
   ...desktopPackage.dependencies,
   ...desktopPackage.devDependencies,
@@ -105,7 +108,10 @@ for (const file of frontendRuntime) {
   if (/部署测试版|发布正式版|测试版|正式版/.test(text)) {
     failures.push(`${file} 重新暴露了废弃的测试版/正式版产品模型`);
   }
-  if (file !== "apps/desktop/src/api.ts" && !file.startsWith("apps/desktop/src/api/")) {
+  if (
+    file !== "apps/desktop/src/api.ts" &&
+    !file.startsWith("apps/desktop/src/api/")
+  ) {
     if (/from\s+["']@tauri-apps\/api\/core["']/.test(text)) {
       failures.push(`${file} 绕过类型化 API 直接依赖 Tauri invoke`);
     }
@@ -116,6 +122,7 @@ checkMarkdownLinks(files.filter((file) => file.endsWith(".md")));
 checkUserFacingDocumentationBoundaries();
 checkFrontendReachability(frontendRuntime);
 checkProjectContextRecovery();
+checkDocumentationAssetConsistency(files);
 
 if (failures.length) {
   console.error("项目质量检查失败：\n");
@@ -154,10 +161,14 @@ function checkProjectContextRecovery() {
       const firstStep = coldStart.match(/^1\.\s+.*$/m)?.[0] ?? "";
       const secondStep = coldStart.match(/^2\.\s+.*$/m)?.[0] ?? "";
       if (!firstStep.includes("docs/README.md")) {
-        failures.push("AGENTS.md 的“一分钟冷启动”第 1 步必须先指向 docs/README.md");
+        failures.push(
+          "AGENTS.md 的“一分钟冷启动”第 1 步必须先指向 docs/README.md",
+        );
       }
       if (!secondStep.includes(currentState)) {
-        failures.push(`AGENTS.md 的“一分钟冷启动”第 2 步必须再指向 ${currentState}`);
+        failures.push(
+          `AGENTS.md 的“一分钟冷启动”第 2 步必须再指向 ${currentState}`,
+        );
       }
     }
     for (const entry of ["OpenSpec", "Comet", "CodeGraph"]) {
@@ -179,7 +190,83 @@ function checkProjectContextRecovery() {
     "OUT_OF_SCOPE",
   ];
   for (const status of statuses) {
-    if (!text.includes(status)) failures.push(`${currentState} 缺少状态枚举：${status}`);
+    if (!text.includes(status))
+      failures.push(`${currentState} 缺少状态枚举：${status}`);
+  }
+}
+
+function checkDocumentationAssetConsistency(allFiles) {
+  const docsIndex = "docs/README.md";
+  if (existsSync(docsIndex)) {
+    const linkedTargets = new Set();
+    const text = readFileSync(docsIndex, "utf8");
+    for (const match of text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+      const href = match[1].split("#")[0];
+      if (!href || /^(?:https?:|mailto:)/.test(href)) continue;
+      linkedTargets.add(
+        path.normalize(
+          path.resolve(root, path.dirname(docsIndex), decodeURI(href)),
+        ),
+      );
+    }
+    const topLevelDocuments = allFiles.filter(
+      (file) =>
+        file.startsWith("docs/") &&
+        !file.slice("docs/".length).includes("/") &&
+        file.endsWith(".md"),
+    );
+    for (const file of topLevelDocuments) {
+      if (file === docsIndex) continue;
+      if (!linkedTargets.has(path.normalize(path.resolve(root, file)))) {
+        failures.push(`顶层维护文档未从 ${docsIndex} 发现：${file}`);
+      }
+    }
+  }
+
+  const prototype = "docs/product-prototype/index.html";
+  if (existsSync(prototype)) {
+    const prototypeText = readFileSync(prototype, "utf8");
+    for (const marker of [
+      "历史讨论资产",
+      "仅用于追溯",
+      "不代表当前产品、实现或完成状态",
+    ]) {
+      if (!prototypeText.includes(marker)) {
+        failures.push(`${prototype} 缺少非权威提示：${marker}`);
+      }
+    }
+    const maintainedDocuments = [
+      "README.md",
+      "SECURITY.md",
+      ...allFiles.filter(
+        (file) =>
+          file.startsWith("docs/") &&
+          file.endsWith(".md") &&
+          !file.startsWith("docs/comet/") &&
+          !file.startsWith("docs/superpowers/"),
+      ),
+    ];
+    const deletionClaim = /历史(?:\s+HTML)?\s*原型(?:已经|已)删除/;
+    for (const file of maintainedDocuments) {
+      if (!existsSync(file)) continue;
+      if (deletionClaim.test(readFileSync(file, "utf8"))) {
+        failures.push(`${file} 声称历史原型已删除，但 ${prototype} 仍存在`);
+      }
+    }
+  }
+
+  for (const file of ["AGENTS.md", "docs/README.md"]) {
+    if (!existsSync(file)) continue;
+    const text = readFileSync(file, "utf8");
+    for (const recoveryPath of [
+      ".comet/current-change.json",
+      "docs/comet/changes/",
+      "openspec/changes/",
+    ]) {
+      if (!text.includes(recoveryPath)) {
+        failures.push(`${file} 缺少 Native/Classic 恢复线索：${recoveryPath}`);
+      }
+    }
   }
 }
 
@@ -198,7 +285,9 @@ function checkHistoricalPrototypeNavigation() {
   for (const file of ["AGENTS.md", "README.md"]) {
     if (!existsSync(file)) continue;
     if (readFileSync(file, "utf8").includes(historicalPath)) {
-      failures.push(`默认冷启动入口禁止链接历史原型：${file} 包含 ${historicalPath}`);
+      failures.push(
+        `默认冷启动入口禁止链接历史原型：${file} 包含 ${historicalPath}`,
+      );
     }
   }
 
@@ -210,7 +299,9 @@ function checkHistoricalPrototypeNavigation() {
   const historyHeading = text.match(/^## 历史追溯\s*$/m);
   const historySection = markdownSection(text, "历史追溯");
   if (!historyHeading || historySection === null) {
-    failures.push(`${docsIndex} 包含 ${historicalPath} 链接，但缺少“## 历史追溯”章节`);
+    failures.push(
+      `${docsIndex} 包含 ${historicalPath} 链接，但缺少“## 历史追溯”章节`,
+    );
     return;
   }
   const sectionStart = historyHeading.index + historyHeading[0].length;
@@ -231,7 +322,10 @@ function referencesCurrentState(file, currentState) {
   const expectedTarget = path.resolve(root, currentState);
   return [...text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)].some((match) => {
     const href = match[1].split("#")[0];
-    return href && path.resolve(root, path.dirname(file), decodeURI(href)) === expectedTarget;
+    return (
+      href &&
+      path.resolve(root, path.dirname(file), decodeURI(href)) === expectedTarget
+    );
   });
 }
 
@@ -242,18 +336,25 @@ function checkUserFacingDocumentationBoundaries() {
     "docs/product-contract.md",
     "docs/frontend-design-guidelines.md",
   ];
-  const adapterOrLegacyTerms = /\b(?:CNB|TCR|Caddy|Docker|Compose|FlowGram|Coze|OCI|Ubuntu|ProjectGallery|startDeploymentPath)\b|sslip\.io|公网 IP|腾讯云|Nginx|四节点|DeploymentWorkflowCanvas|DeploymentPathWorkspace|测试环境|生产环境|主机指纹|一次性密码|私钥/gi;
+  const adapterOrLegacyTerms =
+    /\b(?:CNB|TCR|Caddy|Docker|Compose|FlowGram|Coze|OCI|Ubuntu|ProjectGallery|startDeploymentPath)\b|sslip\.io|公网 IP|腾讯云|Nginx|四节点|DeploymentWorkflowCanvas|DeploymentPathWorkspace|测试环境|生产环境|主机指纹|一次性密码|私钥/gi;
   const markdownOnlyAdapterTerms = /\bSSH\b/g;
 
   for (const file of productFiles) {
     if (!existsSync(file)) continue;
     const text = readFileSync(file, "utf8");
-    const matches = [...new Set([
-      ...(text.match(adapterOrLegacyTerms) ?? []),
-      ...(file.endsWith(".md") ? text.match(markdownOnlyAdapterTerms) ?? [] : []),
-    ])];
+    const matches = [
+      ...new Set([
+        ...(text.match(adapterOrLegacyTerms) ?? []),
+        ...(file.endsWith(".md")
+          ? (text.match(markdownOnlyAdapterTerms) ?? [])
+          : []),
+      ]),
+    ];
     if (matches.length) {
-      failures.push(`${file} 混入适配器或历史产品术语：${matches.join("、")}；请移入技术迁移清单`);
+      failures.push(
+        `${file} 混入适配器或历史产品术语：${matches.join("、")}；请移入技术迁移清单`,
+      );
     }
   }
 }
@@ -271,12 +372,16 @@ function checkMarkdownLinks(markdownFiles) {
 }
 
 function checkFrontendReachability(runtimeFiles) {
-  const normalizedFiles = new Set(runtimeFiles.map((file) => path.normalize(path.resolve(file))));
+  const normalizedFiles = new Set(
+    runtimeFiles.map((file) => path.normalize(path.resolve(file))),
+  );
   const dependencies = new Map();
   for (const file of normalizedFiles) {
     const text = readFileSync(file, "utf8");
     const targets = [];
-    for (const match of text.matchAll(/(?:from\s*|import\s*\()\s*["']([^"']+)["']/g)) {
+    for (const match of text.matchAll(
+      /(?:from\s*|import\s*\()\s*["']([^"']+)["']/g,
+    )) {
       if (!match[1].startsWith(".")) continue;
       const base = path.resolve(path.dirname(file), match[1]);
       const resolved = [
@@ -300,10 +405,14 @@ function checkFrontendReachability(runtimeFiles) {
     pending.push(...(dependencies.get(file) ?? []));
   }
 
-  const allowed = new Set([path.normalize(path.resolve("apps/desktop/src/vite-env.d.ts"))]);
+  const allowed = new Set([
+    path.normalize(path.resolve("apps/desktop/src/vite-env.d.ts")),
+  ]);
   for (const file of normalizedFiles) {
     if (!reachable.has(file) && !allowed.has(file)) {
-      failures.push(`前端运行文件无法从 main.tsx 到达：${path.relative(root, file)}`);
+      failures.push(
+        `前端运行文件无法从 main.tsx 到达：${path.relative(root, file)}`,
+      );
     }
   }
 }

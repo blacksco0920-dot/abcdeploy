@@ -1,0 +1,27 @@
+{
+  "schema": "comet.native.transaction.v2",
+  "id": "3609a772-5f29-49df-8217-4030caabfae7",
+  "kind": "archive",
+  "status": "committed",
+  "change": "audit-project-documentation-assets",
+  "createdAt": "2026-08-02T03:34:09.599Z",
+  "preflightHash": "c86f5f358b363c345e0200ba25b091bb11d7aa4a6c1ebb18883ab939c788d34b",
+  "operations": [
+    {
+      "id": "spec-1-project-context-recovery",
+      "type": "write",
+      "target": "specs/project-context-recovery/spec.md",
+      "staged": "runtime/transactions/3609a772-5f29-49df-8217-4030caabfae7/staged/specs/project-context-recovery/spec.md",
+      "expectedTargetHash": null,
+      "stagedHash": "a8f7a197aa6a77a09e185edd1fc85cc0cb76a8102e41f82c5750f515b263c797"
+    },
+    {
+      "id": "archive-change",
+      "type": "move",
+      "source": "changes/audit-project-documentation-assets",
+      "target": "archive/2026-08-02-audit-project-documentation-assets",
+      "expectedSourceHash": "687dec9bb0f8a9965b93109136031c540a9908f1d24062a0207673c22e7b2f8c",
+      "expectedTargetHash": null
+    }
+  ]
+}

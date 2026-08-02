@@ -1,0 +1,11 @@
+{
+  "schema": "comet.native.archive-cas.v1",
+  "operationId": "spec-1-project-context-recovery",
+  "role": "post",
+  "hash": "a8f7a197aa6a77a09e185edd1fc85cc0cb76a8102e41f82c5750f515b263c797",
+  "identity": {
+    "dev": 16777234,
+    "ino": 86686413,
+    "birthtimeMs": 1785641650403.2446
+  }
+}

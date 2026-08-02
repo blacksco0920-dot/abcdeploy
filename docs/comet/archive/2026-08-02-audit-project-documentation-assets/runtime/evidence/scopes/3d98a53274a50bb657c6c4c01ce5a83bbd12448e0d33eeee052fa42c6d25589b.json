@@ -1,0 +1,288 @@
+{
+  "schema": "comet.native.implementation-scope.v2",
+  "contractHash": "b74c87fe4276da33d1498deda4da3ddb1b6cea0a73f0666b260c43df962dbd2e",
+  "baselineProjectionRef": "runtime/evidence/snapshots/aad3516e08003b2fc1f281632eb1457ff04c9e40e2cb5609bed69db1c4d8c966.json",
+  "baselineProjectionHash": "aad3516e08003b2fc1f281632eb1457ff04c9e40e2cb5609bed69db1c4d8c966",
+  "currentProjectionRef": "runtime/evidence/snapshots/e5bba228b9ca670db5d89aa84606f5637795c587da88f36a9cc56510c41f728c.json",
+  "currentProjectionHash": "e5bba228b9ca670db5d89aa84606f5637795c587da88f36a9cc56510c41f728c",
+  "complete": false,
+  "declaredArtifacts": [
+    {
+      "path": "AGENTS.md",
+      "kind": "file"
+    },
+    {
+      "path": "README.md",
+      "kind": "file"
+    },
+    {
+      "path": "SECURITY.md",
+      "kind": "file"
+    },
+    {
+      "path": "docs/README.md",
+      "kind": "file"
+    },
+    {
+      "path": "docs/current-state.md",
+      "kind": "file"
+    },
+    {
+      "path": "docs/engineering-quality.md",
+      "kind": "file"
+    },
+    {
+      "path": "docs/frontend-design-guidelines.md",
+      "kind": "file"
+    },
+    {
+      "path": "docs/implementation-acceptance.md",
+      "kind": "file"
+    },
+    {
+      "path": "docs/internal/codegraph.md",
+      "kind": "file"
+    },
+    {
+      "path": "docs/internal/implementation-inventory.md",
+      "kind": "file"
+    },
+    {
+      "path": "scripts/check-project-quality.mjs",
+      "kind": "file"
+    }
+  ],
+  "changes": [
+    {
+      "path": "AGENTS.md",
+      "kind": "modified",
+      "before": {
+        "hash": "bf3e1b5a593e5c4a4088b6822d2ed2e6e6c2e7140b6dd5d26e514158a028116b",
+        "size": 3916
+      },
+      "after": {
+        "hash": "a654050b84972a04013b03d80c73739d21dd45228f804071a218e5d4ba53ebac",
+        "size": 4134
+      },
+      "attributedTo": [
+        {
+          "path": "AGENTS.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "README.md",
+      "kind": "modified",
+      "before": {
+        "hash": "7387bda3c35d1c9c3ee68d4296f6634ef4f56776d0067668a38f9e5a9045c62c",
+        "size": 4538
+      },
+      "after": {
+        "hash": "0b22ff67c1bba356a0e7812798f35371e2e49983dfa2630a76e9826e124316f6",
+        "size": 4660
+      },
+      "attributedTo": [
+        {
+          "path": "README.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "SECURITY.md",
+      "kind": "modified",
+      "before": {
+        "hash": "37898391b60158710754f781c98ea7cd56fd3b42623490bc42dc4c528902dcc5",
+        "size": 3386
+      },
+      "after": {
+        "hash": "001bda617c58040f87e8f3654cc7db8b7615e6af0a9f9528505ede6a86bca2d7",
+        "size": 3542
+      },
+      "attributedTo": [
+        {
+          "path": "SECURITY.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "docs/README.md",
+      "kind": "modified",
+      "before": {
+        "hash": "ef425e164ff26bf6dc245c21af63665fc91c45f0ed49dc7be4249a4270576419",
+        "size": 2732
+      },
+      "after": {
+        "hash": "def54629799249a7d9f61195f58b05b6088ca743f4e47f629dbfc2b4206473e2",
+        "size": 2965
+      },
+      "attributedTo": [
+        {
+          "path": "docs/README.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "docs/current-state.md",
+      "kind": "modified",
+      "before": {
+        "hash": "54452a414110e7b670dde37689094b4c733b79f3798e726df8b262fc12452e53",
+        "size": 7879
+      },
+      "after": {
+        "hash": "e7c24e1f2a1dce4e3182a6f6b7eed6c883660e5d26df61bcefbbd8f5b9e6cc3e",
+        "size": 8774
+      },
+      "attributedTo": [
+        {
+          "path": "docs/current-state.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "docs/engineering-quality.md",
+      "kind": "modified",
+      "before": {
+        "hash": "2f71c28fe87ceffc23496f6bfc42c97ecd2bb0eeb2bf8c2ed214b0ae718677ab",
+        "size": 5031
+      },
+      "after": {
+        "hash": "104fab9869a5c5f1d7758aac4c6ea4855338a666da67f47843c641f3ba25792d",
+        "size": 5186
+      },
+      "attributedTo": [
+        {
+          "path": "docs/engineering-quality.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "docs/frontend-design-guidelines.md",
+      "kind": "modified",
+      "before": {
+        "hash": "16b228fe16fb7c9eab93e8b8f9557f21b7fc52fdc8a49867218fa971573f0bd7",
+        "size": 12109
+      },
+      "after": {
+        "hash": "41667750e9895dddba683e479d6a69e225e4adb0be2dcc907cd336cab6ecd69f",
+        "size": 12195
+      },
+      "attributedTo": [
+        {
+          "path": "docs/frontend-design-guidelines.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "docs/implementation-acceptance.md",
+      "kind": "modified",
+      "before": {
+        "hash": "b5ffceda9aaeed7baeec572f2e55951245c3aaed79206e564f270ad79998b3b4",
+        "size": 21155
+      },
+      "after": {
+        "hash": "89859ad0cb257d69fc89d736d7707b36ebf74fbea4980d060b4a85795b39b8e3",
+        "size": 21265
+      },
+      "attributedTo": [
+        {
+          "path": "docs/implementation-acceptance.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "docs/internal/codegraph.md",
+      "kind": "modified",
+      "before": {
+        "hash": "240feff93c393b3afe1d95972dd9b794937f0ac1319b7a07b35cb7d1810b48bd",
+        "size": 6479
+      },
+      "after": {
+        "hash": "7ed637b0643afb989b1a26f72de83117c5bb1e028edd8909d3fb09576db42d39",
+        "size": 6724
+      },
+      "attributedTo": [
+        {
+          "path": "docs/internal/codegraph.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "docs/internal/implementation-inventory.md",
+      "kind": "modified",
+      "before": {
+        "hash": "25c44bf47aeb993e3fd8edd752c64062429c61011e325cf9aab3b3bc293ee4bb",
+        "size": 11012
+      },
+      "after": {
+        "hash": "3a4437dec66c493e8d088df1c9ecd238cb9f1e9d028c6439d898a4cb3cc42731",
+        "size": 11144
+      },
+      "attributedTo": [
+        {
+          "path": "docs/internal/implementation-inventory.md",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "path": "docs/local-running.md",
+      "kind": "removed",
+      "before": {
+        "hash": "47b493d2ac97990e386f6aa952be9fbf71b584903a9febf8467befea963747f0",
+        "size": 4459
+      },
+      "after": null,
+      "attributedTo": []
+    },
+    {
+      "path": "scripts/check-project-quality.mjs",
+      "kind": "modified",
+      "before": {
+        "hash": "15dfcb22c20dbd0561e135a3c1d47398f54960467c1ac8aaf5344d8e83962c60",
+        "size": 11476
+      },
+      "after": {
+        "hash": "f3d9225125b3f804b00e260c5b53e372db4573b74cc280ccedc40c1afe898835",
+        "size": 14205
+      },
+      "attributedTo": [
+        {
+          "path": "scripts/check-project-quality.mjs",
+          "kind": "file"
+        }
+      ]
+    }
+  ],
+  "unattributed": [
+    {
+      "path": "docs/local-running.md",
+      "kind": "removed",
+      "before": {
+        "hash": "47b493d2ac97990e386f6aa952be9fbf71b584903a9febf8467befea963747f0",
+        "size": 4459
+      },
+      "after": null,
+      "attributedTo": []
+    }
+  ],
+  "unresolvedScopes": [
+    {
+      "id": "scope:f40a0552e0f59f857558667cab2f1a054e0adca0efe994ed09719f57621b5cfa",
+      "kind": "unattributed-change",
+      "source": "implementation-scope",
+      "path": "docs/local-running.md",
+      "reason": "Changed path is not covered by a declared artifact: docs/local-running.md"
+    }
+  ],
+  "noCodeReason": null,
+  "scopeHash": "3d98a53274a50bb657c6c4c01ce5a83bbd12448e0d33eeee052fa42c6d25589b"
+}

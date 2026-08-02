@@ -1,10 +1,10 @@
 # ABCDeploy 当前状态
 
-> 更新时间：2026-08-01。证据截止：2026-08-01 的无会话冷启动审计、归档闭环与本地治理门禁；自动验证不构成新增用户验收。
+> 更新时间：2026-08-02。证据截止：2026-08-02 的项目文档资产复核、Comet Runtime 状态、CodeGraph 与本地治理门禁；自动验证不构成新增用户验收。
 
 本页是冷启动时判断“已经验收什么、代码做到什么、下一步做什么”的唯一入口，也是当前完成度与验收事实的唯一账本。产品应当做到什么仍以 [产品合同](product-contract.md) 为准；实现边界以 [工程架构](architecture.md) 为准；本页不把目标或测试覆盖写成用户验收，也不把现有实现反写为产品合同。
 
-代码入口、调用链、测试和已确认缺口统一见 [实现证据索引](internal/implementation-inventory.md)，查询当前定义与影响范围见 [CodeGraph 指南](internal/codegraph.md)。本页只链接实现导航以及 active change 或必要的归档证据，不复制代码图谱、任务或设计全文。
+代码入口、调用链、测试和已确认缺口统一见 [实现证据索引](internal/implementation-inventory.md)，查询当前定义与影响范围见 [CodeGraph 指南](internal/codegraph.md)。active change 的实时身份以 `.comet/current-change.json` 和对应 workflow 的只读状态为准：Native 从 `docs/comet/changes/` 恢复，Classic/OpenSpec 从 `openspec/changes/` 恢复。本页只保存稳定状态、带日期的审计快照和必要链接，不复制代码图谱、任务或设计全文，也不冒充实时 selection。
 
 ## 状态定义
 
@@ -16,14 +16,14 @@
 | `TARGET` | 产品合同或架构要求的目标；当前入口尚未实现或不能据现有证据称为可用。 |
 | `OUT_OF_SCOPE` | 当前本地快速迭代明确不做的工作，不应据此触发发布或扩张范围。 |
 
-## 无会话冷启动审计与治理门禁
+## 冷启动审计与治理门禁
 
-- 审计日期：2026-08-01。
-- 审计输入边界：仅读取 `AGENTS.md`、`docs/README.md`、本页、`docs/internal/implementation-inventory.md`、`docs/product-contract.md`、`docs/architecture.md`，并只列目录确认 `openspec/changes/` 的 active change；未读取 `docs/product-prototype/index.html` 或其他历史原型，未读取审计前的聊天上下文，也未以文件名猜测业务入口。
-- 五题结果：唯一 `VERIFIED` 是本地文件夹 → Linux 服务器正向 MVP 主线；本机运行、完整待办与门禁、成功证据、更新部署和版本恢复均为 `IMPLEMENTED_UNVERIFIED`；当前没有 active change，因此没有已承诺的 `NEXT`，后续候选工作仍保持为 `TARGET`；未获正式发布授权时的版本、标签、Release、全平台安装包与下载文件发布均为 `OUT_OF_SCOPE`；前端、Tauri/应用、仓储、Provider 与测试分别从 `docs/internal/implementation-inventory.md` 的稳定跨层起点和能力证据索引定位，目录边界见 `docs/architecture.md` §6–§7、§12。
-- 变更结构：`organize-canonical-project-assets` 在归档前通过严格验证，现已归档至 [`2026-07-31-organize-canonical-project-assets`](../openspec/changes/archive/2026-07-31-organize-canonical-project-assets/)，其 6 项需求已同步到 [项目上下文恢复主规格](../openspec/specs/project-context-recovery/spec.md)。
-- 项目门禁：`pnpm check:project` 于 2026-08-01 通过；`pnpm check:secrets` 于 2026-08-01 通过。
-- CodeGraph：`pnpm codegraph:index` 与 `pnpm codegraph:status` 于 2026-08-01 01:06 CST 通过；索引已同步且为最新状态。
+- 审计日期：2026-08-02。
+- 审计输入边界：从 `AGENTS.md`、`docs/README.md`、本页、实现索引、产品合同和架构开始；按文档准确性任务继续复核全部当前维护文档、根入口、项目质量脚本、Comet 配置与 selection。代码事实先用 CodeGraph 查询，图谱没有覆盖嵌套回调或动态入口时才使用 `rg`、源码和测试补充；历史原型只用于核对“文件是否存在和是否有非权威提示”，不参与产品事实裁决。聊天中的旧结论不作为证据。
+- 五题结果：唯一 `VERIFIED` 仍是本地文件夹 → Linux 服务器正向 MVP 主线；本机运行、完整待办与门禁、成功证据、更新部署和版本恢复均为 `IMPLEMENTED_UNVERIFIED`；仓库来源仍为 `TARGET`；已确认 change 的下一步从 selection、workflow 状态和 change brief 恢复；未获正式发布授权时的版本、标签、Release、全平台安装包与下载文件发布均为 `OUT_OF_SCOPE`。前端、Tauri/应用、仓储、Provider 与测试从实现证据索引的稳定跨层起点定位，目录边界见 `docs/architecture.md` §6–§7、§12。
+- 变更结构：2026-08-02 审计快照中，selection 指向 Native change `audit-project-documentation-assets`；实时状态必须用 `comet native status` 确认。此前的 Classic change `organize-canonical-project-assets` 已归档至 [`2026-07-31-organize-canonical-project-assets`](../openspec/changes/archive/2026-07-31-organize-canonical-project-assets/)，其 6 项需求已同步到 [Classic 项目上下文恢复规格](../openspec/specs/project-context-recovery/spec.md)。
+- 项目门禁：`pnpm check:project`、`pnpm check:secrets` 与 `git diff --check` 于 2026-08-02 通过；项目质量检查新增顶层文档可发现性、历史原型事实一致性以及 Native/Classic 恢复路径检查。
+- CodeGraph：`pnpm codegraph:status` 于 2026-08-02 通过；索引为最新状态，共 203 个文件、3,135 个节点和 9,728 条边。
 
 ## 关键用户能力
 
@@ -40,12 +40,13 @@
 
 ## 当前进行中的变更
 
-- `NEXT`：当前没有 active OpenSpec/Comet change；项目上下文治理已经完成并归档，后续工作必须先创建或恢复明确的 change，才能成为已承诺的下一步。
+- 实时入口：读取 `.comet/current-change.json`，再运行对应 workflow 的只读 `status`；selection 缺失、失效或存在多个候选时不得根据聊天摘要猜测。
+- `NEXT`：2026-08-02 审计快照中的已确认工作是完成 `audit-project-documentation-assets` 的 Build、Verify 与 Archive；该快照归档后不继续充当 active 注册表。
 - `TARGET`：四种来源/运行位置组合仍是稳定产品目标；不得因为目前只验收服务器正向主线而缩小产品合同。
 
 ## 最近下一步
 
-1. `NEXT`：当前无已承诺实施项；从下列 `TARGET` 选择工作后，先创建或恢复对应 OpenSpec/Comet change。
+1. `NEXT`：优先完成 selection 指向且已确认的 change；没有 active change 时，必须先为新的已承诺工作创建或恢复对应 Native 或 Classic change。
 2. `TARGET`：在任何声称仓库来源已可用之前，接通 `resolveRepository` 的真实解析、身份锁定和受管目录流程，并取得自动测试与用户验收。
 3. `TARGET`：为本机运行、更新部署和版本恢复补充真实客户端验收记录；验收前保持 `IMPLEMENTED_UNVERIFIED`。
 
@@ -65,5 +66,5 @@
 
 - 用户完成或撤回真实客户端验收时，更新相应能力状态、日期和验收事实。
 - 改动项目来源、运行位置、待办、部署、证据、更新或恢复的代码入口、测试或可用性时，复核本页的精确证据。
-- 创建、完成、归档或替换影响当前判断的 OpenSpec change 时，更新“当前进行中的变更”和“最近下一步”。
+- 创建、完成、归档或替换影响稳定状态判断的 Native 或 Classic/OpenSpec change 时，更新带日期快照和验证证据；实时 active 身份只由 selection 与 workflow 状态决定。
 - 每次更新后运行 `pnpm check:project`；状态枚举缺失会被项目门禁拒绝。

@@ -1,10 +1,10 @@
 # ABCDeploy 当前实现证据索引
 
-> 更新于 2026-08-01。本文只记录当前工作树中的代码、测试和明确缺口，不定义产品，也不把自动测试写成用户验收。产品行为以 [产品合同](../product-contract.md) 为准；所有完成度与用户验收状态只看 [当前状态](../current-state.md)。
+> 更新于 2026-08-02。本文只记录当前工作树中的代码、测试和明确缺口，不定义产品，也不把自动测试写成用户验收。产品行为以 [产品合同](../product-contract.md) 为准；所有完成度与用户验收状态只看 [当前状态](../current-state.md)。
 
 ## 1. 证据职责与查询边界
 
-- OpenSpec/Comet 保存一次变更的 why、what、任务、验证证据和可恢复状态；active change 应从仓库中的 change 目录恢复，不从聊天摘要重建。
+- OpenSpec/Comet 保存一次变更的 why、what、任务、验证证据和可恢复状态；先以 `.comet/current-change.json` 和对应 workflow 的只读状态确认 active 身份，再从 Native 的 `docs/comet/changes/` 或 Classic/OpenSpec 的 `openspec/changes/` 恢复，不从聊天摘要重建。
 - CodeGraph 只用于定位当前定义、调用者、被调用者和影响范围；它不决定产品目标、完成度或用户验收。
 - 本清单把用户能力映射到稳定符号和测试起点。图谱未返回某一层、动态 Tauri 注册无法形成静态边或索引过期时，才使用 `rg` 与对应源码/测试复核，并把缺口写在表中。
 - [当前状态](../current-state.md) 只保留状态和上述资产的链接，不复制 change 内容或调用图全文。

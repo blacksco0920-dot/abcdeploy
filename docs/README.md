@@ -19,7 +19,7 @@
 1. 先阅读 [当前状态](current-state.md)，确定当前事实和禁区。
 2. 只按任务需要阅读上表对应的产品、架构或实现材料。
 3. 修改代码时，再进入 [内部实施资料](internal/README.md) 查询 CodeGraph 和迁移细节；它不属于产品定义。
-4. 当前状态列出 active change 时，从对应 OpenSpec/Comet 记录恢复，不默认遍历其他变更或历史资产。
+4. 读取 `.comet/current-change.json` 并用对应 workflow 的只读状态确认 active change：Native 从 `docs/comet/changes/` 恢复，Classic/OpenSpec 从 `openspec/changes/` 恢复；不默认遍历其他变更或历史资产。
 
 稳定产品规则只在 [产品合同](product-contract.md) 维护；本页只负责导航，不复述产品模型、对象或成功判定。
 
@@ -34,5 +34,6 @@
 ## 导航维护
 
 - 新结论直接更新上表对应的权威文档，不在本页增加第二套产品、状态、架构或实现定义。
+- 新增当前维护的顶层 `docs/*.md` 时必须加入上表；没有独立问题域的重复文档应合并或删除。
 - 历史资产只能从“历史追溯”区进入；默认阅读顺序不得要求读取它们。
 - 文档入口或职责变化时同步 `AGENTS.md`、根 `README.md` 和本页；其余维护要求见 [工程质量规范](engineering-quality.md)。

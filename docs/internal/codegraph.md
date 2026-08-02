@@ -6,7 +6,7 @@ CodeGraph 为当前工作树建立符号、引用、调用和文件依赖索引�
 
 - 产品规则冲突以 [产品合同](../product-contract.md) 为准。
 - 当前完成度与验收事实以 [当前状态](../current-state.md) 为准。
-- OpenSpec/Comet 保存变更的 why、what、任务、验证证据和恢复状态。
+- OpenSpec/Comet 保存变更的 why、what、任务、验证证据和恢复状态；`.comet/current-change.json` 选择当前 workflow，Native 资产位于 `docs/comet/changes/`，Classic/OpenSpec 资产位于 `openspec/changes/`。
 - CodeGraph 只回答“当前代码在哪里、怎样相连、改动可能影响什么”。
 - [实现证据索引](implementation-inventory.md) 保存用户能力到各层稳定入口的人工复核结果；[当前状态](../current-state.md) 只链接这些资产，不复制 change 或调用图全文。
 
@@ -25,7 +25,7 @@ pnpm codegraph:status  # 检查索引状态
 ## AI 修改流程
 
 1. 阅读 `docs/README.md`、`docs/current-state.md` 和任务对应的权威文档。
-2. 检查 active OpenSpec/Comet change，从仓库状态恢复当前 why、what 和任务。
+2. 读取 `.comet/current-change.json` 并用对应 workflow 的只读状态确认 active change，再从 `docs/comet/changes/` 或 `openspec/changes/` 恢复当前 why、what 和任务。
 3. 运行 `codegraph_status`；索引健康后，用一次 `codegraph_explore` 同时询问相关符号、调用链和测试入口。
 4. 只在需要精确影响范围时补充 `codegraph_callers`、`codegraph_callees` 或 `codegraph_impact`。
 5. 若单项没有返回、动态 Tauri/React/序列化入口无法形成静态边，或该文件被标为过期，记录缺口，再用 `rg` 和对应源码/测试复核；禁止凭文件名补全。

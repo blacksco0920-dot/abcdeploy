@@ -1,0 +1,2241 @@
+{
+  "schema": "comet.native.content-snapshot-projection.v1",
+  "origin": "change-created",
+  "capture": {
+    "provider": "git"
+  },
+  "complete": true,
+  "limits": {
+    "maxFiles": 10000,
+    "maxFileBytes": 268435456,
+    "maxTotalBytes": 268435456,
+    "maxManifestBytes": 1048576,
+    "maxDurationMs": 60000
+  },
+  "policy": {
+    "schema": "comet.native.snapshot-policy.v1",
+    "include": [
+      "**/*"
+    ],
+    "exclude": [],
+    "hash": "cc34dce5671bc1aefad09b658911a71d0434a26a1fbb4d8ba10de57b316f1f2f"
+  },
+  "entries": [
+    {
+      "path": ".cnb.yml",
+      "hash": "008422515a9638229fa587ddfe6cd99c6d329c90c8ddbd79e84a9d32845d006e",
+      "size": 74979,
+      "type": "file"
+    },
+    {
+      "path": ".cnb/tag_deploy.yml",
+      "hash": "496e11aca2980ebdb4d308e80c522ccf674cc0f92357ab7e28dcbcd0bdef7d38",
+      "size": 615,
+      "type": "file"
+    },
+    {
+      "path": ".codex/skills/openspec-apply-change/SKILL.md",
+      "hash": "83e0d2d4c47674e312fc9d29297d91e5c018a5507e6961829ee623600e2cf2ff",
+      "size": 5465,
+      "type": "file"
+    },
+    {
+      "path": ".codex/skills/openspec-archive-change/SKILL.md",
+      "hash": "85c8764715a18fbd11d16ca04bd9e15d8644bf5e4203176ad34eee192b546472",
+      "size": 4965,
+      "type": "file"
+    },
+    {
+      "path": ".codex/skills/openspec-explore/SKILL.md",
+      "hash": "79249f798ad0d69bf95f08f3c7a29d44d982e4c1645f1a12a21dfcd488f4ba0d",
+      "size": 11428,
+      "type": "file"
+    },
+    {
+      "path": ".codex/skills/openspec-propose/SKILL.md",
+      "hash": "a666b2381a7d5e982d8e32183484020f518da2b795c0f387c5ff4b3cb47be0fd",
+      "size": 5465,
+      "type": "file"
+    },
+    {
+      "path": ".codex/skills/openspec-sync-specs/SKILL.md",
+      "hash": "420e5815eee33ebd642b9d038f0a5307b176923a5c1a837c4873e51de085aae3",
+      "size": 5187,
+      "type": "file"
+    },
+    {
+      "path": ".codex/skills/openspec-update-change/SKILL.md",
+      "hash": "82a51ed50b10ac3be479d7abc4a99fe3685ee7794078d7d8ea7bfc90ae42c2d9",
+      "size": 5791,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/.gitignore",
+      "hash": "b1599d24f2f41df2225d2c821898262df7840b0a434cdbf1aac3f28f37dc2b70",
+      "size": 80,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/generated/build/Dockerfile.desktop",
+      "hash": "86ab2e5860d85fc416c6a9ac906c8167ea580ac56b339157beb3a6811e724eca",
+      "size": 1590,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/generated/development/Caddyfile",
+      "hash": "62d0076c728e240c8d34e9849ac3a63fa4c0d9d3b4b0f71a641ad16b845e88c6",
+      "size": 101,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/generated/development/docker-compose.yml",
+      "hash": "baf9a3436e5127f379adeed545702dbd775137e810f6d14242c61742eaf44087",
+      "size": 831,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/generated/production/Caddyfile",
+      "hash": "e5c0091dfda0cd496ac08167c346048148b07b3ca9ed3d22b44640b360543582",
+      "size": 101,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/generated/production/docker-compose.yml",
+      "hash": "133946ebfb3c20edd70a88f2f5f13b8d4d8060939513ee4985350f4057b70600",
+      "size": 739,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/generated/production/secret.example.yml",
+      "hash": "2336877479ccf737c900876a7f7b9aea8161a17b05a9178383cd38021a1ab2b7",
+      "size": 489,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/generated/staging/Caddyfile",
+      "hash": "f766017e04a01a956bf2b492ae8e55723560ed4a9cc6419cc826db33fef939ab",
+      "size": 101,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/generated/staging/docker-compose.yml",
+      "hash": "faea271efb968c7f41fdadf2ee619d72224ec730293b0aa95ff2e993704bb677",
+      "size": 724,
+      "type": "file"
+    },
+    {
+      "path": ".deploydesk/generated/staging/secret.example.yml",
+      "hash": "7db90435f7295e96596b6bdbd54fbb92ad315f1c2a62e1fb4f1602e94d82fbd9",
+      "size": 471,
+      "type": "file"
+    },
+    {
+      "path": ".dockerignore",
+      "hash": "6ddd9ab34351a44f456925af63a291704f216255429cb61ef994935aec7e6815",
+      "size": 88,
+      "type": "file"
+    },
+    {
+      "path": ".editorconfig",
+      "hash": "52b56f195f1aa7e0131fed960fe71835d794b772550b5d6363b7a404dc109935",
+      "size": 172,
+      "type": "file"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug.yml",
+      "hash": "4ff0fd3d3981b5fecde9a0ebcf9518c997e526601d7f058a6952a1a667023d8a",
+      "size": 1160,
+      "type": "file"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/config.yml",
+      "hash": "a43e1465ac845fc3745ce002645c2a0e21b356136b00374b811f520cba00cb03",
+      "size": 209,
+      "type": "file"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature.yml",
+      "hash": "e635e9b0e653541302d5949c1fd599bbac268e16395234a6beae2b2c556970a3",
+      "size": 630,
+      "type": "file"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "hash": "064feafb288fc9be26fdbcc150efcf4b96a1347237fbd31fd9d60aca77322430",
+      "size": 693,
+      "type": "file"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "hash": "ec4838e6ee0390da70370823876bdd1a755b430f0faf29f3d2c4951f0b68f3d5",
+      "size": 404,
+      "type": "file"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "hash": "2872f0d6f7f5477f5fbb9ed4ed06dd1eafa1268c20c7020906e436694c017137",
+      "size": 2898,
+      "type": "file"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "hash": "1e9ad4af8ec0a6f97073250b835f0af1d19901a25377e1642510125a700418ab",
+      "size": 5068,
+      "type": "file"
+    },
+    {
+      "path": ".github/workflows/sync-cnb.yml",
+      "hash": "9a4d36f46077cbcd8fc080a6aa664faa48883bc20f01970226bbd36092f338b3",
+      "size": 918,
+      "type": "file"
+    },
+    {
+      "path": ".gitignore",
+      "hash": "c61bcf093bedba2d6c5f33938231b804379d2b894495cc8a0628a3ce4953b1e5",
+      "size": 226,
+      "type": "file"
+    },
+    {
+      "path": "AGENTS.md",
+      "hash": "bf3e1b5a593e5c4a4088b6822d2ed2e6e6c2e7140b6dd5d26e514158a028116b",
+      "size": 3916,
+      "type": "file"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "hash": "4611fc8b3f93be55def0eb845e1157c82c242d49a71013b0c9346d8fe078004f",
+      "size": 604,
+      "type": "file"
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "hash": "13f674e01f7b747adc87555984a1b0b6e7b617567fead0318b050428f78dfeb8",
+      "size": 1121,
+      "type": "file"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "hash": "7855c7bb8ef3bb5cb1356e8e19c71ac7a2cc5bb7b854d72147014a87b7fdb3ed",
+      "size": 2975,
+      "type": "file"
+    },
+    {
+      "path": "Cargo.lock",
+      "hash": "e7421fd596523d89b49d469ecd0087019d5b8834d55e61115b529248b157d92d",
+      "size": 187670,
+      "type": "file"
+    },
+    {
+      "path": "Cargo.toml",
+      "hash": "c525aa215c5d61dc5ece81331b5c93edbb62dabe5adb3a891550eadbba88a9ef",
+      "size": 1512,
+      "type": "file"
+    },
+    {
+      "path": "LICENSE",
+      "hash": "d0bd12b6f062650b7380e6e65f5c66e5674fb57c70664b213d8c19c9f7b0de7b",
+      "size": 11352,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "hash": "7387bda3c35d1c9c3ee68d4296f6634ef4f56776d0067668a38f9e5a9045c62c",
+      "size": 4538,
+      "type": "file"
+    },
+    {
+      "path": "SECURITY.md",
+      "hash": "37898391b60158710754f781c98ea7cd56fd3b42623490bc42dc4c528902dcc5",
+      "size": 3386,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/.gitignore",
+      "hash": "fe718e7babb14f3cbad2d97f08889b9ce5215ed3fe0e43b2b8cfbfb3b9b844e8",
+      "size": 253,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/.vscode/extensions.json",
+      "hash": "8988c707a30230dcaa815dc690caab61f43c57b13fb42e2d632e06a794b58454",
+      "size": 80,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/index.html",
+      "hash": "25ea70330f4cd2fa2c0fc58e93256e40e587fdb564b832f605956c5c5f55c6d6",
+      "size": 1745,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "hash": "f74395e496fc74a86a01cf972ee66afe30ec328ab25f97d88141e83564c1bd92",
+      "size": 1609,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/public/abcdeploy.svg",
+      "hash": "376489ba1d5cb504314c275be7f35cc71d76874a035ed841d30253a15521f432",
+      "size": 851,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/.gitignore",
+      "hash": "88707cda7ba4226eda3ffa91d8284f1a0d12b827f06fb9bc48425cc0d4af04af",
+      "size": 166,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/Cargo.toml",
+      "hash": "c0dff50eb57590a85fb40adfdcde3c4c8bed399f0ac2d87914ebeeaa9de5f991",
+      "size": 1397,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/build.rs",
+      "hash": "6aeeab41bc35efde4e3c2b644a6248f7fc06d24ae30b75c0d33491cbb0c1fa31",
+      "size": 40,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/capabilities/default.json",
+      "hash": "7bda819edef5ff98bdeb6cbe5ed87c1a5bc5d6f7f546ede81439cc8c413c5fb5",
+      "size": 287,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/128x128.png",
+      "hash": "2c564cc39c613e24e087841e1be18c54320693115b38261873070bfbe93ca24e",
+      "size": 3735,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/128x128@2x.png",
+      "hash": "a8ad647bf5eecf6870aa16d69531e228812aec2255d7f7197e9410792ec07460",
+      "size": 6653,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/32x32.png",
+      "hash": "e8afecf7455b0bd77a2e219d3bbd96d0c83a2ff5a7fb1e1246e0eb64f0a4af47",
+      "size": 1107,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/64x64.png",
+      "hash": "32d25be6504685f45b8d3f0e966aa0045e62e4e4802a40b3a266df6cddbf8f76",
+      "size": 2033,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square107x107Logo.png",
+      "hash": "6e8dbdae3e539289fc3002b663905c00960f39b16a48cacda65252507d12ba11",
+      "size": 3177,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square142x142Logo.png",
+      "hash": "d89b1bc8ddb2b7c240c284857563c7a9bf85048a3d9130bcdf6ca321a0cc0c0a",
+      "size": 3990,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square150x150Logo.png",
+      "hash": "dd674e4486f884c99bedf86cc947944eeeb36a99ed4429172e2af0ffd39a9e79",
+      "size": 4124,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square284x284Logo.png",
+      "hash": "1f35af1303efb77aea64422a049d01410e5a2e2f7ac85afd6ea59cce57b2335b",
+      "size": 7620,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square30x30Logo.png",
+      "hash": "e1852b4f2a8b6f654af18d70d4d1f7d464066d09893bbb8a29c89a899a0c0d5c",
+      "size": 1001,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square310x310Logo.png",
+      "hash": "5d0afc6a8afda3d9f9690f7c2d87d69a0a1f0807ddf95d838ece78f0165f0a6d",
+      "size": 8185,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square44x44Logo.png",
+      "hash": "2da142daf6b1efa66a800f7743ab83219e447a5f22d18ffec01ea27f7ecf0a2f",
+      "size": 1420,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square71x71Logo.png",
+      "hash": "04438e03c98294e10eef75b522c31e03049659b37054336806f4e750ca3ae6c5",
+      "size": 2268,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square89x89Logo.png",
+      "hash": "9212666af5cd2993e727da40ace653bdda7f6d440e76644d95e87738d3334896",
+      "size": 2718,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/StoreLogo.png",
+      "hash": "5df682d8af7ede7970b2bd7b1f93b5d66d0f96d6fd9ab7e2c1fe38a2fcb1cbbc",
+      "size": 1548,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml",
+      "hash": "760d4b8a06bf7163dd010c33ad2cac9e4a75fa0177afaba042f83e311eef0c3e",
+      "size": 261,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-hdpi/ic_launcher.png",
+      "hash": "341a2ebb14c73b52dca22c86ce40481b96b5bbc4b635252a515098b25b1b6fc5",
+      "size": 2577,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-hdpi/ic_launcher_foreground.png",
+      "hash": "7fc3ba2b7a97811b7209a47c2d9021277bc96b1e7f18a034cdc898912ca64f1d",
+      "size": 4666,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-hdpi/ic_launcher_round.png",
+      "hash": "5eec31e6395fef3118db8ae2e8dc040e6c13d291a769a3f5ce61b4777721a3ce",
+      "size": 2534,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-mdpi/ic_launcher.png",
+      "hash": "1401637484f0b84ce7bb0d76272003fbc3e0ba2716d373522c43795921443d75",
+      "size": 2421,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-mdpi/ic_launcher_foreground.png",
+      "hash": "6b3a825eeab2e7439980228a403ba87939e01dad9652df0f60123642479a4196",
+      "size": 3160,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-mdpi/ic_launcher_round.png",
+      "hash": "059c88bc7f35e7b6358b2ceadf2a3a6386fc8a30d98764e6203fd721f77bf742",
+      "size": 2393,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-xhdpi/ic_launcher.png",
+      "hash": "35e3d098b67e1e3e65c7dde26ec153216618810cc3e6e86de21aceb1bcd4beb9",
+      "size": 5480,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-xhdpi/ic_launcher_foreground.png",
+      "hash": "c8e90e1acae23240afd6e7f4103280cc1f0a8dc76c9d5dfd890f6656b8a63165",
+      "size": 5816,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-xhdpi/ic_launcher_round.png",
+      "hash": "ff07c4c5ad1aca1d8fc480b5004642684c623b2a22caa9fca67827ed9536f657",
+      "size": 5380,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-xxhdpi/ic_launcher.png",
+      "hash": "a2ae5090f21f5487fb9dfcd3fe88949871e4dfcf9b4680f851408a7a62a428c7",
+      "size": 8703,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-xxhdpi/ic_launcher_foreground.png",
+      "hash": "e37b142e7b3c88c66a743fd86f1021ed3c112d7476147a47727e324c088fca76",
+      "size": 8649,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-xxhdpi/ic_launcher_round.png",
+      "hash": "3d5c6626f6b1e01a6ded77f3b12886d3ed42cf40199bb2a50ea7917973933f5e",
+      "size": 8140,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher.png",
+      "hash": "2550da0e79b09dc6585b57a53655909911bdf677f289e69ebe95ab0bcb6fa238",
+      "size": 11492,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "hash": "9c9bbfffe180cea53babd66d9112b76108a5d85be3c46b196fc384a84081f55a",
+      "size": 10977,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher_round.png",
+      "hash": "6f2907d3faefd81f0f5957a7d7b9c819ad0446cd3a6132eaffe1d595de56a5a1",
+      "size": 10858,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/android/values/ic_launcher_background.xml",
+      "hash": "0687336f0ccc6f7ee09c7c95110667c63b75931238df779a21af401fb864cd34",
+      "size": 115,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/icon.icns",
+      "hash": "2a2ca75d567dbc5b8d857fca85427d2be6c0445f619fe2ccd1a0d6619bda81bd",
+      "size": 79045,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/icon.ico",
+      "hash": "695d62600ec25ce61981280277c6263ad37361aa8de09e988afe30ecf388b976",
+      "size": 14236,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/icon.png",
+      "hash": "7ea35393afba64d0217104313c5049497231b2d5106acfda91fd0ad0011d5049",
+      "size": 13213,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-20x20@1x.png",
+      "hash": "242ee059fa6ee4abb997ded4373f4a3029a06d865f946f6ea0a0c73421af3ead",
+      "size": 661,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-20x20@2x-1.png",
+      "hash": "7e251a07bca79614b2d67c9f054422cadd6b952eccd1f2dcc48b52a831fc9553",
+      "size": 1297,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-20x20@2x.png",
+      "hash": "7e251a07bca79614b2d67c9f054422cadd6b952eccd1f2dcc48b52a831fc9553",
+      "size": 1297,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-20x20@3x.png",
+      "hash": "13cb677c47ba25bfe4706f060edbbc1fd03cf1dfd27c049a153237b1dc7946a2",
+      "size": 1922,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-29x29@1x.png",
+      "hash": "9e15c4fd4cad675849371d70e7e2913e13c6ee50e371ce0a2b8495526820ffd2",
+      "size": 950,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-29x29@2x-1.png",
+      "hash": "0984832192bcb835883dd2d7c4ca2a013407680dfbf51e3e8734aae368311dd6",
+      "size": 1951,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-29x29@2x.png",
+      "hash": "0984832192bcb835883dd2d7c4ca2a013407680dfbf51e3e8734aae368311dd6",
+      "size": 1951,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-29x29@3x.png",
+      "hash": "bfa6faff2da76ffdf7f8de5e523a29967ad74b2ed67a398007dcde5be408bc50",
+      "size": 2757,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-40x40@1x.png",
+      "hash": "7e251a07bca79614b2d67c9f054422cadd6b952eccd1f2dcc48b52a831fc9553",
+      "size": 1297,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-40x40@2x-1.png",
+      "hash": "4680e0561da637880f2a158c715ddf4f18e4bd53c8beea8f0341792cbcd5ab33",
+      "size": 2536,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-40x40@2x.png",
+      "hash": "4680e0561da637880f2a158c715ddf4f18e4bd53c8beea8f0341792cbcd5ab33",
+      "size": 2536,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-40x40@3x.png",
+      "hash": "03de4bfe620236f70d62a3ed69b252281e8b237b27f5bc005f5d6abba6a92b5e",
+      "size": 3508,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-512@2x.png",
+      "hash": "3b4763dbc0802aba95933457cdc673983fe01e01a83b787e5efb696fb3a33e99",
+      "size": 29260,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-60x60@2x.png",
+      "hash": "03de4bfe620236f70d62a3ed69b252281e8b237b27f5bc005f5d6abba6a92b5e",
+      "size": 3508,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-60x60@3x.png",
+      "hash": "8c42ea43b4f799d4811a06e9eafaf34cc12d9a40bbc999f1149761e1b6fe5f10",
+      "size": 4989,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-76x76@1x.png",
+      "hash": "4eacf896b5559160b2dd3921d8b8bdec1489deb0eb5de6e208a19188a20f72c8",
+      "size": 2377,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-76x76@2x.png",
+      "hash": "cad27b7b6381379034854430902b727c0979f58c1eb92fc1ff80e20b830a9a2d",
+      "size": 4197,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/ios/AppIcon-83.5x83.5@2x.png",
+      "hash": "3c46efc0a7591689f5172ce9088a2825e800cd37a649634fcb4b1c552046f280",
+      "size": 4727,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/credentials.rs",
+      "hash": "08003ba374697f80691ec495e44a71137c6c0d641dc247ce221d6e7c94a319e5",
+      "size": 23871,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/deployment_route_verification.rs",
+      "hash": "36885e722830f0188975fbe556a110b044f9133e541828de67914bcda371b9c3",
+      "size": 3868,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/deployment_state.rs",
+      "hash": "9d9ab97b13b2067d2f37c3fff5fead10943a47143bac2645d255eb44e3bd4451",
+      "size": 4121,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/lib.rs",
+      "hash": "3ef027506fbcdce11a077d0bc75fb043629803f490ab609dcd380f596dac2630",
+      "size": 335233,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/local_process.rs",
+      "hash": "1230eb2e5bf6d1b5e670910b755767a63aff4a7f686fd4212440acbfcc930783",
+      "size": 25883,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/local_runtime.rs",
+      "hash": "b7fc0955706babbae1c6d9b8c2f52e449864509eb9e89e4d38d9ec956547f79d",
+      "size": 22639,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/main.rs",
+      "hash": "92b08739f56da2d04fdea4b2bb092a58679eba8d8ed6fc0b7ae0a640f28a562b",
+      "size": 661,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/mvp_environment.rs",
+      "hash": "8bf2bb7f5d18c8ec756f2178f489e9f15ea1c35c72baa24d23d26212cd56328e",
+      "size": 21196,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/pilot_validation.rs",
+      "hash": "6ae547601435be59564499c808cff56129c18921440f7277254954e682b91c87",
+      "size": 13171,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/runtime_config.rs",
+      "hash": "a5f25798a5021f17e2fc4486751272f99007cb18152a5561552e8f4e38ce71e7",
+      "size": 43292,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/source_snapshots.rs",
+      "hash": "1a47a7ca3f185a8470911094e71607392653ffc36c8778bde1fcef0a47d042da",
+      "size": 28107,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/tests.rs",
+      "hash": "7c0daf303582c54f1041a4d47489ed661b82225c7510b8609459889caa20c90d",
+      "size": 108330,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/tests/deployment_error_tests.rs",
+      "hash": "821eb7875922c23ffd18b9c793ef43c01a845bd7bc34d978a589ff08a8c50e1a",
+      "size": 3764,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/tests/deployment_route_capability_tests.rs",
+      "hash": "719106977d03d87dc8dba9cae7f86742bd5aa627f9c3b699db0f7db5c90e5e08",
+      "size": 2091,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/workspace.rs",
+      "hash": "5be60a8e3a6f898de998e5c521616890e2f67195fd5cbe6e83cc3ad7997f75b4",
+      "size": 193909,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/workspace/current_runs_tests.rs",
+      "hash": "301f77377361898a9ec089700f2fc28dab556e26290f58a3727656947ac21b8a",
+      "size": 3301,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/workspace/deployment_run_queries.rs",
+      "hash": "a4463257dd29781459967e4fd30968426e4ad6370e4f1c3da23e3463b11d5c37",
+      "size": 4399,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/workspace/model.rs",
+      "hash": "3397233d2077ae19ea278ea26025908f72636db2eeda8293e41fd8c50797371d",
+      "size": 7652,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/workspace/removal.rs",
+      "hash": "55c3e9b3bf38d9d744e23c598eb3b956c89d922fa369c8055379696d7bdfb456",
+      "size": 1967,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/workspace/tests.rs",
+      "hash": "f74e25bc3914e686e06794dd7207f68ac327daa302ead20c1eb583be5b4ca49f",
+      "size": 134551,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tauri.conf.json",
+      "hash": "89034ea800f4c4f248507f15e925ebe3bd0fb501a115364175a8e45c79c1734a",
+      "size": 1187,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/App.current.test.tsx",
+      "hash": "22afc0907267555ce1b4ac12e9f6af81b287c31acb8972cea28336a54d97b058",
+      "size": 922,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/App.entry.test.tsx",
+      "hash": "cec253a062058a045ea124c03db5cffa911f07720d3a01c753c924641eb86d38",
+      "size": 6101,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/App.tsx",
+      "hash": "6492a5e6d51de7da55fba6da00c6211c07f7e4b8ec4a9858cf9ad0f054a510f9",
+      "size": 5901,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/accessibility-styles.test.ts",
+      "hash": "9689d454874f50808507a34b67d8180b7172be98078bbb87c160b2a0cbcdc733",
+      "size": 1044,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/api.test.ts",
+      "hash": "6eb3637064226d3c6ef38b31ed7d237ebc6f90086e8818ecd18316361bb27c27",
+      "size": 10406,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/api.ts",
+      "hash": "f0bb9d36559cdff9656eece59ab51430d0559485c1c2789919c671c424b74244",
+      "size": 49497,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/api/config-profiles.ts",
+      "hash": "ace70f1b0c94d47bdf2a3677d12634cd85a000906bfdce9137b9d3fdf60cf23c",
+      "size": 10695,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/api/secrets.ts",
+      "hash": "c302d561fbc9e01902d2fc257b7d1d2a722a44c5c42b4a02cc6c75b15289dd16",
+      "size": 2546,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/api/settings.ts",
+      "hash": "3b608864cfccb34bd04df4b89fc5fec4fbdabeb0ab3db01de8303e6076a3b3bc",
+      "size": 1093,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/Brand.tsx",
+      "hash": "6d9beac88805db308108c56ac2d7f346188c87e01426171271052ba221eea92f",
+      "size": 840,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/ProjectGallery.test.tsx",
+      "hash": "30a292b2540d1ed151611b716f9e5091f11391dec81dae9126e900c7c542f4f0",
+      "size": 12789,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/ProjectGallery.tsx",
+      "hash": "988d6b86fd599239c5e7cbcccbe64549f900e1a76d15d17559fab672cf6569d0",
+      "size": 8409,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/ui/button.tsx",
+      "hash": "cf34e61ee2490279da767d8350a163c5747b8ac47462693b4ddf9228048e901e",
+      "size": 2086,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/ui/dialog.tsx",
+      "hash": "80c7c00e50bc84e0897b1058e2f4701985310f5872d85ac46facc56880292bca",
+      "size": 2758,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/ui/input.tsx",
+      "hash": "b5477f4154e1a37446b91141f39646097ad0fda6a7a492a5118ab7d4ee5341b1",
+      "size": 703,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/ui/select.tsx",
+      "hash": "c2ceaab71d3715a237ad3a2b485cea5852efbd4225315f26d2e2ac500787805c",
+      "size": 2811,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/action-checklist/model.test.ts",
+      "hash": "5e8187593f36d08833a4ada8b105f99cd54889988c1dddb4700251bf2f8c3c4d",
+      "size": 5453,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/action-checklist/model.ts",
+      "hash": "011781f6fa905f91d984eacc602aa5d871c3ee9f31da0a4ac3fff9b2d88627db",
+      "size": 4451,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-detail/DeploymentDetailController.tsx",
+      "hash": "c4cd39671fa6ef129591e0d950a138fa6b7b80e8b174af9b8c85f3a4e2a633fd",
+      "size": 4667,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-detail/DeploymentDetailPage.tsx",
+      "hash": "5ab9b91be4132d1abd10edbc8890312caf53f6f28c2db53914c84820f7a7350c",
+      "size": 12071,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-detail/deployment-detail-services.ts",
+      "hash": "a7c7ab9fe87c08bc9ea8c4299aa1f125f4299fc07afbfb7c562f4c4ddf14c74d",
+      "size": 1020,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-detail/model.test.ts",
+      "hash": "b6d67013ef6a4dff4bbc97f25cee0a963cb4bdd2690c7bfa81c1d805cd1e7617",
+      "size": 4892,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-detail/model.ts",
+      "hash": "3a1412b3b1f8283bf714168a1125a60555b40b26b6e201c2f2bf7a3205fe5ad3",
+      "size": 1715,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/CnbSecretHandoffDialog.test.tsx",
+      "hash": "678672f7a39b5f34f4f2eb2556e56936ad4b08053692bb839bcf3753f9431f17",
+      "size": 3953,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/CnbSecretHandoffDialog.tsx",
+      "hash": "c00645a2fec30937f149776287b83b9b5319125e4ea85f7d7770a187421bada0",
+      "size": 6465,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentAdoptionDecision.tsx",
+      "hash": "f5e6be6e8c5dc9a1d5f04b3b6b06981208c0db213174e41ba397596927535eb9",
+      "size": 4889,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorController.address-recovery.test.tsx",
+      "hash": "e4c8b148bf73c1daae73c1d1839fb3d7521a9eae21f884be270368069159a80f",
+      "size": 4854,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorController.route-recovery.test.tsx",
+      "hash": "eda2a33b9c8c3d4730ff6daee64b6e55d2b415d9f3c4359673c239df223dc0f9",
+      "size": 9494,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorController.source-refresh.test.tsx",
+      "hash": "debeb57783d92e7d5d8f263e7fe905ee5251a75652de363375a8ce54e1fe5a12",
+      "size": 4051,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorController.test.tsx",
+      "hash": "c1038da3899740098b2f44bc719ed2a53e1c5c8ad8da801939c73a6b19d8efca",
+      "size": 40038,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorController.tsx",
+      "hash": "ab7919442d86939054c8d29baff98fe743bd27cece6195bd3b90c95c02fee50a",
+      "size": 27888,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorController.update.test.tsx",
+      "hash": "2af5a2a38d5742e793e42e3e06061bfe55f7ae5872ab6800c75edc77fce3b71c",
+      "size": 3855,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorPage.test.tsx",
+      "hash": "68ee9be4f36ac690bd48d55b46e251e6fc6616f93daad0b0e1518ec39df7916f",
+      "size": 18410,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorPage.tsx",
+      "hash": "cd749b1354b9e6aaef7de3caffb9eaceb9d29df2a9cee2c35ba079b69e9c1832",
+      "size": 24621,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorPageParts.tsx",
+      "hash": "c93dd8676fa2d9f3de2f8bd125ac8f6c05558c201704909b46334f4cb9917ac2",
+      "size": 4881,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEditorServerConnectionDialog.tsx",
+      "hash": "ad37721a15304e85b616b3d0d89b991ac3c0be7e50c04e0fa7eace998f758295",
+      "size": 1565,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentEvidenceFacts.tsx",
+      "hash": "bb71d4d0faa42330d107542a767acc27ce2d7e8989e19161a24f3f5f836ae326",
+      "size": 4777,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentSetupDialogs.test.tsx",
+      "hash": "66965a770a0980db314560e3224a516f6aa239329a70986c6ce25f2dd960cfc9",
+      "size": 4435,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentSetupDialogs.tsx",
+      "hash": "c68199237e3d1293cfa47eda1e77914db3b8d0c38be4ac00338f128080f232d5",
+      "size": 6910,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/DeploymentSetupProgress.tsx",
+      "hash": "d1dfb0182b2cd0e292c4174ca5cc174348313aabed5c6d22cc246d8c533c43d7",
+      "size": 1899,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/NecessaryConfigurationDialog.test.tsx",
+      "hash": "aa81d05af7ea40cd986fe013413893eae409c235c8b0eb0450eb11176c729951",
+      "size": 4656,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/NecessaryConfigurationDialog.tsx",
+      "hash": "5ba61bacd893a1f40a5dfdd0e1662e6dcd1cb695c3c071585324976b994813fa",
+      "size": 6259,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/ResourceSetupGuide.tsx",
+      "hash": "789621259537d060286388216119533f534ef41dc1e4a6e730bb317b6ac5c991",
+      "size": 2205,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/RunRecoveryCard.tsx",
+      "hash": "34da8c2d69ed4d1d83e2d6cc28c81c2e2dc98093cdb25e4a2b5f994059cdaa74",
+      "size": 1773,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/ServerAddressDialog.test.tsx",
+      "hash": "3ab59545ab73e1c3ed90710dc5f2151ceaee3c975671346a08bf7e97ea50ee57",
+      "size": 6436,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/ServerAddressDialog.tsx",
+      "hash": "16d6502e0484c7e6fcb033969413820ab562637d89a51a51671fe2a19e19a166",
+      "size": 6370,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/ServerConnectionDialog.test.tsx",
+      "hash": "6c331710b24efaf0b9089af25df3862b9a32da579904ce4a3c5afa2d46599af7",
+      "size": 1225,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/ServerConnectionDialog.tsx",
+      "hash": "92585550ee56277ade2ca22de30ca9539f611d846f7dd2edf748ecdc1446b8ce",
+      "size": 6754,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/ServerDeploymentSetupDialog.test.tsx",
+      "hash": "787861e8c7923a1a68067df098e08a029d35cd578dd4d035b49bfd858efe97c5",
+      "size": 8887,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/ServerDeploymentSetupDialog.tsx",
+      "hash": "a2163d02ead6e03a87cadec86e0c5f91878eb57fb6fb505df5c58685511abec2",
+      "size": 20090,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/configuration-document.test.ts",
+      "hash": "53f8821f238b4055610c224a775a3ab6cd82882bd9a35a080a3abc765156cc12",
+      "size": 2520,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/configuration-document.ts",
+      "hash": "30a44308452038eacadae3043b792fd68cb125aca32fff5305411c735cb844a7",
+      "size": 4851,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/deployment-editor-services.test.data.ts",
+      "hash": "262d42c9535cc663ddb24b8da86a548d2f97c4137e8f823d3bd220626e8a8239",
+      "size": 4440,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/deployment-editor-services.ts",
+      "hash": "1d3f0bbe13294ebb9ba56944062a9df793d9ede3801264066af6fe1647fc5514",
+      "size": 8072,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/deployment-readiness.ts",
+      "hash": "d647f46ea315240017548ae57c8bf1b7a010f9d9a6c530f01065919fdcbe11e6",
+      "size": 1292,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/editor-view-model.ts",
+      "hash": "6273d9ee16586d4d9c355cae9b5a69d01969f8f4512b61b9cd73df06e1739cc7",
+      "size": 1432,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/local-evidence-view.ts",
+      "hash": "3237de159d620cd2f35a41dcee3fb6b99abfd2d98dc1297b652c54db4ee14c64",
+      "size": 3490,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/model.test.ts",
+      "hash": "87f2da18284c2d80724e4cd96ae2d36cecedb675f0ff2981e68c4f9bfc690b82",
+      "size": 6101,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/model.ts",
+      "hash": "85b1ac09217a5f9e5009e8b36992acc0d9b45f198f3bf86f5687e1210e7379ee",
+      "size": 8916,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/public-address.ts",
+      "hash": "074a1f8c83102b90b477c105f0f2bf847e3aeae93a953d1e9e534a59d27d5613",
+      "size": 1738,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/resource-setup-guides.ts",
+      "hash": "51b8abeea7b541a462e67b72fd6b861160b4a9ad0532c0f1d9eab16ab26408ae",
+      "size": 3575,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/restored-server-deployment.ts",
+      "hash": "054844525fccf12620d3623ebe1c4e2129c7453b354ad0a030578e1a71ec4c9a",
+      "size": 1629,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/run-view.test.ts",
+      "hash": "43ad1d2863371d6248b6d93cd69caf1ff8ce6a12a420839b23b83b79e04ae4d0",
+      "size": 11232,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/run-view.ts",
+      "hash": "a685fdddca34bca4bbfd13d120bbe68b906fd291d4ad13f689cedba4d3f8c654",
+      "size": 11805,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/runtime-configuration-recovery.ts",
+      "hash": "5cd9a26dc662a631b80a69142b715c509677b679eab31e1deacbb0ea96c5aad0",
+      "size": 963,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-connection.ts",
+      "hash": "3ed962f748a4c31f4187434920d09735b0acc744fba6aed056e7780ef219ece9",
+      "size": 2193,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-deployment-authorization.test.ts",
+      "hash": "c355945559ffa09c8dacd2c78c2f311f4541047844170fb6b35f8bf76918186f",
+      "size": 12789,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-deployment-authorization.ts",
+      "hash": "3b72d8f7dbfb52491b36df3c8d5280b760c6d31bbbac9d3e3d82ee378d65cc69",
+      "size": 8074,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-deployment-setup-service.test.ts",
+      "hash": "7bf45ec6041b677943227a52e472f277a51ab047720fc9d5398c19326bac2d42",
+      "size": 13577,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-deployment-setup-service.ts",
+      "hash": "a3ba4ef13f2654e277ffa3dab12e97096098cf38c97462e5ed4fcd66061f6fee",
+      "size": 15597,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-deployment-setup.test.ts",
+      "hash": "09720ec76fbaceae3282f7c6fa860dafc0be08dd7c8a4105567bedb3b115d4ff",
+      "size": 2640,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-deployment-setup.ts",
+      "hash": "3be7a58370a6fd62912c84abab846aa2f33c20276bc9a04cd48a4f0fb55f148a",
+      "size": 4346,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-evidence.test.ts",
+      "hash": "d137b1227a907b67b1cff96a87019f55d2a99bad0561ffb8fb627c0920ab5e11",
+      "size": 4651,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-evidence.ts",
+      "hash": "e092e54afd0a18537884573d6dc5a1770de9656f01a833a307410c591d6fa36d",
+      "size": 2939,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-readiness.test.ts",
+      "hash": "4685c67190b02428a4e100dd586ee89e5428949be343694818018af9a990e871",
+      "size": 1159,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-readiness.ts",
+      "hash": "3bd3284e572b8de1bb80ce49d4e7705593879d258ab0371ad602ff3a7421903b",
+      "size": 2510,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/server-route-recovery.ts",
+      "hash": "8ffbfc2a5710d6a91875cec80248d43030ae52ad9cde883d6cb64e182ddb3724",
+      "size": 1202,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/session.test.ts",
+      "hash": "ec6128e043a38aaa882da03dc0c6a80efc183bbb42f5224af6dad2cb0cdcbeca",
+      "size": 15118,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/session.ts",
+      "hash": "53f028710fa6b916a05d2546a06441a1caf3c2bec52e41b7578e0ef5a8fb1e51",
+      "size": 18125,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/test-fixtures.test.data.ts",
+      "hash": "595c854a0094ca0d35f6cae9ebac9eb84ce642ee2799f67800c474fec472d985",
+      "size": 1321,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/use-deployment-adoption.ts",
+      "hash": "d284ca6a2d7935d4d74804dc9eb63599a4743a09911ff49340e1744c024f5a67",
+      "size": 2149,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/use-deployment-setup-dialog.ts",
+      "hash": "0eca915ee9c1955e7b5ddb08570de0de835d2d34311e2975a21b8e5f87dfd98d",
+      "size": 2726,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/use-local-run-verification.ts",
+      "hash": "d1ecc417364431502d950a7c21680a46f32b7862d4fc4e0351355f51d545a4c9",
+      "size": 2599,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/use-runtime-configuration-recovery.ts",
+      "hash": "80bb434a6e37f1302e7b9ec75238f7c0958bf9dbfc5945e45abb4bb2b3db7d5c",
+      "size": 2273,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/use-saved-deployment-servers.ts",
+      "hash": "37b3ed80e2dbc76ff7e96fcf18c09f7b65cba5f3086ffda20473c1142ae64854",
+      "size": 917,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-editor/use-source-readiness.ts",
+      "hash": "1fe573382e5949bc7b63ca42a849345bcc1e959ed991648833f3b660f1694785",
+      "size": 5427,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-evidence/model.test.ts",
+      "hash": "ab2f20dee2dd2a79fbc243117fbd9ca3b13f9b84e103b723b41d34300261b327",
+      "size": 4994,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-evidence/model.ts",
+      "hash": "d553fcc00ab0a167807ee790c18db72b90f92358e9f5e00f9e0aaec12ba1a308",
+      "size": 7024,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-list/DeploymentListPage.test.tsx",
+      "hash": "5fe6fd423de8d38c898d930152efc54d370b76052d6c84e3f69c4450498c5c13",
+      "size": 4747,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-list/DeploymentListPage.tsx",
+      "hash": "925f83e02f77aec63156ae414f49e3e9aa0980894f886af1f2b9d022e25ee318",
+      "size": 9852,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-list/model.ts",
+      "hash": "812fc708af0447ecc9425d379dfbf8835987a07ec55b418e9a61f437e836bf97",
+      "size": 546,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-list/use-deployment-dashboard.ts",
+      "hash": "7eca822ba61b75f5c84adf56a6c6cf90675cc31fb28efdc9c0c18006a78f8412",
+      "size": 4279,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-path/model.test.ts",
+      "hash": "edd072d6d90c10ed0e6ad1203efecf139c04e43c910d71a15c037716b255f66a",
+      "size": 4433,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/features/deployment-path/model.ts",
+      "hash": "bc141416fd6446996ac47cc7f1410c5c2343729f6f8b828ee4a1bbbf449100b9",
+      "size": 10576,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/lib/errors.test.ts",
+      "hash": "fce6f182b4cbaaa7afc35a2147355956d83f5e86629c25545c055459523aa933",
+      "size": 17096,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/lib/errors.ts",
+      "hash": "40ca6b7dcc8d2055c0bc1f88455eab16e0d8e7cfbb583860627aecc46f68f550",
+      "size": 25393,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/lib/utils.ts",
+      "hash": "d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27",
+      "size": 169,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/lib/workspace.test.ts",
+      "hash": "c1ff958fe503a69ccf35fe28f27791721c92d5c107888b3f08d8de81e9ba3e4e",
+      "size": 1166,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/lib/workspace.ts",
+      "hash": "25b2d29eed67fdfd5da91a83f569fecfe8d29d0e1388c71e05ca7268c03487fa",
+      "size": 726,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/main.test.tsx",
+      "hash": "5fa012bcd7f1c0e8d7e7d780e77e39d0881f6d3377b7bda9c7a6431754ce03c0",
+      "size": 721,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/main.tsx",
+      "hash": "b9487288c53d096d51748b26256b0fc1e67cce3b605391ee53822181f977f9e1",
+      "size": 1579,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/startup-shell.test.ts",
+      "hash": "c24d1937b6fe050e97ee6b74ac41c817dc8ab454b0138002a001e63199892e48",
+      "size": 514,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/styles.css",
+      "hash": "dc89a4afb3bac2bb4ca885dee94181b1c847d60e6caab94c42eae65353acb8f4",
+      "size": 5627,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/test/setup.ts",
+      "hash": "f482e5490f2d76950c000c58c051da1f658739d6b9586d0c814b32a3db8db80d",
+      "size": 699,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/types.ts",
+      "hash": "f1f17c4a8a5a4091e01945f0a5da72425b5b18fde2cce43fd66b4eec55242e7f",
+      "size": 17409,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/vite-env.d.ts",
+      "hash": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "size": 38,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/window-config.test.ts",
+      "hash": "7b307d669916100d3de41759ed832e504db9fa66748b81eef7e1aa2fe09f9267",
+      "size": 783,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "hash": "980d6cbe977ddfb52d3ab1bdd3fba30f8c1db9371b3b14aa4557d32bb00ce54b",
+      "size": 605,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/tsconfig.node.json",
+      "hash": "9e2abb169ea87b7190613a1d4da57ca608463a453bd4231fa3aeee5e308370dd",
+      "size": 213,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/vite.config.ts",
+      "hash": "fdcef8ae7f6bb42845875df56c2a7af0bf64d61bcdd81c38365528ee959b1943",
+      "size": 1282,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/vitest.config.ts",
+      "hash": "d1c02fa4b52a7ec248ac7a2c98233a438b88205df396fc3ba9d007dcec330eb5",
+      "size": 227,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/Caddyfile",
+      "hash": "0fd56c2a7709b9baa3b939f64d7ea992df96d972b15ba232b21793e6f51888e5",
+      "size": 223,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/Dockerfile",
+      "hash": "2a8cdda8879d83b2a4a5691db8ed312cf93fc5ee17064659109a0723c9ce9f90",
+      "size": 518,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/index.html",
+      "hash": "46d1cf9211fde285373ad7256ebd5f2b5ec706d1fa6926952246d23534c732c8",
+      "size": 9856,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/package.json",
+      "hash": "8ed4e9f989516daeeea9023dd2f6ad6b62a7d4c3d796cbe228127442f1845565",
+      "size": 489,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/public/abcdeploy-app.png",
+      "hash": "cd62e32296ba52519e8a3fb655a21861bbc8b511bb9ee1745881f382adc679db",
+      "size": 140116,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/public/abcdeploy-workspace.png",
+      "hash": "8f42dd7c5688e0533b8134dd32b35fac01158474cec42eec67243577a97e9a80",
+      "size": 183363,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/public/abcdeploy.svg",
+      "hash": "376489ba1d5cb504314c275be7f35cc71d76874a035ed841d30253a15521f432",
+      "size": 851,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/public/releases/latest.json",
+      "hash": "a254977560cd44b4882796f4345cec2c600706c74bf88f5aafd9257983b8f9db",
+      "size": 409,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/src/main.js",
+      "hash": "2952b42c00212fb049a06885d34c0e34161666c8531a1e4dc993d44345a094aa",
+      "size": 2471,
+      "type": "file"
+    },
+    {
+      "path": "apps/site/src/styles.css",
+      "hash": "4757c5f4f1b53b2337111b226b00a3514ee1466c3abf1c974ec4f72603f16250",
+      "size": 9382,
+      "type": "file"
+    },
+    {
+      "path": "assets/abcdeploy-icon.svg",
+      "hash": "376489ba1d5cb504314c275be7f35cc71d76874a035ed841d30253a15521f432",
+      "size": 851,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/Cargo.toml",
+      "hash": "3424b6b6c50b433b0cdb84dba42fd15a3344afca4c8dde40dc84000e7043595d",
+      "size": 820,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/command.rs",
+      "hash": "eee4ed4e0aced417cc5d585ff95dbaf34d13b4376f80beb46372a89aff9b7ba8",
+      "size": 1645,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/error.rs",
+      "hash": "6e8f553691f3b9e5472fe151895f1e234160e0403c3fcbc5ed308c1ba1a7fa54",
+      "size": 1391,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/health.rs",
+      "hash": "af872f145a98f25b4f10f28f83b6f4d7a3830de7db0c21bc04d33ff1ab081383",
+      "size": 24594,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/journal.rs",
+      "hash": "f44e88195bae1aa0013c9f701d42aaf21aef58db2d5060f8e01f7ce76fd8c8c0",
+      "size": 5481,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/lib.rs",
+      "hash": "1143adcd31e78ef2f11d829be5e3ac1f4823b24a13b9e4091a561eafd0b7f5ed",
+      "size": 659,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/manifest.rs",
+      "hash": "9057ede9951fe2e768327410730b9981f2bf3d9e63968dfdac4a8a1fb9bfbe31",
+      "size": 19457,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/model.rs",
+      "hash": "d580f308029526fa3a441135c9b2e22ea623323ed460b486a6f545384464060f",
+      "size": 19534,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/mvp/checklist.rs",
+      "hash": "96b9f31fcd53f1dbad08b9a414c35d4c91d0aa53cad0da7a0a6f3cb0b8a6c18f",
+      "size": 11317,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/mvp/evidence.rs",
+      "hash": "00ceea5b277eccb4ec1fc844258b10ccc9dd3d0feff4afc748a71a1da8b797bd",
+      "size": 18174,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/mvp/mod.rs",
+      "hash": "b0fb8bf7c0502a4071261797fe800665be423092fa08f970b5cba3cecfcdcfa7",
+      "size": 609,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/mvp/model.rs",
+      "hash": "17240d74966b59f8864f82ea06d7f05efefc9e7caa1ff6079ff09d17546be780",
+      "size": 4561,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/mvp/projection.rs",
+      "hash": "89596f7c858a7f2ddfa2b46c4d98925f17b1e793d20fd00c1c84eba4f3652f32",
+      "size": 9118,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/plan.rs",
+      "hash": "3dfb661133e113417dba85dab0ca329378685ddeb3b634bb8dcc8672f4e536fc",
+      "size": 78017,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/preflight.rs",
+      "hash": "31f648d97688e765967bec38bb9baafd0e9e8ca224d274949b0281b5c3b2f2d4",
+      "size": 3623,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/providers/caddy.rs",
+      "hash": "7707c4eeb7db79634f9149fa93b6562f5e0a12e9b13608f89e4a26d287b0a284",
+      "size": 12553,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/providers/cnb.rs",
+      "hash": "fc698c9c723749d4376da5ded2421f0d533099e85570507b8858b3a34eee6b4b",
+      "size": 30097,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/providers/docker.rs",
+      "hash": "62bd8bc2c17a56b09c71d3b9fa397a8e212ddcd51ae757e60a1d40168bb59e98",
+      "size": 2875,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/providers/mod.rs",
+      "hash": "37dc04fe021d9a1eba90302674b07d6d1ec50cc2bcac92bf77ea9d82e31570ac",
+      "size": 1045,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/providers/pipeline.rs",
+      "hash": "e94a392627f66ee3b6dc16cdfde9fb56799489dd42e5da1a8856918b2276efe3",
+      "size": 1256,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/providers/registry.rs",
+      "hash": "e9e9cb31236a6551ad65c0e93849436b662c6bfac3ad1d8733d1853e5191e696",
+      "size": 7421,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/providers/ssh.rs",
+      "hash": "e23b46de684a58dd7d059094b33080f27a39a1643624fbaa4ece576861aecbd1",
+      "size": 27580,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/redact.rs",
+      "hash": "f86a65759606ad6492abb82d6633b17504b0289c5ba228400d2b2214662c6332",
+      "size": 3986,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/render.rs",
+      "hash": "cfe6e37d178c5e3c300047d3ddae1ec02086966464cfec81cdd5a8f0fd9a7e14",
+      "size": 135078,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/src/scanner.rs",
+      "hash": "b59b54e3d1b838edcfafa12e0142294cff5df32a8004bc70df829a6d32fa6f3c",
+      "size": 44425,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/tests/ecat_fixture.rs",
+      "hash": "83f95435b6cbf10cabca399ff3302fbf3bd9262d45632dec9ac933cf2a0a5ef4",
+      "size": 3569,
+      "type": "file"
+    },
+    {
+      "path": "crates/deploy-core/tests/hello_example.rs",
+      "hash": "b9098e12bfc020683aadcae9cf2005edb01b525a78f431443a633447eeb5c94b",
+      "size": 1915,
+      "type": "file"
+    },
+    {
+      "path": "crates/deployctl/Cargo.toml",
+      "hash": "297b5c155ed6424e294c9f91084c10cf838b17e6390f84e2e23b2948b0c703f2",
+      "size": 507,
+      "type": "file"
+    },
+    {
+      "path": "crates/deployctl/src/main.rs",
+      "hash": "f4d694d3b8335c28b10d1118a45fbb34a5cbd86ad255093cc0de0cc1f9c011a8",
+      "size": 14463,
+      "type": "file"
+    },
+    {
+      "path": "deploy.yaml",
+      "hash": "d1fefb60ca00937642556b41c020264b7072651e9ef147fba1e7276404104eba",
+      "size": 2078,
+      "type": "file"
+    },
+    {
+      "path": "docs/README.md",
+      "hash": "ef425e164ff26bf6dc245c21af63665fc91c45f0ed49dc7be4249a4270576419",
+      "size": 2732,
+      "type": "file"
+    },
+    {
+      "path": "docs/architecture.md",
+      "hash": "7f1d5b5a62702d3cea0dc1e5306c0b6f85b7ae28171c1aae97961f47ac238c20",
+      "size": 20343,
+      "type": "file"
+    },
+    {
+      "path": "docs/current-state.md",
+      "hash": "54452a414110e7b670dde37689094b4c733b79f3798e726df8b262fc12452e53",
+      "size": 7879,
+      "type": "file"
+    },
+    {
+      "path": "docs/engineering-quality.md",
+      "hash": "2f71c28fe87ceffc23496f6bfc42c97ecd2bb0eeb2bf8c2ed214b0ae718677ab",
+      "size": 5031,
+      "type": "file"
+    },
+    {
+      "path": "docs/frontend-design-guidelines.md",
+      "hash": "16b228fe16fb7c9eab93e8b8f9557f21b7fc52fdc8a49867218fa971573f0bd7",
+      "size": 12109,
+      "type": "file"
+    },
+    {
+      "path": "docs/implementation-acceptance.md",
+      "hash": "b5ffceda9aaeed7baeec572f2e55951245c3aaed79206e564f270ad79998b3b4",
+      "size": 21155,
+      "type": "file"
+    },
+    {
+      "path": "docs/internal/README.md",
+      "hash": "6ceeb7d34d406016724695ecf9d07fc0d2739b37000edf6c62d7df45567b27ad",
+      "size": 969,
+      "type": "file"
+    },
+    {
+      "path": "docs/internal/codegraph.md",
+      "hash": "240feff93c393b3afe1d95972dd9b794937f0ac1319b7a07b35cb7d1810b48bd",
+      "size": 6479,
+      "type": "file"
+    },
+    {
+      "path": "docs/internal/implementation-inventory.md",
+      "hash": "25c44bf47aeb993e3fd8edd752c64062429c61011e325cf9aab3b3bc293ee4bb",
+      "size": 11012,
+      "type": "file"
+    },
+    {
+      "path": "docs/local-running.md",
+      "hash": "47b493d2ac97990e386f6aa952be9fbf71b584903a9febf8467befea963747f0",
+      "size": 4459,
+      "type": "file"
+    },
+    {
+      "path": "docs/product-contract.md",
+      "hash": "10d7cb6fc70fdf3c8ffaef3a87bf8ce6c640f15f1546cf4c2a91bb64cff6a31b",
+      "size": 33404,
+      "type": "file"
+    },
+    {
+      "path": "docs/product-prototype/index.html",
+      "hash": "18e44d2da4f869688cd85b1f18c58e01a8e1a5a3d1305c09a79f2315bbcb43c1",
+      "size": 69923,
+      "type": "file"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-31-project-context-recovery.md",
+      "hash": "5b6da083e9fae31b514a422c394054069591ca249ef06cde74a3c607ff6790d3",
+      "size": 18199,
+      "type": "file"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-08-02-comet-native-default.md",
+      "hash": "9f6474832b4acf94c30339e5a82fbf2a9da2136e25f705f231d6635ff0467bf9",
+      "size": 6334,
+      "type": "file"
+    },
+    {
+      "path": "docs/superpowers/reports/2026-08-01-organize-canonical-project-assets-verify.md",
+      "hash": "71d99b69522d38d5ebb2a996b218a96aba54281ab73566875d95246203eb1466",
+      "size": 6850,
+      "type": "file"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-31-project-context-recovery-design.md",
+      "hash": "e92eff51bc093bfbca6280d91065c2362abfa6e4fff50120e22c93aeb97b5558",
+      "size": 10271,
+      "type": "file"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-08-02-comet-native-default-design.md",
+      "hash": "7978d595da82706fd060acfc9d7a1ccfcf38db65f8566e75b13b47bf50cde7ae",
+      "size": 3626,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.cnb.yml",
+      "hash": "2719bf7345831b02da11087ca28bebac276ccfcff7b9ccd7af8fd57b06daf880",
+      "size": 83586,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.cnb/tag_deploy.yml",
+      "hash": "496e11aca2980ebdb4d308e80c522ccf674cc0f92357ab7e28dcbcd0bdef7d38",
+      "size": 615,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.deploydesk/.gitignore",
+      "hash": "b1599d24f2f41df2225d2c821898262df7840b0a434cdbf1aac3f28f37dc2b70",
+      "size": 80,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.deploydesk/generated/development/Caddyfile",
+      "hash": "7351302edd0c8c1bf5ced3aced98c9b58bad1d76dc9cd6c168f4905919370368",
+      "size": 117,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.deploydesk/generated/development/docker-compose.yml",
+      "hash": "fd89441eea53f5a8a9f8eea60d648e5cd98a757dd159b0bdc7c2bbda9087064e",
+      "size": 1764,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.deploydesk/generated/production/Caddyfile",
+      "hash": "e92475a2e3ef5f4929d8968569551cd9319f3a11a036073e0f40a38afe7239e0",
+      "size": 117,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.deploydesk/generated/production/docker-compose.yml",
+      "hash": "5c425adb375863e28e274def79463510a95acd1847a929ad8a38885f0ee8fb04",
+      "size": 1547,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.deploydesk/generated/production/secret.example.yml",
+      "hash": "0a885130cd65a7fc09e8a81ffde79c08336f7713183c8d0a2ee824a06444e29a",
+      "size": 455,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.deploydesk/generated/staging/Caddyfile",
+      "hash": "bd6cf0dbf7cdb023f2fc5f3303d24ae30667c6fe6c9a945b9fa536daf12b066e",
+      "size": 117,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.deploydesk/generated/staging/docker-compose.yml",
+      "hash": "b58979cde9ce0aacd27842d0306da915a9011bfaf7594fafaa14b49bebe4ba81",
+      "size": 1523,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.deploydesk/generated/staging/secret.example.yml",
+      "hash": "d7187f8f54bb241eba457ad84bae9a59e3c54db6f6a4ef2a0f62becaa19b8184",
+      "size": 437,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.dockerignore",
+      "hash": "afd6cb11407d8275c712a0a4b28bf32c42bfb545907b4d552cf9df1ff08a3b29",
+      "size": 301,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/.gitignore",
+      "hash": "62f06502e5ba9c5c96b149c42bea09e197b3635e550d38dec03c8203beee91a1",
+      "size": 86,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/README.md",
+      "hash": "196b0096633badcea3782658dd7140596984ba6176461f076498800060d56c4b",
+      "size": 342,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/api/Dockerfile",
+      "hash": "be77e93f2cf320079c45e3128073459740e43b6907eef1d989e83c847008457e",
+      "size": 1108,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/api/nest-cli.json",
+      "hash": "a4e62198ee93c72755ae6663472640e19c7a092eacf6f14c27ab6ad4e33cf2f0",
+      "size": 118,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/api/package.json",
+      "hash": "fe03f91c77026dbd7e76d59afc95f845ac4eeb69bf09815e333cf7a6acffe179",
+      "size": 496,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/api/src/app.controller.ts",
+      "hash": "004ae015ed7b831cd70c4fc17002f5acfd17b977dd82e611d0fa5c4e8210bed2",
+      "size": 279,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/api/src/app.module.ts",
+      "hash": "7065ef56201f8c3b3b934fed2a0d6615a49d77fa68b6e7eed2d0e2e321fed4a2",
+      "size": 160,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/api/src/main.ts",
+      "hash": "e1c333148c602c7cfefd4e4b1275cb2bbd67bf5226d390382369e0056a46a107",
+      "size": 330,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/api/tsconfig.build.json",
+      "hash": "143f714555b60bfbfdab39b9c4c143992e7848e50366c22de42ba5cc08d11100",
+      "size": 98,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/api/tsconfig.json",
+      "hash": "fa4677bb89dd6a81c5f9363d638c9592d07497ed1a83aad02606110ac64db3f0",
+      "size": 408,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/web/Dockerfile",
+      "hash": "f35a2f14bdf332ec1f70f81c1e12d0c433d0d9d1195d68009657b861d9902d8b",
+      "size": 957,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/web/index.html",
+      "hash": "432029738a9bb67584fbf69e72cae19341e132773f9a03c756e6289d57b02dea",
+      "size": 306,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/web/package.json",
+      "hash": "2a46197bb79259d147b36ac9250898fac892f02f44b800c0ef0666389ac90fb6",
+      "size": 438,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/web/src/main.tsx",
+      "hash": "77d7f76d23748eff6e1b11874d52a37b756561383c0b574eca0164cbc73ed459",
+      "size": 456,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/web/src/style.css",
+      "hash": "81c330eac52a4bbdc976aa0d0464907d6d788245a04a96df1f2d56c3e76b6d03",
+      "size": 410,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/web/tsconfig.json",
+      "hash": "cc32a3c2be133425d30e112e3dc863c9dbe1ecbbdd81123abf6d6a0300a8ae5c",
+      "size": 525,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/apps/web/vite.config.ts",
+      "hash": "099316384050c3d7218e68808140ea3c9e69d0dab29e32b34c8540a24fc11e57",
+      "size": 133,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/deploy.yaml",
+      "hash": "201a71b579485c671d26d08e914f1d04047682068edee2f963ddce9a960a50cc",
+      "size": 2494,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/package.json",
+      "hash": "24393db2c3e40a04106d5bafc3ecb40faec2cfc11e25c546f03a791f0cb177ec",
+      "size": 235,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/pnpm-lock.yaml",
+      "hash": "c26fc790b5165bf70ec5d9ddb729a74a22f6c0cb943dc9f628882600c76228c2",
+      "size": 118434,
+      "type": "file"
+    },
+    {
+      "path": "examples/hello-fullstack/pnpm-workspace.yaml",
+      "hash": "89f441216bacd70e2344e93eda7d2d89b67d8a9f070ecfa1d234133a2e3409c4",
+      "size": 57,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/README.md",
+      "hash": "39d555e12dbb33e998fcf880e24984496d990f6f8e33829add62d56366809a76",
+      "size": 232,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/apps/admin/Dockerfile",
+      "hash": "bb57c7da220a8753d7bdabac0d3afdb6efa742e4c736c5bc93ab40dfd5e23b9b",
+      "size": 13,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/apps/admin/package.json",
+      "hash": "9776997b6397b5f35ed0d352b7f0112ef0b3040bf189566cf46fa2c082f70496",
+      "size": 149,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/apps/api/Dockerfile",
+      "hash": "bb57c7da220a8753d7bdabac0d3afdb6efa742e4c736c5bc93ab40dfd5e23b9b",
+      "size": 13,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/apps/api/package.json",
+      "hash": "061935620d4b5e9d3dd56c2906e1e35c5c55a08dab41a9ea6bd6b7f35f2f45f2",
+      "size": 236,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/apps/api/prisma/schema.prisma",
+      "hash": "d6ba2e4d55dc9336acb9fece8e4ba1361aac8bdb4203aa06150c48035f67286a",
+      "size": 131,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/apps/miniapp/Dockerfile",
+      "hash": "bb57c7da220a8753d7bdabac0d3afdb6efa742e4c736c5bc93ab40dfd5e23b9b",
+      "size": 13,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/apps/miniapp/package.json",
+      "hash": "bd62c2876186eaf923fb949d9e12cbcf95ac9856fa76343110d5259f0020ea38",
+      "size": 169,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/package.json",
+      "hash": "d7c8051c684ef8e838a38f6cb13ecd49fe597f743baeaeca25ce0c373ca059d5",
+      "size": 144,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/pnpm-lock.yaml",
+      "hash": "f0bcde463fa201480015b9caa7db2017d3c1b6ca9c7e133df955038c54333d48",
+      "size": 23,
+      "type": "file"
+    },
+    {
+      "path": "fixtures/ecat-energy/pnpm-workspace.yaml",
+      "hash": "59d8c363d3edb29e184d75ac9292ac98505e841bb3865ab3ae6858f8937a3e3f",
+      "size": 21,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet.yaml",
+      "hash": "7e33fe6c67e0bd2bede7c0fb668db18ecd1e5f7584c8518c2bac7eb00fb49392",
+      "size": 1081,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/artifacts.json",
+      "hash": "1f4bdf70d55f9aec6512c302c2b1a96e9b795b0f2ff9c96aa5216f48ace9ce0d",
+      "size": 693,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/checkpoint.json",
+      "hash": "302ee3694e1db63a1c65029af96b646850cfabe64f73f0a4b7d2887ef118433e",
+      "size": 317,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/context.md",
+      "hash": "2a780dd077b72c0ac9451206108cf514668dabd8ebde056c43e613f249b18c27",
+      "size": 14162,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/handoff/brainstorm-summary.md",
+      "hash": "a0f6f89bedb885f7b3f6908da63ba002df3dac2df40fe3654c83cf1d924f8f6d",
+      "size": 2547,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/handoff/design-context.json",
+      "hash": "b02b0cbc55f58832b361925bdf4e28d70d3e91f71f01416ddec523cdcc1f7128",
+      "size": 929,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/handoff/design-context.md",
+      "hash": "2a780dd077b72c0ac9451206108cf514668dabd8ebde056c43e613f249b18c27",
+      "size": 14162,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/run-state.json",
+      "hash": "dbdd91694eb8e7e51344fea3b9d5f7b0d5270c7bade5b3d5108932e4a4818121",
+      "size": 550,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/skill-snapshots/9bd4ffab011ae18aef91dc0db336ffc12d454b513229178c15b8b75d50930ba1/package.json",
+      "hash": "44cfc9cee00c3ddcd065d241d6e0f017f26cbaafd82b2915b67309291a90d268",
+      "size": 7851,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/skill-snapshots/9bd4ffab011ae18aef91dc0db336ffc12d454b513229178c15b8b75d50930ba1/sha256",
+      "hash": "0472daf14db10eede85a433b44e3edb64aeac278179db2bf7fadf60d23c8baad",
+      "size": 65,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/state-events.jsonl",
+      "hash": "0ab45bbcb813226a5520238156527c9a39354e411917907a0146c33a012d22e8",
+      "size": 17391,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/subagent-progress.md",
+      "hash": "292f6684cd090171b2b52b61f66f24b6f22e554f16cffbd280a1c4eb7dcb9594",
+      "size": 3103,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.comet/trajectory.jsonl",
+      "hash": "1ed28a21810c04137a91f084ee67a167ae8fb1950fff085a6d6f3c63318783d5",
+      "size": 3554,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/.openspec.yaml",
+      "hash": "aaab1efc65ce3b56fbc0b9d37a5389df7eca4b46c3ac11725c22c732283a16d9",
+      "size": 40,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/design.md",
+      "hash": "b7160556c15f53c893f13552717e2840444a524f3b1a5c17678a752f171e6e04",
+      "size": 7413,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/proposal.md",
+      "hash": "700d9760ae8ecb4057bbb0ce65ac4be7534259248acb905a43002f9dcd160573",
+      "size": 2153,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/specs/project-context-recovery/spec.md",
+      "hash": "5fd27edc52f1497574690667c285ffcf80ef3d2670396076d8ada8a5741ca688",
+      "size": 3455,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/archive/2026-07-31-organize-canonical-project-assets/tasks.md",
+      "hash": "2a50de8fabfbda996e26f12288b1363aad7c059f5860bbfeb71c26e7f10ec7a9",
+      "size": 2086,
+      "type": "file"
+    },
+    {
+      "path": "openspec/config.yaml",
+      "hash": "7f64d2448e1c83ffa6f2f3398b742fb5f2d4d3ea47b2c540a9076484977026b4",
+      "size": 573,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/project-context-recovery/spec.md",
+      "hash": "e48dd051ad42326b0dab3b7925f8977225b52c0c36d1a005b746dc55908322e8",
+      "size": 3657,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "hash": "0c6f6eb12cb890c066563c5f20519e35e9b0a8c6a58f8e7797ea5a574d1fca06",
+      "size": 1727,
+      "type": "file"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "hash": "69200e4103bdc3331246fcce85f43d0d332a8d861e4b992d32b5865eeba522c6",
+      "size": 126892,
+      "type": "file"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "hash": "bba0cb23a3f4edc60d4627b6dd94d7bdf57e7d3cc579f2ffacb239e6db06a826",
+      "size": 101,
+      "type": "file"
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "hash": "5dadf76f82268c66ac709bf72a7f1792fe4bbd2ac7473d07b725f744196c0657",
+      "size": 87,
+      "type": "file"
+    },
+    {
+      "path": "rustfmt.toml",
+      "hash": "0ac5fe16274264866702e86d51bfa3e51d18c1739e15fe293a714a48241850a3",
+      "size": 41,
+      "type": "file"
+    },
+    {
+      "path": "schemas/deploy.schema.json",
+      "hash": "0b8661ecec311b78e07020cc1fc4b293a2658e83d9ed4532a0a8c4f31d24ed3a",
+      "size": 10660,
+      "type": "file"
+    },
+    {
+      "path": "scripts/build-macos-test-app.sh",
+      "hash": "2bce853810dced7bec5d462e102c225ab7b3badfe873f045cca4b332efc0b177",
+      "size": 1616,
+      "type": "file"
+    },
+    {
+      "path": "scripts/build-release-manifest.mjs",
+      "hash": "140fc7e74b9734b4a6e25b83af50fdc3e0349854b379d08c5fee250904d90f40",
+      "size": 2281,
+      "type": "file"
+    },
+    {
+      "path": "scripts/build-release-manifest.test.mjs",
+      "hash": "a976caa4e873fce8911cde6b065d6a92d7b84e974668da743a744688c2afa79f",
+      "size": 2645,
+      "type": "file"
+    },
+    {
+      "path": "scripts/check-project-quality.mjs",
+      "hash": "15dfcb22c20dbd0561e135a3c1d47398f54960467c1ac8aaf5344d8e83962c60",
+      "size": 11476,
+      "type": "file"
+    },
+    {
+      "path": "scripts/check-tracked-secrets.mjs",
+      "hash": "66168399b25990d1dca507469cb40a2cba0766b6ad576f13f237656db71ef8e0",
+      "size": 1719,
+      "type": "file"
+    },
+    {
+      "path": "scripts/index-codegraph-worktree.mjs",
+      "hash": "a4220a63cfae0b238ef638f5cc498bb9e87bfeb673e75df9884cad06a62acc92",
+      "size": 1272,
+      "type": "file"
+    },
+    {
+      "path": "scripts/macos-development-entitlements.plist",
+      "hash": "5abf6e008167244f8067be40f17ee29173c118bb90197e2154ada8c34fae7375",
+      "size": 250,
+      "type": "file"
+    },
+    {
+      "path": "scripts/publish-release-assets.sh",
+      "hash": "8e7dd3c10b14243f86811f1c9a0b50dda4404e8315b5f05ac5b2dced9a34952f",
+      "size": 2618,
+      "type": "file"
+    },
+    {
+      "path": "scripts/server-bootstrap.sh",
+      "hash": "5aa2767129b796f41acbb10a1a27eca9a0bd69dd14162481a432f80a83021dee",
+      "size": 14837,
+      "type": "file"
+    },
+    {
+      "path": "scripts/server-runtime-sources.sh",
+      "hash": "224b0701241f2b7b26de7c99a552d366aac19c10f407fe7cbc9e64885c2e2c96",
+      "size": 3769,
+      "type": "file"
+    }
+  ],
+  "omitted": [],
+  "omittedCount": 0
+}

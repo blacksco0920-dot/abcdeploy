@@ -5,14 +5,14 @@
 1. 先读 `docs/README.md`，确认问题域权威和阅读边界。
 2. 再读 `docs/current-state.md`，确认 VERIFIED、未验证实现、NEXT 和禁区。
 3. 只按任务需要读取产品契约、架构或实现清单，不默认遍历历史原型。
-4. 检查 active OpenSpec/Comet change；存在时从仓库状态恢复，不从聊天摘要重建需求。
+4. 先读 `.comet/current-change.json` 并用对应 workflow 的只读状态确认 active change：Native 资产位于 `docs/comet/changes/`，Classic/OpenSpec 资产位于 `openspec/changes/`；从仓库状态恢复，不从聊天摘要重建需求。
 5. 修改代码前用 CodeGraph 查询定义、调用者和影响范围。
 
 ### 事实冲突与维护触发器
 
 - 用户验收更新 `docs/current-state.md`；产品规则更新 `docs/product-contract.md`。
 - 代码入口改变时更新 `docs/internal/implementation-inventory.md` 并同步 CodeGraph。
-- 归档 change 前同步 `docs/current-state.md` 的状态和验证证据。
+- 归档 change 前同步 `docs/current-state.md` 的稳定状态和验证证据；active 身份始终以 selection 和 workflow 只读状态为准。
 
 ## Comet 路由与协作
 

@@ -1,0 +1,22 @@
+schema: comet.native.v3
+minimum_runtime_version: 3
+revision: 5
+name: audit-project-documentation-assets
+language: zh-CN
+phase: archive
+brief: brief.md
+approval: confirmed
+approved_contract_hash: b74c87fe4276da33d1498deda4da3ddb1b6cea0a73f0666b260c43df962dbd2e
+spec_changes:
+  - capability: project-context-recovery
+    operation: create
+    source: specs/project-context-recovery/spec.md
+    base_hash: null
+verification_result: pass
+verification_report: verification.md
+implementation_scope: runtime/evidence/scopes/36c5ed7f27cc8eb077543636fb5d81105f5f03acc0311de3f7f3169f3a02f206.json
+verification_evidence: runtime/evidence/verifications/ec27fbf41c10e2514e8066ec3eb34919ce8b93874cd6d28aa2cfbf2e574c12f5.json
+partial_allowance: null
+archived: true
+created_at: 2026-08-02
+run_id: 60ba8489-6109-409a-897a-2150919b197c
