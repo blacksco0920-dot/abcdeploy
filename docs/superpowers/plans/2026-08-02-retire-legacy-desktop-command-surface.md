@@ -97,6 +97,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 1: 以 TDD 建立命令面解析器与夹具
 
+- [ ] Task 1 完成：命令面解析器与夹具通过 TDD 验收
+
 **Files:**
 - Create: `scripts/lib/desktop-command-surface.mjs`
 - Create: `scripts/desktop-command-surface.test.mjs`
@@ -149,6 +151,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   ```
 
 ### Task 2: 建立仓库 CLI、111/56/46 初始失败证据与逐命令矩阵
+
+- [ ] Task 2 完成：仓库 CLI 与逐命令证据矩阵通过审查
 
 **Files:**
 - Create: `scripts/check-desktop-command-surface.mjs`
@@ -215,6 +219,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 3: 删除前端空壳并清理无生产用途依赖
 
+- [ ] Task 3 完成：前端空壳、无用依赖和权限完成清理
+
 **Files:**
 - Delete: `apps/desktop/src/api/config-profiles.ts`
 - Modify: `apps/desktop/src/api/secrets.ts`
@@ -274,6 +280,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 4: 退役旧预检、Manifest 与项目步骤命令
 
+- [ ] Task 4 完成：旧预检、Manifest 与项目步骤命令完成退役
+
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
 - Modify: `apps/desktop/src-tauri/src/tests.rs`
@@ -321,6 +329,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   ```
 
 ### Task 5: 退役旧本机准备与服务控制命令
+
+- [ ] Task 5 完成：旧本机准备与服务控制命令完成退役
 
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
@@ -371,6 +381,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   ```
 
 ### Task 6: 退役旧 staging/production、路由修复和外部同步命令
+
+- [ ] Task 6 完成：旧部署控制、路由修复和外部同步命令完成退役
 
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
@@ -423,6 +435,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   ```
 
 ### Task 7: 退役旧数据、配置、运行时秘密和 Provider 管理命令
+
+- [ ] Task 7 完成：旧数据、配置、秘密和 Provider 管理命令完成退役
 
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
@@ -478,6 +492,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 8: 用编译器和调用图删除退役入口的专属实现
 
+- [ ] Task 8 完成：退役入口的专属实现与测试残留完成清理
+
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
 - Modify: `apps/desktop/src-tauri/src/tests.rs`
@@ -527,6 +543,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 9: 把静态命令契约接入快速项目门禁
 
+- [ ] Task 9 完成：静态命令契约接入项目快速门禁
+
 **Files:**
 - Modify: `scripts/check-project-quality.mjs`
 - Modify: `package.json`
@@ -569,6 +587,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 10: 把生产 bundle 命令契约接入桌面构建
 
+- [ ] Task 10 完成：生产 bundle 命令契约接入桌面构建
+
 **Files:**
 - Modify: `apps/desktop/package.json`
 - Modify: `scripts/check-desktop-command-surface.mjs`
@@ -609,6 +629,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 11: 同步实现文档、OpenSpec 证据与 CodeGraph
 
+- [ ] Task 11 完成：实现文档、OpenSpec 证据与 CodeGraph 完成同步
+
 **Files:**
 - Modify: `docs/internal/implementation-inventory.md`
 - Modify: `docs/current-state.md`
@@ -641,9 +663,9 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   在 `docs/current-state.md` 添加带日期的自动审计事实、净删除规模和门禁结果；本机运行、更新、恢复仍为 `IMPLEMENTED_UNVERIFIED`，服务器正向主线仍保持原 `VERIFIED`，不把本次测试写成新用户验收。
 
-- [ ] **Step 4: 完成矩阵与 OpenSpec 任务账本**
+- [ ] **Step 4: 完成矩阵并复核 OpenSpec 任务账本**
 
-  矩阵记录最终三集合数量、每个命令的最终处置和验证命令；按实际完成情况勾选 `openspec/.../tasks.md` 的 1.1–4.3，4.4–4.5 留到 Task 12 验证后再勾选。
+  矩阵记录最终三集合数量、每个命令的最终处置和验证命令；复核主协调会话已按各 Task 的审查结果增量勾选 `openspec/.../tasks.md` 1.1–4.3，发现不一致时只报告缺口，不由实现者修改复选框。4.4–4.5 留到 Task 12 验证后由主协调会话勾选。
 
 - [ ] **Step 5: 运行文档 Green**
 
@@ -665,6 +687,8 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   若 `.codegraph` 为忽略的本地索引且 `git status --short .codegraph` 无输出，则不要强制添加；只提交文档并保留 `pnpm codegraph:status` 证据。
 
 ### Task 12: 完整门禁、签名 macOS `.app` 与最终证据
+
+- [ ] Task 12 完成：完整门禁、签名 `.app` 与最终证据通过验收
 
 **Files:**
 - Modify: `openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md`
@@ -722,7 +746,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 - [ ] **Step 6: 回写最终验证证据**
 
-  将实际最终命令数、删除 endpoint/依赖数量、全量门禁时间、CodeGraph 状态、`.app` 绝对路径、codesign 和烟测结果写入矩阵与 `docs/current-state.md`；勾选 OpenSpec tasks 4.4、4.5。只记录自动证据与本次烟测，不新增 `VERIFIED` 能力。
+  将实际最终命令数、删除 endpoint/依赖数量、全量门禁时间、CodeGraph 状态、`.app` 绝对路径、codesign 和烟测结果写入矩阵与 `docs/current-state.md`；向主协调会话提供勾选 OpenSpec tasks 4.4、4.5 所需证据，不由实现者修改复选框。只记录自动证据与本次烟测，不新增 `VERIFIED` 能力。
 
 - [ ] **Step 7: 最终再验证文档改动**
 
