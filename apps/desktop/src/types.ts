@@ -232,19 +232,6 @@ export interface UserFacingIssue {
   retryable: boolean;
 }
 
-export interface CnbRepositoryInput {
-  token: string;
-  slug: string;
-  name: string;
-  description: string;
-  privateRepo: boolean;
-}
-
-export interface CnbRepositoryResult {
-  repository: string;
-  visibility: "private" | "public";
-}
-
 export interface CnbProjectSetup {
   repository: string;
   created: boolean;
@@ -272,11 +259,6 @@ export interface CnbAccount {
   namespaces: CnbNamespace[];
 }
 
-export interface SecretStatus {
-  key: string;
-  stored: boolean;
-}
-
 export type ConnectionKind = "source" | "registry" | "server";
 export type ConnectionStatus =
   "unknown" | "configured" | "ready" | "needs_authorization" | "error";
@@ -290,17 +272,6 @@ export interface ConnectionResource {
   lastCheckedAt: string | null;
   capabilities: string[];
   metadata: Record<string, string>;
-}
-
-export interface EnvironmentConnectionBindings {
-  targetConnectionId: string | null;
-  registryConnectionId: string | null;
-}
-
-export interface ProjectConnectionBindings {
-  sourceConnectionId: string | null;
-  staging: EnvironmentConnectionBindings;
-  production: EnvironmentConnectionBindings;
 }
 
 export type DeploymentPathState =
@@ -353,61 +324,6 @@ export interface DeploymentPathInput {
   lastSuccessfulRevision?: string | null;
 }
 
-export type ConfigProfileKind =
-  "ai" | "database" | "redis" | "dns" | "registry" | "custom";
-export type ConfigProfileScope = "any" | "local" | "remote";
-
-export interface ConfigProfile {
-  id: string;
-  kind: ConfigProfileKind;
-  provider: string;
-  name: string;
-  scope: ConfigProfileScope;
-  values: Record<string, string>;
-  secretFields: string[];
-  configuredSecretFields: string[];
-  isDefault: boolean;
-  updatedAt: string;
-}
-
-export interface ConfigProfileInput {
-  id?: string;
-  kind: ConfigProfileKind;
-  provider: string;
-  name: string;
-  scope: ConfigProfileScope;
-  values: Record<string, string>;
-  secretFields: string[];
-  secrets: Record<string, string>;
-  isDefault: boolean;
-}
-
-export interface ProjectProfileBinding {
-  environment: RuntimeEnvironment;
-  kind: ConfigProfileKind;
-  profileId: string;
-}
-
-export type EnvironmentConfigBindings = ProjectProfileBinding[];
-
-export interface RuntimeConfigRecommendation {
-  content: string;
-  appliedProfiles: string[];
-  filledVariables: string[];
-}
-
-export interface ExistingProjectConfig {
-  sourceFiles: string[];
-  content: string;
-}
-
-export interface LocalEnvWriteResult {
-  path: string;
-  written: boolean;
-  requiresConfirmation: boolean;
-  backupPath: string | null;
-}
-
 export interface LocalPreviewService {
   id: string;
   kind: "api" | "web" | "worker" | "static";
@@ -427,22 +343,6 @@ export interface LocalPreviewStatus {
   writtenFiles: string[];
 }
 
-export interface LocalDevelopmentSupport {
-  available: boolean;
-  serviceCount: number;
-  message: string;
-}
-
-export interface LocalInfrastructureStatus {
-  state: "not_prepared" | "stopped" | "running" | "partial" | "unavailable";
-  message: string;
-  postgresRunning: boolean;
-  redisRunning: boolean;
-  postgresPort: number;
-  redisPort: number;
-  profilesReady: boolean;
-}
-
 export interface PipelineIdentityResult {
   created: boolean;
   fingerprint: string;
@@ -450,12 +350,6 @@ export interface PipelineIdentityResult {
 
 export type RuntimeEnvironment =
   "development" | "staging" | "production" | `path-${string}`;
-
-export interface RuntimeSecretStatus {
-  environment: RuntimeEnvironment;
-  variable: string;
-  stored: boolean;
-}
 
 export interface RuntimeConfigFile {
   environment: RuntimeEnvironment;
@@ -472,11 +366,6 @@ export interface RuntimeConfigStatus {
   environment: RuntimeEnvironment;
   filename: string;
   stored: boolean;
-}
-
-export interface RuntimeConfigSyncStatus {
-  stored: boolean;
-  synchronized: boolean;
 }
 
 export interface CnbSecretBundle {
@@ -634,63 +523,6 @@ export interface DeploymentRun {
    */
   routeChecks?: PublicRouteStatus[];
   startedAt: string;
-  updatedAt: string;
-}
-
-/**
- * The durable state of one project environment.
- *
- * Deployment runs are attempts. This record is the authoritative pointer to
- * what is actually online, so a failed newer attempt must not replace
- * `currentVersionKey` or `currentRunId`.
- */
-export interface ProjectEnvironment {
-  environment: EnvironmentName;
-  displayName: string;
-  status: string;
-  currentVersionKey: string | null;
-  currentRunId: string | null;
-}
-
-export type VersionValidationState = "passed" | "rejected";
-
-/**
- * The durable business decision for one immutable staging version.
- *
- * `versionKey` is derived from image digests whenever they are available, so
- * redeploying the same image keeps the same test conclusion even when the
- * deployment run id changes.
- */
-export interface VersionValidation {
-  versionKey: string;
-  state: VersionValidationState;
-  runId: string;
-  verifiedAt: string;
-}
-
-/**
- * One immutable version produced by a successful staging deployment.
- *
- * Unlike `DeploymentRun`, this object is an asset that can be validated once
- * and deployed to more than one environment. Failed deployment attempts never
- * appear in this collection.
- */
-export interface ProjectVersion {
-  id: string;
-  versionKey: string;
-  status: string;
-  commitSha: string | null;
-  sourceTitle: string | null;
-  sourceConnectionId: string | null;
-  sourceBuildId: string | null;
-  repository: string | null;
-  branch: string | null;
-  candidateTag: string | null;
-  stagingRunId: string | null;
-  artifacts: DeploymentArtifact[];
-  validation: VersionValidation | null;
-  currentEnvironments: Array<"staging" | "production">;
-  createdAt: string;
   updatedAt: string;
 }
 

@@ -81,6 +81,33 @@
 | `enable_cnb_auto_trigger` | `delete` | 删除旧自动触发管理 command。 | CodeGraph callers=0；当前同步/部署 Provider 流程不调用该 endpoint。 |
 | `get_app_settings` | `internalize` | 删除批量 IPC；保留 `WorkspaceState::settings`。 | `reconcile_compat_connections` 生产 caller；旧 Provider 设置回填且不暴露秘密测试。 |
 
+## Task 8 孤儿实现终审（2026-08-02）
+
+- 基线与 Green 均保持 `registered/source/bundled=45/45/45`；`missingRegistrations`、`registeredOnly`、`bundleOnly`、`sourceNotBundled`、`dynamicInvocations` 全为 0，`source`、`bundle`、`all` 三个 CLI 均 exit 0，命令面测试 12/12 PASS。
+- 对全部 45 个 `delete` 行逐项运行 CodeGraph impact 与 `rg -n '<command>' apps/desktop`。RED 时 CodeGraph 对 42 个命令返回 `not found`；`secret_status`、`runtime_secret_status` 只命中同名 TypeScript DTO；`generate_runtime_secret` 只命中当前生产链 `load_or_generate_runtime_secret` / `generate_runtime_secret_value`。Green 后 CodeGraph 为 44/45 `not found`；`rg` 对 44 个命令为零命中，`generate_runtime_secret` 的 5 个命中均属于上述当前生产链，不是旧 endpoint。
+- RED 清单是 `apps/desktop/src/types.ts` 中 22 个无任何前端生产或测试消费者的旧 DTO/类型；Green 删除 168 行：`CnbRepositoryInput`、`CnbRepositoryResult`、`SecretStatus`、`EnvironmentConnectionBindings`、`ProjectConnectionBindings`、`ConfigProfileKind`、`ConfigProfileScope`、`ConfigProfile`、`ConfigProfileInput`、`ProjectProfileBinding`、`EnvironmentConfigBindings`、`RuntimeConfigRecommendation`、`ExistingProjectConfig`、`LocalEnvWriteResult`、`LocalDevelopmentSupport`、`LocalInfrastructureStatus`、`RuntimeSecretStatus`、`RuntimeConfigSyncStatus`、`ProjectEnvironment`、`VersionValidationState`、`VersionValidation`、`ProjectVersion`。同名 Rust 兼容 model、schema、migration、current pointer 与保护测试均未改。
+- 其余 `delete` 行没有 command、adapter、command attribute、注册、专属类型或端点测试残留。`ApplyResult`、`LocalPreviewStatus`、`RuntimeEnvironment`、`GeneratedSshIdentity` 等相邻类型仍有当前 IPC/生产 caller，因此明确保留；没有删除有效迁移、兼容、安全、恢复或进程退出断言。
+
+### Task 8 internalize 复核
+
+| commands | retained implementation | production caller or named compatibility evidence |
+| --- | --- | --- |
+| `begin_deployment_attempt` | `WorkspaceState::begin_deployment_attempt` | `redeploy_deployment_path_version`、`start_deployment_path_inner`、`refresh_deployment_path`、`take_over_deployment_path_routes_inner`、`run_pilot_validation` 生产 caller。 |
+| `create_deployment_task` | `create_deployment_task_inner` | `prepare_managed_server_deployment` 与 `run_pilot_validation` 生产 caller。 |
+| `get_app_settings` | `WorkspaceState::settings` | `reconcile_compat_connections` 生产 caller。 |
+| `get_project_server` | `WorkspaceState::server_for_project` | `capture_deployment_artifacts`、`verify_public_routes`、`deployment_server_profile`、`remember_registered_domain_requirement` 生产 caller。 |
+| `save_project_step` | `WorkspaceState::set_project_step` | `save_manifest_draft`、`refresh_deployment`、`run_pilot_validation` 生产 caller。 |
+| `prepare_deployment_path_retry` | `prepare_deployment_path_retry_inner` | `run_pilot_validation` 生产 caller；`repaired_deployment_path_drops_the_previous_issue_code`、`repaired_deployment_path_routes_keep_existing_artifacts_on_the_server`。 |
+| `start_deployment_path` | `start_deployment_path_inner` | `run_pilot_validation` 生产 caller。 |
+| `take_over_deployment_path_routes`、`take_over_server_routes` | `take_over_deployment_path_routes_inner`、`take_over_caddy_routes` | `run_pilot_validation` 生产 caller；内部 route takeover 复用 `take_over_caddy_routes`。 |
+| `delete_deployment_path` | `WorkspaceState::delete_deployment_path`（`#[cfg(test)]`） | `deployment_paths_are_project_scoped_reusable_connection_bindings`。 |
+| `get_project_connection_bindings` | `WorkspaceState::project_connection_bindings`（`#[cfg(test)]`） | `removing_and_readding_a_project_starts_with_a_fresh_release_model`、`reset_clears_only_project_deployment_state_and_blocks_stale_resurrection`。 |
+| `bind_config_profile`、`list_config_profile_bindings`、`list_config_profiles`、`save_config_profile`、`set_environment_config_bindings` | 精确 `#[cfg(test)]` Profile/绑定接缝 | `stores_reusable_profiles_and_project_bindings_without_secret_values`、`upgrades_profile_bindings_and_supports_multiple_profiles_per_environment`、`relinks_a_moved_project_without_losing_history_bindings_or_settings`。 |
+| `list_deployment_attempts` | `WorkspaceState::list_deployment_attempts`，保留既有具名窄化 `dead_code` 原因 | `deployment_retries_append_attempts_and_freeze_the_path_snapshot`。 |
+| `list_project_environments` | `WorkspaceState::list_project_environments`（`#[cfg(test)]`） | `newer_failed_or_needs_action_production_does_not_replace_online_version`、`restart_backfills_production_history_and_preserves_a_newer_rollback`。 |
+| `list_project_versions` | `WorkspaceState::list_project_versions`（`#[cfg(test)]`） | `lists_immutable_project_versions_with_artifacts_validation_and_environment_ownership`、`failed_deployment_does_not_create_a_project_version`。 |
+| `list_version_validations`、`set_version_validation` | 精确 `#[cfg(test)]` 版本验证读写接缝 | `persists_version_validation_across_workspace_restart`、`shares_validation_between_runs_with_the_same_immutable_artifacts`、`latest_rejected_result_replaces_the_previous_passed_result`。 |
+
 ## 矩阵
 
 | command                                  | feature consumer                                                                                                                                                                                                                                                                  | TypeScript wrapper                                                          | production bundle | Rust internal callers                                                                                                                                                              | data/migration duty                                    | tests                                                                                                                                             | decision      | rationale                                                                                                                       |
