@@ -6,7 +6,7 @@ use reqwest::header::{ACCEPT, LOCATION};
 use serde::Deserialize;
 
 use crate::error::Result;
-use crate::model::{DnsProviderHint, HealthcheckResult, PublicRouteCheck, PublicRouteStatus};
+use crate::model::{HealthcheckResult, PublicRouteCheck, PublicRouteStatus};
 
 #[derive(Debug, Deserialize)]
 struct DnsJsonResponse {
@@ -278,86 +278,6 @@ pub async fn check_public_route_status_for_target(
     }
 }
 
-pub async fn detect_dns_provider(host: &str) -> Option<DnsProviderHint> {
-    let normalized = host.trim().trim_end_matches('.').to_ascii_lowercase();
-    let labels = normalized.split('.').collect::<Vec<_>>();
-    if labels.len() < 2
-        || labels.iter().any(|label| {
-            label.is_empty()
-                || label.len() > 63
-                || !label
-                    .bytes()
-                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
-        })
-    {
-        return None;
-    }
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(5))
-        .build()
-        .ok()?;
-    for index in 0..labels.len() - 1 {
-        let zone = labels[index..].join(".");
-        let response = client
-            .get(format!("https://doh.pub/dns-query?name={zone}&type=NS"))
-            .header(ACCEPT, "application/dns-json")
-            .send()
-            .await
-            .ok()?;
-        if !response.status().is_success() {
-            return None;
-        }
-        let payload = response.json::<DnsJsonResponse>().await.ok()?;
-        let mut name_servers = payload
-            .answers
-            .into_iter()
-            .filter(|answer| answer.record_type == 2)
-            .map(|answer| answer.data.trim_end_matches('.').to_ascii_lowercase())
-            .filter(|answer| !answer.is_empty())
-            .collect::<Vec<_>>();
-        name_servers.sort();
-        name_servers.dedup();
-        if name_servers.is_empty() {
-            continue;
-        }
-        let (provider, management_url) = dns_provider_for_nameservers(&name_servers);
-        return Some(DnsProviderHint {
-            zone,
-            provider: provider.to_string(),
-            management_url: management_url.map(str::to_string),
-            name_servers,
-        });
-    }
-    None
-}
-
-fn dns_provider_for_nameservers(name_servers: &[String]) -> (&'static str, Option<&'static str>) {
-    let matches = |suffix: &str| {
-        name_servers
-            .iter()
-            .any(|server| server == suffix || server.ends_with(&format!(".{suffix}")))
-    };
-    if matches("dnspod.net") || matches("dnspod.com") {
-        return (
-            "腾讯云 DNSPod",
-            Some("https://console.cloud.tencent.com/cns"),
-        );
-    }
-    if matches("alidns.com") {
-        return ("阿里云云解析 DNS", Some("https://dns.console.aliyun.com/"));
-    }
-    if matches("cloudflare.com") {
-        return ("Cloudflare", Some("https://dash.cloudflare.com/"));
-    }
-    if matches("huaweicloud-dns.com") {
-        return (
-            "华为云云解析服务",
-            Some("https://console.huaweicloud.com/dns/"),
-        );
-    }
-    ("当前域名服务商", None)
-}
-
 fn public_route_scheme(host: &str) -> &'static str {
     if host.to_ascii_lowercase().ends_with(".sslip.io") {
         "http"
@@ -572,29 +492,10 @@ mod tests {
 
     use super::{
         AddressResolution, DnsJsonAnswer, DnsJsonResponse, DnsQueryOutcome,
-        cloud_domain_policy_message, combine_dns_query_outcomes, dns_provider_for_nameservers,
-        dns_query_outcome, dns_record_type, public_route_scheme, request_failure_phase,
-        resolve_addresses, select_address_resolution, tcp_port_open,
+        cloud_domain_policy_message, combine_dns_query_outcomes, dns_query_outcome,
+        dns_record_type, public_route_scheme, request_failure_phase, resolve_addresses,
+        select_address_resolution, tcp_port_open,
     };
-
-    #[test]
-    fn maps_public_name_servers_to_their_management_console() {
-        assert_eq!(
-            dns_provider_for_nameservers(&["cricket.dnspod.net".to_string()]),
-            (
-                "腾讯云 DNSPod",
-                Some("https://console.cloud.tencent.com/cns")
-            )
-        );
-        assert_eq!(
-            dns_provider_for_nameservers(&["ada.ns.cloudflare.com".to_string()]),
-            ("Cloudflare", Some("https://dash.cloudflare.com/"))
-        );
-        assert_eq!(
-            dns_provider_for_nameservers(&["ns.example.net".to_string()]),
-            ("当前域名服务商", None)
-        );
-    }
 
     #[test]
     fn names_the_exact_dns_record_type_for_literal_server_addresses() {

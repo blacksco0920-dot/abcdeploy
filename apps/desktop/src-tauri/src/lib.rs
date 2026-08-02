@@ -4,9 +4,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::fs;
 use std::io::{Read, Write as _};
-use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
+use std::net::TcpListener;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
@@ -15,24 +15,21 @@ use chrono::Utc;
 use deploy_core::error::DeployError;
 use deploy_core::manifest::{ManifestValidation, validate_manifest};
 use deploy_core::model::{
-    DeploymentPlan, DnsProviderHint, DomainRoute, EnvironmentConfig, EnvironmentName, Framework,
-    InspectionReport, PackageManager, ProjectManifest, ProviderCheck, PublicRouteStatus,
-    RegistryConfig, ServiceKind,
+    DeploymentPlan, DomainRoute, EnvironmentConfig, EnvironmentName, Framework, InspectionReport,
+    PackageManager, ProjectManifest, ProviderCheck, PublicRouteStatus, RegistryConfig, ServiceKind,
 };
 use deploy_core::plan::serialize_manifest;
 use deploy_core::providers::{
     caddy,
     cnb::{
-        CnbBuildRecord, CnbClient, build_records, build_revision, build_serial,
-        missing_permission_scopes, summarize_build_status,
+        CnbClient, build_records, build_revision, build_serial, missing_permission_scopes,
+        summarize_build_status,
     },
     registry::RegistryProvider,
     ssh,
 };
 use deploy_core::redact::redact_text;
-use deploy_core::render::{
-    caddy_partial_route_activation_script, render_deployment_path_bundle, render_project_files,
-};
+use deploy_core::render::{render_deployment_path_bundle, render_project_files};
 use deploy_core::{
     MANIFEST_FILE, apply_local_plan, apply_plan, apply_setup_plan, build_plan,
     create_default_manifest, inspect_project, load_manifest, parse_manifest,
@@ -64,8 +61,7 @@ use credentials::{
     store_secret, valid_registry_host, valid_registry_namespace,
 };
 use deployment_route_verification::{
-    collect_public_route_statuses, only_waiting_for_certificates,
-    wait_for_stable_public_route_statuses,
+    collect_public_route_statuses, wait_for_stable_public_route_statuses,
 };
 use deployment_state::{
     DeployedServiceState, apply_deployed_service_states, parse_deployed_service_states,
@@ -91,8 +87,8 @@ use runtime_config::{
     ensure_remote_runtime_dependencies_scoped, ensure_runtime_template_variables,
     fill_managed_runtime_dependencies, generate_runtime_secret, load_existing_project_config,
     load_runtime_config, prepare_cnb_secret_bundle, remote_dependency_error,
-    replace_managed_runtime_dependencies, rollback_environment, runtime_config_sync_status,
-    runtime_defaults, runtime_secret_status, store_runtime_config, store_runtime_secret,
+    replace_managed_runtime_dependencies, runtime_config_sync_status, runtime_defaults,
+    runtime_secret_status, store_runtime_config, store_runtime_secret,
     sync_runtime_config_to_server,
 };
 use source_snapshots::{
@@ -112,13 +108,11 @@ use local_runtime::development_package_command;
 #[cfg(test)]
 use pilot_validation::pilot_can_resume_existing_artifacts;
 #[cfg(test)]
-use runtime_config::{
-    REMOTE_DEPENDENCY_SCRIPT, rollback_script, safe_postgres_identifier, url_encode_userinfo,
-};
+use runtime_config::{REMOTE_DEPENDENCY_SCRIPT, safe_postgres_identifier, url_encode_userinfo};
 
 use workspace::{
     CNB_SOURCE_CONNECTION_ID, ConfigProfile, ConnectionResource, DeploymentArtifact,
-    DeploymentAttempt, DeploymentPath, DeploymentPathInput, DeploymentRun, ProjectAdoptionRecord,
+    DeploymentPath, DeploymentPathInput, DeploymentRun, ProjectAdoptionRecord,
     ProjectConnectionBindings, ProjectEnvironment, ProjectProfileBinding, ProjectRelinkIdentity,
     ProjectVersion, RecentProject, ServerResource, TCR_REGISTRY_CONNECTION_ID, VersionValidation,
     WorkspaceState, project_storage_id,
@@ -133,15 +127,9 @@ const CNB_KEYCHAIN_UNAVAILABLE_ERROR: &str =
 const CNB_LOGIN_MISSING_ERROR: &str = "CNB 登录已失效，请重新连接后继续";
 const REMOTE_INFRA_NETWORK: &str = "abcdeploy-infra";
 static SECRET_CACHE: OnceLock<Mutex<BTreeMap<String, Zeroizing<String>>>> = OnceLock::new();
-static PREVIEW_TUNNELS: OnceLock<Mutex<BTreeMap<String, PreviewTunnelProcess>>> = OnceLock::new();
 static LOCAL_START_PROCESSES: OnceLock<Mutex<BTreeMap<String, Option<u32>>>> = OnceLock::new();
 static LOCAL_START_CANCELLED: OnceLock<Mutex<BTreeSet<String>>> = OnceLock::new();
 static KEYCHAIN_WRITE_GATE: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(1);
-
-struct PreviewTunnelProcess {
-    child: Child,
-    known_hosts_path: PathBuf,
-}
 
 struct LocalStartTask {
     key: String,
@@ -287,20 +275,6 @@ struct PipelineIdentityResult {
     fingerprint: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-struct RouteConflict {
-    host: String,
-    source: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RouteConflictCheck {
-    conflicts: Vec<RouteConflict>,
-    takeover_available: bool,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ServerRouteProblemKind {
     Takeover,
@@ -439,13 +413,6 @@ struct SourceSyncResult {
     branch: String,
     commit_sha: String,
     committed: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct StagingPreviewTunnel {
-    url: String,
-    service: String,
 }
 
 struct PipelineIdentityMaterial {
@@ -1420,24 +1387,6 @@ async fn start_local_preview(
     ))
 }
 
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-fn create_deployment_task(
-    path: String,
-    environment: String,
-    source_run_id: Option<String>,
-    deployment_path_id: Option<String>,
-    state: State<'_, WorkspaceState>,
-) -> Result<DeploymentRun, String> {
-    create_deployment_task_inner(
-        path,
-        environment,
-        source_run_id,
-        deployment_path_id,
-        state.inner(),
-    )
-}
-
 fn create_deployment_task_inner(
     path: String,
     environment: String,
@@ -1492,73 +1441,6 @@ fn create_deployment_task_inner(
     Ok(run)
 }
 
-#[tauri::command]
-fn begin_deployment_attempt(
-    task_id: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<DeploymentAttempt, String> {
-    state.begin_deployment_attempt(&task_id)
-}
-
-#[tauri::command]
-fn list_deployment_attempts(
-    task_id: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<Vec<DeploymentAttempt>, String> {
-    state.list_deployment_attempts(&task_id)
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-fn pause_deployment_task(
-    run_id: String,
-    current_stage: String,
-    issue_code: String,
-    message: String,
-    action_kind: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<DeploymentRun, String> {
-    let allowed_stage = matches!(
-        current_stage.as_str(),
-        "prepare" | "prepare-server" | "write-config" | "sync-source" | "trigger-build"
-    );
-    let allowed_action = matches!(
-        action_kind.as_str(),
-        "retry-staging-preparation"
-            | "retry-production-preparation"
-            | "deployment-path-preparation-retry"
-    );
-    if !allowed_stage || !allowed_action {
-        return Err("部署任务恢复位置不正确".to_string());
-    }
-    let mut run = state.deployment_run(&run_id)?;
-    if matches!(run.status.as_str(), "success" | "cancelled") {
-        return Err("已经结束的部署任务不能改成等待处理".to_string());
-    }
-    run.status = "needs_action".to_string();
-    run.current_stage = current_stage;
-    run.issue_code = Some(if issue_code.starts_with("AD-") {
-        issue_code
-    } else {
-        "AD-APP-001".to_string()
-    });
-    run.action_kind = Some(action_kind);
-    run.action_url = None;
-    run.message = public_error(message);
-    run.updated_at = Utc::now().to_rfc3339();
-    state.save_deployment_run(&run)?;
-    Ok(run)
-}
-
-#[tauri::command]
-fn prepare_deployment_path_retry(
-    run_id: String,
-    repaired_node: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<DeploymentRun, String> {
-    prepare_deployment_path_retry_inner(run_id, repaired_node, state.inner())
-}
-
 fn prepare_deployment_path_retry_inner(
     run_id: String,
     repaired_node: String,
@@ -1610,81 +1492,6 @@ fn prepare_deployment_path_retry_inner(
     Ok(run)
 }
 
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-async fn start_staging_deployment(
-    path: String,
-    expected_revision: Option<String>,
-    prefer_push_build: bool,
-    task_id: Option<String>,
-    state: State<'_, WorkspaceState>,
-) -> Result<DeploymentRun, String> {
-    let root = PathBuf::from(&path);
-    let manifest = load_manifest(&root.join(MANIFEST_FILE)).map_err(public_error)?;
-    let validation = validate_manifest(&manifest);
-    if !validation.valid {
-        return Err("部署配置仍有必填项或隔离问题，请先处理校验结果".to_string());
-    }
-    let mut run = if let Some(task_id) = task_id {
-        let run = state.deployment_run(&task_id)?;
-        if run.environment != "staging" || run.project_path != path {
-            return Err("保存的部署任务与当前项目不一致".to_string());
-        }
-        run
-    } else {
-        state.create_deployment_run(
-            &root,
-            &manifest.project.name,
-            "staging",
-            &manifest.providers.build.repository,
-            &manifest.source.release_branch,
-        )?
-    };
-    run.repository
-        .clone_from(&manifest.providers.build.repository);
-    run.branch.clone_from(&manifest.source.release_branch);
-    run.commit_sha = checked_git_revision(expected_revision.as_deref())?;
-    run.source_title = run
-        .commit_sha
-        .as_deref()
-        .and_then(|revision| local_git_title(&root, revision));
-    run.status = "queued".to_string();
-    run.current_stage = "trigger-build".to_string();
-    run.action_kind = None;
-    run.action_url = None;
-    run.issue_code = None;
-    run.message = "代码版本已保存，正在请求 CNB 开始构建".to_string();
-    run.updated_at = Utc::now().to_rfc3339();
-    // 完整 SHA 必须在任何远程构建触发前落库。即使进程在 CNB 接受
-    // 请求后退出，重启时仍能按同一 SHA 找回同一个任务。
-    state.save_deployment_run(&run)?;
-    state.begin_deployment_attempt(&run.id)?;
-    state.set_project_step(&root, "deploying")?;
-    if cloud_setup_required(&manifest) {
-        run.status = "needs_action".to_string();
-        run.current_stage = "cloud-setup".to_string();
-        run.issue_code = Some("AD-CNB-201".to_string());
-        run.action_kind = Some("cloud-setup".to_string());
-        run.action_url = Some("https://cnb.cool/new/repos".to_string());
-        run.message = "还差一次 CNB 保护配置；完成后会从这里继续，不会重复准备服务器".to_string();
-        run.updated_at = Utc::now().to_rfc3339();
-        state.save_deployment_run(&run)?;
-        return Ok(run);
-    }
-    trigger_cnb_run(run, "api_trigger_staging", None, prefer_push_build, &state).await
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-async fn start_deployment_path(
-    path: String,
-    expected_revision: String,
-    task_id: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<DeploymentRun, String> {
-    start_deployment_path_inner(path, expected_revision, task_id, state.inner()).await
-}
-
 async fn start_deployment_path_inner(
     path: String,
     expected_revision: String,
@@ -1724,105 +1531,6 @@ async fn start_deployment_path_inner(
         Some(&revision),
         true,
         state,
-    )
-    .await
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-async fn resume_staging_deployment(
-    run_id: String,
-    expected_revision: Option<String>,
-    state: State<'_, WorkspaceState>,
-) -> Result<DeploymentRun, String> {
-    let mut run = state.deployment_run(&run_id)?;
-    if run.environment != "staging" || run.action_kind.as_deref() != Some("cloud-setup") {
-        return Err("这次部署当前不在持续部署配置步骤".to_string());
-    }
-    let manifest = load_manifest(Path::new(&run.project_path).join(MANIFEST_FILE).as_path())
-        .map_err(public_error)?;
-    if cloud_setup_required(&manifest) {
-        return Err("CNB 仓库或两套环境密钥文件尚未配置完整".to_string());
-    }
-    run.repository
-        .clone_from(&manifest.providers.build.repository);
-    run.branch.clone_from(&manifest.source.release_branch);
-    run.commit_sha = checked_git_revision(expected_revision.as_deref())?;
-    run.source_title = run
-        .commit_sha
-        .as_deref()
-        .and_then(|revision| local_git_title(Path::new(&run.project_path), revision));
-    run.status = "queued".to_string();
-    run.current_stage = "prepare".to_string();
-    run.action_kind = None;
-    run.action_url = None;
-    run.message = "持续部署连接已完成，正在请求 CNB 构建".to_string();
-    run.updated_at = Utc::now().to_rfc3339();
-    state.save_deployment_run(&run)?;
-    state.begin_deployment_attempt(&run.id)?;
-    trigger_cnb_run(run, "api_trigger_staging", None, true, &state).await
-}
-
-fn cloud_setup_required(manifest: &deploy_core::model::ProjectManifest) -> bool {
-    manifest.providers.build.repository.contains("replace-me")
-        || manifest.providers.build.repository.starts_with("owner/")
-        || [
-            manifest.environments.staging.secrets_ref.as_deref(),
-            manifest.environments.production.secrets_ref.as_deref(),
-        ]
-        .into_iter()
-        .flatten()
-        .any(|reference| reference.contains("replace-me"))
-        || manifest.environments.staging.secrets_ref.is_none()
-        || manifest.environments.production.secrets_ref.is_none()
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-async fn promote_production_deployment(
-    source_run_id: String,
-    task_id: Option<String>,
-    state: State<'_, WorkspaceState>,
-) -> Result<DeploymentRun, String> {
-    let source = state.deployment_run(&source_run_id)?;
-    if source.environment != "staging" || source.status != "success" {
-        return Err("只有健康检查通过的测试版本才能发布生产".to_string());
-    }
-    let revision = source.commit_sha.clone().ok_or_else(|| {
-        "这次测试部署缺少完整版本标识，不能安全发布生产，请重新部署测试".to_string()
-    })?;
-    if source.artifacts.is_empty() {
-        return Err("AD-REL-201: 尚未读取到测试环境的实际版本，请重新检查服务器连接".to_string());
-    }
-    let mut run = if let Some(task_id) = task_id {
-        let run = state.deployment_run(&task_id)?;
-        if run.environment != "production" || run.project_path != source.project_path {
-            return Err("保存的正式发布任务与当前版本不一致".to_string());
-        }
-        run
-    } else {
-        state.create_deployment_run(
-            Path::new(&source.project_path),
-            &source.project_name,
-            "production",
-            &source.repository,
-            &source.branch,
-        )?
-    };
-    run.repository.clone_from(&source.repository);
-    run.branch.clone_from(&source.branch);
-    run.commit_sha = Some(revision.clone());
-    run.source_title.clone_from(&source.source_title);
-    run.source_run_id = Some(source.id);
-    run.candidate_tag = source.candidate_tag;
-    state.save_deployment_run(&run)?;
-    state.begin_deployment_attempt(&run.id)?;
-    trigger_cnb_run(
-        run,
-        "api_trigger_production",
-        Some(&revision),
-        false,
-        &state,
     )
     .await
 }
@@ -2985,204 +2693,6 @@ fn deployment_needs_public_route_recheck(action_kind: Option<&str>) -> bool {
     )
 }
 
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-async fn open_staging_preview_tunnel(
-    run_id: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<StagingPreviewTunnel, String> {
-    let mut run = state.deployment_run(&run_id)?;
-    let route_blocked = run.action_kind.as_deref() == Some("route-check")
-        && run.issue_code.as_deref() == Some("AD-NET-201");
-    let reopening_preview =
-        run.status == "success" && run.action_kind.as_deref() == Some("local-preview");
-    if run.environment != "staging" || (!route_blocked && !reopening_preview) {
-        return Err("当前测试版本不需要本机安全预览".to_string());
-    }
-    if run.artifacts.is_empty() {
-        return Err("测试版本尚未完成服务器验证，请先重新检查当前部署".to_string());
-    }
-    let manifest = deployment_manifest(&run)?;
-    let environment = &manifest.environments.staging;
-    let service = manifest
-        .services
-        .iter()
-        .find(|service| matches!(service.kind, ServiceKind::Web | ServiceKind::Static))
-        .or_else(|| {
-            manifest
-                .services
-                .iter()
-                .find(|service| service.kind != ServiceKind::Worker)
-        })
-        .ok_or_else(|| "没有找到可以打开的测试服务".to_string())?;
-    let container = format!("{}-{}-1", environment.target.namespace, service.id);
-    if !safe_runtime_identifier(&container) {
-        return Err("测试服务容器名称不安全，已停止创建预览通道".to_string());
-    }
-    let profile = deployment_server_profile(&run, &state)?;
-    let remote_command = format!(
-        "docker inspect --format '{{{{range .NetworkSettings.Networks}}}}{{{{println .IPAddress}}}}{{{{end}}}}' {} | sed -n '/./{{p;q;}}'",
-        shell_quote(&container)
-    );
-    let output = ssh::execute(&profile, &remote_command, None, Duration::from_secs(20))
-        .await
-        .map_err(public_error)?;
-    if output.exit_status != Some(0) {
-        return Err("无法读取测试服务的安全预览地址，请重新检查测试版运行状态后重试".to_string());
-    }
-    let remote_ip = output
-        .stdout
-        .lines()
-        .map(str::trim)
-        .find(|line| !line.is_empty())
-        .and_then(|line| line.parse::<IpAddr>().ok())
-        .ok_or_else(|| "测试服务还没有可访问的容器网络地址".to_string())?;
-    let local_listener = TcpListener::bind(("127.0.0.1", 0))
-        .map_err(|error| format!("无法分配本机预览端口：{error}"))?;
-    let local_port = local_listener.local_addr().map_err(public_error)?.port();
-    drop(local_listener);
-
-    let identity = ssh::probe_host_identity(&profile)
-        .await
-        .map_err(public_error)?;
-    if profile.host_fingerprint.as_deref() != Some(identity.fingerprint.as_str()) {
-        return Err("服务器身份指纹已变化，已停止创建预览通道".to_string());
-    }
-    let known_hosts_path = std::env::temp_dir().join(format!(
-        "abcdeploy-preview-{}.known-hosts",
-        &project_storage_id(Path::new(&run.project_path))[..24]
-    ));
-    write_preview_known_hosts(&known_hosts_path, &profile, &identity.public_key)?;
-    let forward = format!(
-        "127.0.0.1:{local_port}:{remote_ip}:{}",
-        service.container_port
-    );
-    let mut command = system_command("ssh");
-    command
-        .arg("-N")
-        .arg("-i")
-        .arg(&profile.key_path)
-        .arg("-p")
-        .arg(profile.port.to_string())
-        .args(["-o", "BatchMode=yes"])
-        .args(["-o", "ExitOnForwardFailure=yes"])
-        .args(["-o", "ServerAliveInterval=20"])
-        .args(["-o", "ServerAliveCountMax=3"])
-        .args(["-o", "StrictHostKeyChecking=yes"])
-        .arg("-o")
-        .arg(format!(
-            "UserKnownHostsFile={}",
-            known_hosts_path.to_string_lossy()
-        ))
-        .arg("-L")
-        .arg(&forward)
-        .arg(format!("{}@{}", profile.user, profile.host))
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    let mut child = command
-        .spawn()
-        .map_err(|error| format!("无法启动本机安全预览：{error}"))?;
-    let local_address = SocketAddr::from(([127, 0, 0, 1], local_port));
-    let mut ready = false;
-    for _ in 0..12 {
-        if child.try_wait().map_err(public_error)?.is_some() {
-            break;
-        }
-        if TcpStream::connect_timeout(&local_address, Duration::from_millis(250)).is_ok() {
-            ready = true;
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(150)).await;
-    }
-    if !ready {
-        let _ = child.kill();
-        let _ = child.wait();
-        let _ = fs::remove_file(&known_hosts_path);
-        return Err("本机安全预览没有及时建立，请确认 SSH 连接后重试".to_string());
-    }
-    replace_preview_tunnel(
-        &run.project_path,
-        PreviewTunnelProcess {
-            child,
-            known_hosts_path,
-        },
-    );
-
-    run.status = "success".to_string();
-    run.current_stage = "complete".to_string();
-    run.issue_code = None;
-    run.action_kind = Some("local-preview".to_string());
-    run.action_url = None;
-    run.message = "测试环境已通过服务器健康检查，并已通过本机安全通道打开".to_string();
-    if !run.completed_steps.iter().any(|step| step == "healthcheck") {
-        run.completed_steps.push("healthcheck".to_string());
-    }
-    run.updated_at = Utc::now().to_rfc3339();
-    state.save_deployment_run(&run)?;
-    Ok(StagingPreviewTunnel {
-        url: format!("http://127.0.0.1:{local_port}"),
-        service: service.id.clone(),
-    })
-}
-
-fn write_preview_known_hosts(
-    path: &Path,
-    profile: &ssh::SshProfile,
-    public_key: &str,
-) -> Result<(), String> {
-    if public_key.contains(['\r', '\n'])
-        || !(public_key.starts_with("ssh-")
-            || public_key.starts_with("ecdsa-")
-            || public_key.starts_with("sk-"))
-    {
-        return Err("服务器公钥格式不正确，已停止创建预览通道".to_string());
-    }
-    let host = if profile.port == 22 {
-        profile.host.clone()
-    } else {
-        format!("[{}]:{}", profile.host, profile.port)
-    };
-    let content = format!("{host} {public_key}\n");
-    let mut options = fs::OpenOptions::new();
-    options.write(true).create(true).truncate(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.mode(0o600);
-    }
-    let mut file = options.open(path).map_err(public_error)?;
-    file.write_all(content.as_bytes()).map_err(public_error)
-}
-
-fn replace_preview_tunnel(project_path: &str, tunnel: PreviewTunnelProcess) {
-    let Ok(mut tunnels) = PREVIEW_TUNNELS
-        .get_or_init(|| Mutex::new(BTreeMap::new()))
-        .lock()
-    else {
-        return;
-    };
-    if let Some(mut previous) = tunnels.insert(project_path.to_string(), tunnel) {
-        let _ = previous.child.kill();
-        let _ = previous.child.wait();
-        let _ = fs::remove_file(previous.known_hosts_path);
-    }
-}
-
-fn stop_preview_tunnels() {
-    let Some(tunnels) = PREVIEW_TUNNELS.get() else {
-        return;
-    };
-    let Ok(mut tunnels) = tunnels.lock() else {
-        return;
-    };
-    for (_, mut tunnel) in std::mem::take(&mut *tunnels) {
-        let _ = tunnel.child.kill();
-        let _ = tunnel.child.wait();
-        let _ = fs::remove_file(tunnel.known_hosts_path);
-    }
-}
-
 fn apply_cnb_history_permission_fallback(run: &mut DeploymentRun) {
     run.status = "needs_action".to_string();
     run.current_stage = "build".to_string();
@@ -3535,166 +3045,6 @@ async fn check_deployment_routes(
     run.updated_at = Utc::now().to_rfc3339();
     state.save_deployment_run(&run)?;
     Ok(run.route_checks)
-}
-
-#[tauri::command]
-async fn retry_deployment_certificates(
-    run_id: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<Vec<PublicRouteStatus>, String> {
-    let mut run = state.deployment_run(&run_id)?;
-    if run.environment != "production"
-        || run.action_kind.as_deref() != Some("route-check")
-        || run.artifacts.is_empty()
-    {
-        return Err("当前任务不需要重新申请正式地址证书".to_string());
-    }
-    let manifest = deployment_routing_manifest(&run)?;
-    let environment = parse_deploy_environment(&run.environment)?;
-    let routes = &manifest.environments.get(environment).domains;
-    if routes.is_empty() {
-        return Err("当前正式版本没有配置访问地址".to_string());
-    }
-    let expected_target = state
-        .server_for_project(Path::new(&run.project_path), &run.environment)?
-        .map(|server| server.host);
-    let mut initial = collect_public_route_statuses(routes, expected_target.as_deref()).await;
-    let route_problems = match check_server_route_activation(&run, &manifest, state.inner()).await {
-        Ok(problems) => problems,
-        Err(message) => return Err(message),
-    };
-    if route_problems.is_empty()
-        && let Some(message) = interrupted_route_check_message(&initial)
-    {
-        return Err(message);
-    }
-    overlay_server_route_problems(&mut initial, &route_problems);
-    run.route_checks.clone_from(&initial);
-    remember_registered_domain_requirement(state.inner(), &run, &initial);
-    if !apply_server_route_problems(&mut run, &route_problems) {
-        apply_public_route_checks(&mut run, &initial);
-    }
-    run.updated_at = Utc::now().to_rfc3339();
-    state.save_deployment_run(&run)?;
-
-    if !route_problems.is_empty() {
-        return Ok(initial);
-    }
-    if initial.iter().all(|check| check.reachable) {
-        return Ok(initial);
-    }
-    if !certificate_retry_allowed(&initial) {
-        // DNS、域名策略或应用错误不能通过重载 Caddy 证书解决。返回逐地址
-        // 结果供页面展示，但严格不触碰服务器配置。
-        return Ok(initial);
-    }
-
-    force_reload_caddy_for_certificates(&run, &manifest, state.inner()).await?;
-
-    // Certificate authorities normally finish within seconds after DNS becomes
-    // visible. Keep the explicit user action alive for at most 45 seconds, but
-    // stop immediately if every route is ready or the failure changes layer.
-    let final_checks =
-        wait_for_stable_public_route_statuses(routes, expected_target.as_deref()).await;
-    run.route_checks.clone_from(&final_checks);
-    remember_registered_domain_requirement(state.inner(), &run, &final_checks);
-    apply_public_route_checks(&mut run, &final_checks);
-    run.updated_at = Utc::now().to_rfc3339();
-    state.save_deployment_run(&run)?;
-    Ok(final_checks)
-}
-
-fn certificate_retry_allowed(checks: &[PublicRouteStatus]) -> bool {
-    only_waiting_for_certificates(checks)
-}
-
-async fn force_reload_caddy_for_certificates(
-    run: &DeploymentRun,
-    manifest: &deploy_core::model::ProjectManifest,
-    state: &WorkspaceState,
-) -> Result<(), String> {
-    let environment = parse_deploy_environment(&run.environment)?;
-    let hosts = manifest
-        .environments
-        .get(environment)
-        .domains
-        .iter()
-        .map(|route| route.host.clone())
-        .collect::<Vec<_>>();
-    let site_name = format!("{}-{}.caddy", manifest.project.name, run.environment);
-    let profile = deployment_server_profile(run, state)?;
-    let host_payload = format!("{}\n", hosts.join("\n"));
-    let encoded_hosts = BASE64.encode(host_payload.as_bytes());
-    let script = caddy_certificate_reload_script(&site_name, &encoded_hosts, &profile.host);
-    let output = ssh::execute(
-        &profile,
-        "bash -s",
-        Some(script.as_bytes()),
-        Duration::from_secs(75),
-    )
-    .await
-    .map_err(public_error)?;
-    if output.exit_status != Some(0) {
-        return Err(format!(
-            "没有完成证书重试：{}",
-            redact_text(&output.stderr)
-                .lines()
-                .last()
-                .unwrap_or("统一 Caddy 没有返回检查结果")
-        ));
-    }
-    Ok(())
-}
-
-fn caddy_certificate_reload_script(
-    site_name: &str,
-    encoded_hosts: &str,
-    expected_target: &str,
-) -> String {
-    format!(
-        r#"set -eu
-mkdir -p "$HOME/.deploydesk/locks"
-exec 9>"$HOME/.deploydesk/locks/server-deploy.lock"
-flock -w 60 9 || {{ echo '同一服务器正在执行其他部署操作' >&2; exit 75; }}
-HOSTS_FILE="$(mktemp)"
-EXPECTED_IPS_FILE="$(mktemp)"
-HOST_IPS_FILE="$(mktemp)"
-trap 'rm -f "$HOSTS_FILE" "$EXPECTED_IPS_FILE" "$HOST_IPS_FILE" "${{ACTIVE_CONFIG:-}}" "${{VALIDATE_LOG:-}}"' EXIT
-printf '%s' {encoded_hosts} | base64 --decode >"$HOSTS_FILE"
-EXPECTED_TARGET={expected_target}
-getent ahosts "$EXPECTED_TARGET" | awk '{{print $1}}' | sort -u >"$EXPECTED_IPS_FILE"
-test -s "$EXPECTED_IPS_FILE" || {{ echo '无法重新确认绑定服务器的地址，已停止证书重试' >&2; exit 1; }}
-while IFS= read -r host; do
-  [ -n "$host" ] || continue
-  getent ahosts "$host" | awk '{{print $1}}' | sort -u >"$HOST_IPS_FILE"
-  test -s "$HOST_IPS_FILE" || {{ echo "$host 当前没有可用的 DNS 解析，已停止证书重试" >&2; exit 1; }}
-  awk 'NR==FNR {{ expected[$1]=1; next }} expected[$1] {{ matched=1 }} END {{ exit matched ? 0 : 1 }}' "$EXPECTED_IPS_FILE" "$HOST_IPS_FILE" || {{ echo "$host 不再指向绑定服务器，已停止证书重试" >&2; exit 1; }}
-done <"$HOSTS_FILE"
-CADDY_CONTAINER="$(cat "$HOME/.deploydesk/caddy/container-name" 2>/dev/null || true)"
-CADDY_SITE_DIRECTORY="$(cat "$HOME/.deploydesk/caddy/site-directory" 2>/dev/null || true)"
-test -n "$CADDY_CONTAINER" || {{ echo '统一 Caddy 尚未完成连接' >&2; exit 1; }}
-case "$CADDY_SITE_DIRECTORY" in /*) ;; *) echo '统一 Caddy 路由目录无效' >&2; exit 1 ;; esac
-docker inspect "$CADDY_CONTAINER" >/dev/null 2>&1 || {{ echo '统一 Caddy 当前没有运行' >&2; exit 1; }}
-SITE_NAME={site_name}
-SITE_FILE="$CADDY_SITE_DIRECTORY/$SITE_NAME"
-test -f "$SITE_FILE" || {{ echo '当前项目的 Caddy 路由文件不存在' >&2; exit 1; }}
-ACTIVE_CONFIG="$(mktemp)"
-VALIDATE_LOG="$(mktemp)"
-docker exec "$CADDY_CONTAINER" caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile >"$ACTIVE_CONFIG" 2>/dev/null || {{ echo '无法读取统一 Caddy 当前配置' >&2; exit 1; }}
-while IFS= read -r host; do
-  [ -n "$host" ] || continue
-  grep -Fq -- "$host" "$ACTIVE_CONFIG" || {{ echo "$host 还没有加载到统一 Caddy" >&2; exit 1; }}
-done <"$HOSTS_FILE"
-if ! docker exec "$CADDY_CONTAINER" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >"$VALIDATE_LOG" 2>&1; then
-  tail -n 1 "$VALIDATE_LOG" >&2
-  exit 1
-fi
-docker exec "$CADDY_CONTAINER" caddy reload --force --config /etc/caddy/Caddyfile --adapter caddyfile
-"#,
-        encoded_hosts = shell_quote(encoded_hosts),
-        expected_target = shell_quote(expected_target),
-        site_name = shell_quote(site_name),
-    )
 }
 
 fn interrupted_route_check_message(checks: &[PublicRouteStatus]) -> Option<String> {
@@ -4343,356 +3693,12 @@ fn list_current_deployment_runs(
     state.list_current_deployment_runs()
 }
 
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)] // Tauri IPC deserializes owned arguments.
-async fn sync_external_deployments(
-    path: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<Vec<DeploymentRun>, String> {
-    let root = PathBuf::from(&path);
-    let adoption = state.project_adoption(&root)?;
-    if adoption.mode == "pending" {
-        return Err("AD-ADOPT-101：请先选择继续管理已有部署或重新设置部署".to_string());
-    }
-    if adoption.fresh_draft {
-        return Err("AD-ADOPT-102：请先确认新的部署设置，再检查后续构建".to_string());
-    }
-    let manifest = load_manifest(&root.join(MANIFEST_FILE)).map_err(public_error)?;
-    let token = Zeroizing::new(resolve_cnb_token(String::new())?);
-    let client = CnbClient::new(token.as_str()).map_err(public_error)?;
-    let payload = client
-        .recent_builds(&manifest.providers.build.repository, 30)
-        .await
-        .map_err(cnb_build_history_error)?;
-    let mut records = ordered_build_records(&payload);
-    let latest_success_serials = latest_success_serials_by_environment(&records);
-    let mut imported = Vec::new();
-    let mut diagnosed_failure = false;
-    for record in records.drain(..) {
-        // `deploydesk-production` 只是把已验证提交转换为生产自定义事件，
-        // 自身不部署测试环境。历史同步不能把这条 push 误记为新的测试版。
-        if is_production_approval_build(&record) {
-            if let Some(mut run) = state.deployment_run_by_serial_for_project(
-                &root,
-                &manifest.providers.build.repository,
-                &record.serial,
-            )? {
-                apply_version_title(&mut run, &record, &root);
-                run.status = "cancelled".to_string();
-                run.current_stage = "complete".to_string();
-                run.action_kind = Some("production-approval".to_string());
-                run.issue_code = None;
-                run.message = "生产审批已完成，此记录不计为测试部署".to_string();
-                run.updated_at = Utc::now().to_rfc3339();
-                state.save_deployment_run(&run)?;
-                imported.push(run);
-            }
-            continue;
-        }
-        let Some(environment) = build_environment_for_event(&record.event) else {
-            continue;
-        };
-        let is_latest_success = record.status == "success"
-            && latest_success_serials
-                .get(environment)
-                .is_some_and(|serial| serial == &record.serial);
-        let record_started_at = record
-            .created_at
-            .as_deref()
-            .filter(|value| chrono::DateTime::parse_from_rfc3339(value).is_ok())
-            .map(ToString::to_string);
-        if let Some(mut run) = state.deployment_run_by_serial_for_project(
-            &root,
-            &manifest.providers.build.repository,
-            &record.serial,
-        )? {
-            // The deployment-path workflow owns its task from the local snapshot
-            // through registry transfer, server mutation and the final route
-            // check.  The legacy CNB-history importer only knows that the remote
-            // build finished; treating that as a complete environment deployment
-            // overwrites the live path task with `verify-existing-deployment`
-            // before the desktop can transfer the immutable images to TCR.
-            //
-            // Keep returning the row so callers can refresh their local list, but
-            // never let the legacy importer mutate a run already bound to a path.
-            if deployment_path_owns_history_reconciliation(
-                environment,
-                state.deployment_path_for_run(&run.id).is_ok(),
-            ) {
-                imported.push(run);
-                continue;
-            }
-            apply_version_title(&mut run, &record, &root);
-            // 旧版本先插入本机时间再更新 CNB 时间，但 SQLite 的 upsert 曾没有更新
-            // started_at，导致数月前的失败记录排在刚成功的版本前面。每次后台同步都
-            // 用 CNB 原始时间修正；运行中的任务也顺便收敛到远端最终状态。
-            if let Some(started_at) = record_started_at {
-                run.started_at = started_at;
-            }
-            let status_changed = matches!(run.status.as_str(), "queued" | "running")
-                || (run.status == "failed" && record.status == "success")
-                || (run.status == "needs_action" && record.status != "success");
-            if status_changed {
-                apply_history_status(&mut run, &record.status);
-                run.message = synced_history_message(environment, &run.status);
-            }
-            if environment == "production"
-                && let Some(revision) = record.revision.as_deref()
-                && let Some(source) = state.successful_staging_run_by_revision(&root, revision)?
-            {
-                // A production record may have been imported before its
-                // staging source in an older app version. Reconcile the link
-                // on every sync instead of leaving it permanently unresolved.
-                run.source_run_id = Some(source.id);
-            }
-            let should_verify_existing = record.status == "success"
-                && is_latest_success
-                && (status_changed
-                    || run.artifacts.is_empty()
-                    || matches!(
-                        run.action_kind.as_deref(),
-                        Some("verify-existing-deployment" | "artifact-mismatch")
-                    ));
-            if should_verify_existing {
-                apply_history_status(&mut run, &record.status);
-                run.action_kind = Some("verify-existing-deployment".to_string());
-                finalize_successful_deployment(&mut run, &state).await;
-                if run.status == "success" && environment == "production" {
-                    run.message = "已同步手机端完成的正式发布，并核对同一镜像摘要".to_string();
-                }
-            }
-            if run.status == "failed" && !diagnosed_failure {
-                enrich_failed_cnb_run(&client, &mut run, &state).await;
-                diagnosed_failure = true;
-            }
-            run.updated_at = Utc::now().to_rfc3339();
-            state.save_deployment_run(&run)?;
-            imported.push(run);
-            continue;
-        }
-        let started_at = if adoption.mode == "fresh" {
-            let Some(started_at) = record_started_at else {
-                // A provider record without a trustworthy creation time could
-                // predate the local reset. Fresh mode is conservative and
-                // never guesses that such a record is new.
-                continue;
-            };
-            let Some(cutoff) = adoption.history_import_after.as_deref() else {
-                continue;
-            };
-            let Ok(started) = chrono::DateTime::parse_from_rfc3339(&started_at) else {
-                continue;
-            };
-            let Ok(cutoff) = chrono::DateTime::parse_from_rfc3339(cutoff) else {
-                continue;
-            };
-            if started <= cutoff {
-                continue;
-            }
-            started_at
-        } else {
-            record_started_at.unwrap_or_else(|| Utc::now().to_rfc3339())
-        };
-        let mut run = state.deployment_run_draft(
-            &root,
-            &manifest.project.name,
-            environment,
-            &manifest.providers.build.repository,
-            &manifest.source.release_branch,
-        )?;
-        run.commit_sha = record.revision.clone();
-        apply_version_title(&mut run, &record, &root);
-        run.build_serial = Some(record.serial);
-        run.candidate_tag = record
-            .source_ref
-            .as_deref()
-            .and_then(safe_candidate_tag)
-            .map(ToString::to_string)
-            .or_else(|| {
-                record.revision.as_ref().map(|revision| {
-                    manifest
-                        .release
-                        .candidate_tag_template
-                        .replace("{commit}", revision)
-                })
-            });
-        if environment == "production" {
-            run.source_run_id = if let Some(revision) = record.revision.as_deref() {
-                state
-                    .successful_staging_run_by_revision(&root, revision)?
-                    .map(|source| source.id)
-            } else {
-                None
-            };
-        }
-        run.started_at = started_at;
-        run.updated_at.clone_from(&run.started_at);
-        apply_history_status(&mut run, &record.status);
-        run.message = synced_history_message(environment, &run.status);
-        if run.status == "failed" && !diagnosed_failure {
-            enrich_failed_cnb_run(&client, &mut run, &state).await;
-            diagnosed_failure = true;
-        }
-        if run.status == "success" && is_latest_success {
-            // This successful deployment was discovered remotely rather than
-            // started by the current local task. If the server binding is not
-            // available yet, present it as an existing deployment awaiting
-            // verification instead of as a newly failed release.
-            run.action_kind = Some("verify-existing-deployment".to_string());
-            finalize_successful_deployment(&mut run, &state).await;
-            if run.status == "success" && environment == "production" {
-                run.message = "已同步手机端完成的正式发布，并核对同一镜像摘要".to_string();
-            }
-        } else if run.status == "success"
-            && environment == "production"
-            && run.source_run_id.is_none()
-        {
-            // Historic CNB success is still useful deployment history, but a
-            // production row without its staging source cannot safely become
-            // an immutable version pointer.
-            run.status = "needs_action".to_string();
-            run.current_stage = "verify-release".to_string();
-            run.action_kind = Some("verify-existing-deployment".to_string());
-            run.issue_code = Some("AD-REL-301".to_string());
-            run.message = "历史正式发布已导入，但缺少对应的测试版本，暂未核对".to_string();
-        }
-        state.save_deployment_run(&run)?;
-        imported.push(run);
-    }
-    imported.sort_by(|left, right| right.started_at.cmp(&left.started_at));
-    Ok(imported)
-}
-
-fn ordered_build_records(payload: &serde_json::Value) -> Vec<CnbBuildRecord> {
-    let mut records = build_records(payload);
-    records.sort_by(|left, right| {
-        let left_time = left
-            .created_at
-            .as_deref()
-            .and_then(|value| chrono::DateTime::parse_from_rfc3339(value).ok());
-        let right_time = right
-            .created_at
-            .as_deref()
-            .and_then(|value| chrono::DateTime::parse_from_rfc3339(value).ok());
-        left_time
-            .cmp(&right_time)
-            .then_with(|| {
-                build_record_environment_order(left).cmp(&build_record_environment_order(right))
-            })
-            .then_with(|| left.serial.cmp(&right.serial))
-    });
-    records
-}
-
-fn build_record_environment_order(record: &CnbBuildRecord) -> u8 {
-    match build_environment_for_event(&record.event) {
-        Some("deployment") => 0,
-        Some("staging") => 1,
-        Some("production") => 2,
-        _ => 3,
-    }
-}
-
-fn deployment_path_owns_history_reconciliation(
-    environment: &str,
-    bound_to_deployment_path: bool,
-) -> bool {
-    environment == "deployment" && bound_to_deployment_path
-}
-
-fn latest_success_serials_by_environment(
-    records: &[CnbBuildRecord],
-) -> BTreeMap<&'static str, String> {
-    let mut result = BTreeMap::new();
-    for record in records {
-        if record.status != "success" || is_production_approval_build(record) {
-            continue;
-        }
-        if let Some(environment) = build_environment_for_event(&record.event) {
-            result.insert(environment, record.serial.clone());
-        }
-    }
-    result
-}
-
-fn synced_history_message(environment: &str, status: &str) -> String {
-    let label = match environment {
-        "production" => "正式发布",
-        "staging" => "测试部署",
-        _ => "上线版本",
-    };
-    if status == "success" {
-        match environment {
-            "production" => "已同步手机端完成的正式发布".to_string(),
-            "staging" => "已同步 CNB 完成的测试部署".to_string(),
-            _ => "已同步构建服务完成的上线版本".to_string(),
-        }
-    } else if matches!(status, "running" | "queued") {
-        format!("已同步 CNB 页面触发的{label}任务")
-    } else {
-        format!("CNB 页面触发的{label}任务未完成")
-    }
-}
-
-fn safe_candidate_tag(value: &str) -> Option<&str> {
-    let value = value
-        .trim()
-        .strip_prefix("refs/tags/")
-        .unwrap_or(value.trim());
-    (!value.is_empty()
-        && value.len() <= 128
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-')))
-    .then_some(value)
-}
-
 fn build_environment_for_event(event: &str) -> Option<&'static str> {
     match event {
         "push" | "git_push" | "api_trigger_deployment_path_build" => Some("deployment"),
         "api_trigger_staging" | "tag_deploy.staging" => Some("staging"),
         "api_trigger_production" | "tag_deploy.production" => Some("production"),
         _ => None,
-    }
-}
-
-fn is_production_approval_build(record: &CnbBuildRecord) -> bool {
-    matches!(record.event.as_str(), "push" | "git_push")
-        && record.source_ref.as_deref() == Some("deploydesk-production")
-}
-
-fn apply_history_status(run: &mut DeploymentRun, status: &str) {
-    match status {
-        "success" => {
-            run.status = "success".to_string();
-            run.current_stage = "complete".to_string();
-            run.issue_code = None;
-            run.completed_steps = vec![
-                "write-config".to_string(),
-                "verify-build".to_string(),
-                "publish-images".to_string(),
-                "prepare-server".to_string(),
-                "deploy".to_string(),
-                "verify-release".to_string(),
-                "healthcheck".to_string(),
-            ];
-        }
-        "error" | "failed" => {
-            run.status = "failed".to_string();
-            // Build history alone does not say whether the failure happened
-            // before or after a server was touched. Keep the neutral build
-            // stage until the status and redacted runner log are inspected.
-            run.current_stage = "build".to_string();
-            run.issue_code = Some("AD-BLD-201".to_string());
-        }
-        "waiting" | "pending" | "queued" => {
-            run.status = "queued".to_string();
-            run.current_stage = "prepare".to_string();
-        }
-        _ => {
-            run.status = "running".to_string();
-            run.current_stage = "deploy".to_string();
-        }
     }
 }
 
@@ -4882,16 +3888,6 @@ fn local_git_title(root: &Path, revision: &str) -> Option<String> {
         .and_then(|title| readable_version_title(&title))
 }
 
-fn apply_version_title(run: &mut DeploymentRun, record: &CnbBuildRecord, root: &Path) {
-    if let Some(title) = readable_version_title(&record.title).or_else(|| {
-        run.commit_sha
-            .as_deref()
-            .and_then(|revision| local_git_title(root, revision))
-    }) {
-        run.source_title = Some(title);
-    }
-}
-
 fn readable_version_title(title: &str) -> Option<String> {
     let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
     if title.is_empty() {
@@ -5079,29 +4075,6 @@ fn update_run_from_cnb(run: &mut DeploymentRun, payload: &serde_json::Value) {
                 |stage| format!("正在执行：{stage}"),
             );
         }
-    }
-}
-
-async fn enrich_failed_cnb_run(
-    client: &CnbClient,
-    run: &mut DeploymentRun,
-    state: &WorkspaceState,
-) {
-    let Some(serial) = run.build_serial.as_deref() else {
-        return;
-    };
-    let Ok(payload) = client.build_status(&run.repository, serial).await else {
-        return;
-    };
-    update_run_from_cnb(run, &payload);
-    if run.status != "failed" {
-        return;
-    }
-    if let Some(pipeline_id) = summarize_build_status(&payload).pipeline_ids.first()
-        && let Ok(log) = client.runner_log(&run.repository, pipeline_id).await
-    {
-        apply_runner_log_diagnostic(run, &log);
-        enrich_unhealthy_container_diagnostic(run, state).await;
     }
 }
 
@@ -5401,168 +4374,6 @@ async fn install_server_key_with_password(
     Ok(result)
 }
 
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value, clippy::too_many_arguments)] // Tauri IPC deserializes flat, owned arguments.
-async fn bootstrap_server_caddy(
-    name: String,
-    host: String,
-    user: String,
-    key_path: String,
-    port: u16,
-    host_fingerprint: Option<String>,
-    confirmed: bool,
-    state: State<'_, WorkspaceState>,
-) -> Result<ProviderCheck, String> {
-    let profile = ssh::SshProfile {
-        name,
-        host,
-        user,
-        port,
-        key_path: PathBuf::from(key_path),
-        host_fingerprint,
-    };
-    let result = caddy::bootstrap_server(&profile, confirmed)
-        .await
-        .map_err(public_error)?;
-    if result.ok {
-        state.remember_checked_server(&profile)?;
-    }
-    Ok(result)
-}
-
-#[tauri::command]
-async fn inspect_server_route_conflicts(
-    path: String,
-    environment: String,
-    server: ServerConnectionInput,
-) -> Result<RouteConflictCheck, String> {
-    let environment_name = parse_deploy_environment(&environment)?;
-    let manifest =
-        load_manifest(&PathBuf::from(&path).join(MANIFEST_FILE)).map_err(public_error)?;
-    validate_deployment_routing_manifest(&manifest, "当前项目")?;
-    let hosts = manifest
-        .environments
-        .get(environment_name)
-        .domains
-        .iter()
-        .map(|route| route.host.clone())
-        .collect::<Vec<_>>();
-    if hosts.is_empty() {
-        return Ok(RouteConflictCheck {
-            conflicts: Vec::new(),
-            takeover_available: false,
-        });
-    }
-    let host_arguments = hosts
-        .iter()
-        .map(|host| shell_quote(host))
-        .collect::<Vec<_>>()
-        .join(" ");
-    let site_name = format!("{}-{environment}.caddy", manifest.project.name);
-    let route_declared = caddy_route_declared_shell_function();
-    let script = format!(
-        r#"set -eu
-CADDY_CONTAINER="$(cat "$HOME/.deploydesk/caddy/container-name")"
-CADDY_SITE_DIRECTORY="$(cat "$HOME/.deploydesk/caddy/site-directory")"
-MAIN_FILE="$(docker inspect --format '{{{{range .Mounts}}}}{{{{if eq .Destination "/etc/caddy/Caddyfile"}}}}{{{{.Source}}}}{{{{end}}}}{{{{end}}}}' "$CADDY_CONTAINER")"
-test -n "$MAIN_FILE" && test -f "$MAIN_FILE"
-ACTIVE_MAIN_FILE="$(mktemp)"
-trap 'rm -f "$ACTIVE_MAIN_FILE"' EXIT
-docker exec "$CADDY_CONTAINER" cat /etc/caddy/Caddyfile >"$ACTIVE_MAIN_FILE"
-SITE_NAME={site_name}
-TARGET_SITE="$CADDY_SITE_DIRECTORY/$SITE_NAME"
-{route_declared}
-for host in {host_arguments}; do
-  if route_declared_in_file "$host" "$ACTIVE_MAIN_FILE"; then
-    printf 'ABCDEPLOY_ROUTE_CONFLICT\t%s\tmain\n' "$host"
-    continue
-  fi
-  for file in "$CADDY_SITE_DIRECTORY"/*.caddy; do
-    [ -f "$file" ] || continue
-    [ "$file" = "$TARGET_SITE" ] && continue
-    if route_declared_in_file "$host" "$file"; then
-      printf 'ABCDEPLOY_ROUTE_CONFLICT\t%s\tmanaged\n' "$host"
-      break
-    fi
-  done
-done
-"#,
-        site_name = shell_quote(&site_name),
-    );
-    let output = ssh::execute(
-        &server.profile(),
-        "bash -s",
-        Some(script.as_bytes()),
-        Duration::from_secs(20),
-    )
-    .await
-    .map_err(public_error)?;
-    if output.exit_status != Some(0) {
-        return Err(format!(
-            "无法检查正式地址：{}",
-            redact_text(&output.stderr)
-                .lines()
-                .next()
-                .unwrap_or("服务器没有返回检查结果")
-        ));
-    }
-    let conflicts = output
-        .stdout
-        .lines()
-        .filter_map(|line| {
-            let mut fields = line.split('\t');
-            (fields.next()? == "ABCDEPLOY_ROUTE_CONFLICT").then(|| RouteConflict {
-                host: fields.next().unwrap_or_default().to_string(),
-                source: fields.next().unwrap_or("managed").to_string(),
-            })
-        })
-        .collect::<Vec<_>>();
-    let takeover_available =
-        !conflicts.is_empty() && conflicts.iter().all(|item| item.source == "main");
-    Ok(RouteConflictCheck {
-        conflicts,
-        takeover_available,
-    })
-}
-
-#[tauri::command]
-async fn take_over_server_routes(
-    path: String,
-    environment: String,
-    server: ServerConnectionInput,
-    confirmed: bool,
-) -> Result<ProviderCheck, String> {
-    if !confirmed {
-        return Err("接管现有地址前必须明确确认".to_string());
-    }
-    let environment_name = parse_deploy_environment(&environment)?;
-    let manifest =
-        load_manifest(&PathBuf::from(&path).join(MANIFEST_FILE)).map_err(public_error)?;
-    validate_deployment_routing_manifest(&manifest, "当前项目")?;
-    let hosts = manifest
-        .environments
-        .get(environment_name)
-        .domains
-        .iter()
-        .map(|route| route.host.clone())
-        .collect::<Vec<_>>();
-    if hosts.is_empty() {
-        return Err("正式环境还没有配置地址".to_string());
-    }
-    let site_name = format!("{}-{environment}.caddy", manifest.project.name);
-    let caddy_path = format!(
-        ".deploydesk/generated/{}/Caddyfile",
-        environment_name.as_str()
-    );
-    let caddy = render_project_files(&manifest)
-        .map_err(public_error)?
-        .into_iter()
-        .find(|file| file.path == caddy_path)
-        .ok_or_else(|| "无法生成当前正式地址的 Caddy 路由".to_string())?
-        .content;
-    take_over_caddy_routes(&server.profile(), &hosts, &site_name, &caddy).await
-}
-
 async fn take_over_caddy_routes(
     profile: &ssh::SshProfile,
     hosts: &[String],
@@ -5693,15 +4504,6 @@ if [ -f "$WORK_DIR/site.original" ]; then cp "$WORK_DIR/site.original" "$BACKUP_
     })
 }
 
-#[tauri::command]
-async fn take_over_deployment_path_routes(
-    run_id: String,
-    confirmed: bool,
-    state: State<'_, WorkspaceState>,
-) -> Result<DeploymentRun, String> {
-    take_over_deployment_path_routes_inner(run_id, confirmed, state.inner()).await
-}
-
 async fn take_over_deployment_path_routes_inner(
     run_id: String,
     confirmed: bool,
@@ -5761,171 +4563,6 @@ async fn take_over_deployment_path_routes_inner(
     run.updated_at = Utc::now().to_rfc3339();
     state.save_deployment_run(&run)?;
     Ok(run)
-}
-
-#[tauri::command]
-async fn reapply_deployment_routes(
-    run_id: String,
-    state: State<'_, WorkspaceState>,
-) -> Result<ProviderCheck, String> {
-    let run = state.deployment_run(&run_id)?;
-    apply_deployment_routes(&run, &state).await
-}
-
-#[tauri::command]
-async fn detect_dns_provider(host: String) -> Option<DnsProviderHint> {
-    deploy_core::health::detect_dns_provider(&host).await
-}
-
-async fn apply_deployment_routes(
-    run: &DeploymentRun,
-    state: &WorkspaceState,
-) -> Result<ProviderCheck, String> {
-    if run.artifacts.is_empty() {
-        return Err("AD-REL-201：尚未确认服务器上的实际版本，请重新检查正式版运行状态".to_string());
-    }
-    // 镜像摘要仍以候选提交为准；域名和 Caddy 路由使用当前项目设置，
-    // 允许测试通过后再补齐正式地址，而不要求为了一个域名重新构建镜像。
-    let manifest = deployment_routing_manifest(run)?;
-    let environment = parse_deploy_environment(&run.environment)?;
-    let hosts = manifest
-        .environments
-        .get(environment)
-        .domains
-        .iter()
-        .map(|route| route.host.clone())
-        .collect::<Vec<_>>();
-    if hosts.is_empty() {
-        return Err("当前发布版本没有配置公网地址".to_string());
-    }
-    let caddy_path = format!(".deploydesk/generated/{}/Caddyfile", environment.as_str());
-    let caddy = render_project_files(&manifest)
-        .map_err(public_error)?
-        .into_iter()
-        .find(|file| file.path == caddy_path)
-        .ok_or_else(|| "无法生成本次发布版本的 Caddy 路由".to_string())?
-        .content;
-    let profile = deployment_server_profile(run, state)?;
-    let host_arguments = hosts
-        .iter()
-        .map(|host| shell_quote(host))
-        .collect::<Vec<_>>()
-        .join(" ");
-    let site_name = format!("{}-{}.caddy", manifest.project.name, run.environment);
-    let network = format!("deploydesk-{}-{}", manifest.project.name, run.environment);
-    let remote_directory = format!(
-        ".deploydesk/apps/{}/{}",
-        manifest.project.name, run.environment
-    );
-    let encoded_caddy = BASE64.encode(caddy.as_bytes());
-    let partial_route_script = caddy_partial_route_activation_script(&hosts);
-    let script = format!(
-        r#"set -eu
-mkdir -p "$HOME/.deploydesk/locks"
-exec 9>"$HOME/.deploydesk/locks/server-deploy.lock"
-flock -w 60 9 || {{ echo '同一服务器正在执行其他部署操作' >&2; exit 75; }}
-CADDY_CONTAINER="$(cat "$HOME/.deploydesk/caddy/container-name" 2>/dev/null || true)"
-CADDY_SITE_DIRECTORY="$(cat "$HOME/.deploydesk/caddy/site-directory" 2>/dev/null || true)"
-test -n "$CADDY_CONTAINER" || {{ echo 'AD-SRV-205：统一 Caddy 尚未完成连接' >&2; exit 1; }}
-case "$CADDY_SITE_DIRECTORY" in /*) ;; *) echo 'AD-SRV-205：统一 Caddy 路由目录无效' >&2; exit 1 ;; esac
-test -d "$CADDY_SITE_DIRECTORY" && test -w "$CADDY_SITE_DIRECTORY" || {{ echo 'AD-SRV-205：统一 Caddy 路由目录不可写' >&2; exit 1; }}
-docker inspect "$CADDY_CONTAINER" >/dev/null 2>&1 || {{ echo 'AD-SRV-203：统一 Caddy 当前没有运行' >&2; exit 1; }}
-MAIN_FILE="$(docker inspect --format '{{{{range .Mounts}}}}{{{{if eq .Destination "/etc/caddy/Caddyfile"}}}}{{{{.Source}}}}{{{{end}}}}{{{{end}}}}' "$CADDY_CONTAINER")"
-test -n "$MAIN_FILE" && test -f "$MAIN_FILE" || {{ echo 'AD-SRV-205：无法定位统一 Caddy 主配置' >&2; exit 1; }}
-APP_DIRECTORY="$HOME/{remote_directory}"
-APP_FILE="$APP_DIRECTORY/Caddyfile"
-SITE_FILE="$CADDY_SITE_DIRECTORY/{site_name}"
-mkdir -p "$APP_DIRECTORY"
-WORK_DIR="$(mktemp -d "$HOME/.deploydesk/caddy/reapply.XXXXXX")"
-trap 'rm -rf "$WORK_DIR"' EXIT
-printf '%s' {encoded_caddy} | base64 --decode >"$WORK_DIR/Caddyfile.next"
-CANDIDATE_FILE="$WORK_DIR/Caddyfile.next"
-FILTERED_SITE_FILE="$WORK_DIR/Caddyfile.filtered"
-MAIN_CONFIG_FILE="$WORK_DIR/Caddyfile.main"
-ROUTE_CONFLICTS_FILE="$WORK_DIR/conflicts"
-FILTER_HOSTS_FILE="$WORK_DIR/filter-hosts"
-{partial_route_script}
-[ -f "$APP_FILE" ] && cp "$APP_FILE" "$WORK_DIR/app.original" || true
-[ -f "$SITE_FILE" ] && cp "$SITE_FILE" "$WORK_DIR/site.original" || true
-restore() {{
-  if [ -f "$WORK_DIR/app.original" ]; then cp "$WORK_DIR/app.original" "$APP_FILE"; else rm -f "$APP_FILE"; fi
-  if [ -f "$WORK_DIR/site.original" ]; then cp "$WORK_DIR/site.original" "$SITE_FILE"; else rm -f "$SITE_FILE"; fi
-}}
-cp "$WORK_DIR/Caddyfile.next" "$APP_FILE"
-cp "$FILTERED_SITE_FILE" "$SITE_FILE"
-docker network inspect {network} >/dev/null 2>&1 || {{ restore; echo 'AD-SRV-204：项目网络不存在，请重新发布版本' >&2; exit 1; }}
-docker network connect {network} "$CADDY_CONTAINER" 2>/dev/null || true
-if ! docker exec "$CADDY_CONTAINER" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
-  restore
-  echo 'AD-SRV-206：地址配置校验失败，已恢复原路由' >&2
-  exit 1
-fi
-if ! docker exec "$CADDY_CONTAINER" caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; then
-  restore
-  docker exec "$CADDY_CONTAINER" caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1 || true
-  echo 'AD-SRV-207：统一 Caddy 重载失败，已恢复原路由' >&2
-  exit 1
-fi
-docker exec "$CADDY_CONTAINER" caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile >"$WORK_DIR/active.json" 2>/dev/null || {{ restore; docker exec "$CADDY_CONTAINER" caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1 || true; echo 'AD-SRV-209：无法确认新地址是否生效' >&2; exit 1; }}
-for host in {host_arguments}; do
-  if ! grep -Fq -- "$host" "$WORK_DIR/active.json"; then
-    restore
-    docker exec "$CADDY_CONTAINER" caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1 || true
-    echo "AD-SRV-209：统一 Caddy 尚未加载 $host，请检查主配置是否导入路由目录" >&2
-    exit 1
-  fi
-done
-while IFS="$(printf '\t')" read -r host source; do
-  if [ "$source" = "main" ]; then
-    printf 'ROUTE_TAKEOVER_REQUIRED\t%s\n' "$host"
-  fi
-done <"$ROUTE_CONFLICTS_FILE"
-"#,
-        encoded_caddy = shell_quote(&encoded_caddy),
-        network = shell_quote(&network),
-        remote_directory = remote_directory,
-        partial_route_script = partial_route_script,
-    );
-    let output = ssh::execute(
-        &profile,
-        "bash -s",
-        Some(script.as_bytes()),
-        Duration::from_mins(1),
-    )
-    .await
-    .map_err(public_error)?;
-    if output.exit_status != Some(0) {
-        return Err(redact_text(&output.stderr)
-            .lines()
-            .last()
-            .unwrap_or("重新应用地址失败，原路由已保留")
-            .to_string());
-    }
-    let takeover_hosts = output
-        .stdout
-        .lines()
-        .filter_map(|line| line.strip_prefix("ROUTE_TAKEOVER_REQUIRED\t"))
-        .map(str::to_string)
-        .collect::<Vec<_>>();
-    Ok(ProviderCheck {
-        provider: "caddy".to_string(),
-        ok: true,
-        summary: if takeover_hosts.is_empty() {
-            "正式地址已重新应用".to_string()
-        } else {
-            format!(
-                "未冲突的正式地址已恢复，{} 个旧地址等待确认切换",
-                takeover_hosts.len()
-            )
-        },
-        details: hosts,
-        code: None,
-        next_steps: (!takeover_hosts.is_empty())
-            .then(|| "确认接管仍由旧服务使用的地址".to_string())
-            .into_iter()
-            .collect(),
-        retryable: false,
-    })
 }
 
 #[tauri::command]
@@ -7971,19 +6608,8 @@ pub fn run() {
             list_config_profile_bindings,
             set_environment_config_bindings,
             start_local_preview,
-            create_deployment_task,
-            begin_deployment_attempt,
-            list_deployment_attempts,
-            pause_deployment_task,
-            prepare_deployment_path_retry,
-            start_staging_deployment,
-            start_deployment_path,
-            resume_staging_deployment,
-            promote_production_deployment,
             refresh_deployment,
             check_deployment_routes,
-            retry_deployment_certificates,
-            open_staging_preview_tunnel,
             list_deployment_runs,
             list_project_environments,
             list_project_versions,
@@ -7993,17 +6619,10 @@ pub fn run() {
             list_attention_deployment_runs,
             list_recent_successful_deployment_runs,
             list_current_deployment_runs,
-            sync_external_deployments,
             save_manifest_draft,
             generate_ssh_identity,
             check_server,
             install_server_key_with_password,
-            bootstrap_server_caddy,
-            inspect_server_route_conflicts,
-            take_over_server_routes,
-            take_over_deployment_path_routes,
-            reapply_deployment_routes,
-            detect_dns_provider,
             prepare_pipeline_identity,
             runtime_secret_status,
             store_runtime_secret,
@@ -8014,7 +6633,6 @@ pub fn run() {
             runtime_config_sync_status,
             sync_runtime_config_to_server,
             prepare_cnb_secret_bundle,
-            rollback_environment,
             secret_status,
             store_secret,
             delete_secret,
@@ -8036,7 +6654,6 @@ pub fn run() {
         #[cfg(not(target_os = "macos"))]
         let _ = app_handle;
         if let tauri::RunEvent::Exit = &event {
-            stop_preview_tunnels();
             stop_local_start_processes();
         }
         #[cfg(target_os = "macos")]

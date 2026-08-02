@@ -2,41 +2,36 @@ use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::{fmt::Write as _, fs, path::Path, process::Command};
 
-use base64::Engine as _;
 use serde_json::json;
 use tempfile::tempdir;
 
 use super::{
-    BASE64, CNB_ACCOUNT_CACHE_KEY, CNB_KEYCHAIN_UNAVAILABLE_ERROR, CnbBuildRecord,
-    CnbTokenResolutionError, DeploymentArtifact, DeploymentPath, DeploymentRun,
-    LocalPreviewService, LocalPreviewStatus, ProjectRelinkIdentity, REMOTE_DEPENDENCY_SCRIPT,
-    RegistryConfig, ServerRouteProblem, ServerRouteProblemKind, StoredCnbToken, WorkspaceState,
-    apply_container_log_diagnostic, apply_deployed_service_states, apply_public_route_checks,
-    apply_runner_log_diagnostic, apply_server_route_problem, apply_server_route_problems,
-    apply_server_route_takeover_problem, apply_version_title, build_environment_for_event,
-    build_serial_for_revision, cache_secret, cached_cnb_account, cached_secret,
-    caddy_certificate_reload_script, caddy_main_route_rewrite_shell_function,
-    caddy_route_declared_shell_function, certificate_retry_allowed, cloud_setup_required,
+    CNB_ACCOUNT_CACHE_KEY, CNB_KEYCHAIN_UNAVAILABLE_ERROR, CnbTokenResolutionError,
+    DeploymentArtifact, DeploymentPath, DeploymentRun, LocalPreviewService, LocalPreviewStatus,
+    ProjectRelinkIdentity, REMOTE_DEPENDENCY_SCRIPT, RegistryConfig, ServerRouteProblem,
+    ServerRouteProblemKind, StoredCnbToken, WorkspaceState, apply_container_log_diagnostic,
+    apply_deployed_service_states, apply_public_route_checks, apply_runner_log_diagnostic,
+    apply_server_route_problem, apply_server_route_problems, apply_server_route_takeover_problem,
+    build_environment_for_event, build_serial_for_revision, cache_secret, cached_cnb_account,
+    cached_secret, caddy_main_route_rewrite_shell_function, caddy_route_declared_shell_function,
     cnb_account_from_responses, cnb_build_history_error, cnb_keyring_issue, cnb_public_error,
     cnb_secret_filename, container_runtime_env, create_deployment_git_snapshot,
     deployment_manifest, deployment_needs_public_route_recheck, deployment_owned_paths,
     deployment_path_managed_runtime_variables, deployment_path_manifest,
-    deployment_path_owns_history_reconciliation, deployment_routing_manifest,
-    ensure_git_repository_for_sync, ensure_runtime_template_variables, evict_cached_secret,
-    existing_cnb_repository, fill_empty_runtime_values, fill_managed_runtime_dependencies,
-    git_failure, git_stdout, internal_runtime_secret, interrupted_public_route_status,
-    interrupted_route_check_message, is_deployment_internal_path, is_deployment_owned_path,
-    is_production_approval_build, latest_success_serials_by_environment,
-    load_existing_project_config, local_build_failure_summary, local_build_proxy_attempts,
-    local_git_title, local_start_failure, looks_like_dependency_network_text,
-    ordered_build_records, overlay_server_route_problems, parse_deploy_environment,
+    deployment_routing_manifest, ensure_git_repository_for_sync, ensure_runtime_template_variables,
+    evict_cached_secret, existing_cnb_repository, fill_empty_runtime_values,
+    fill_managed_runtime_dependencies, git_failure, git_stdout, internal_runtime_secret,
+    interrupted_public_route_status, interrupted_route_check_message, is_deployment_internal_path,
+    is_deployment_owned_path, load_existing_project_config, local_build_failure_summary,
+    local_build_proxy_attempts, local_git_title, local_start_failure,
+    looks_like_dependency_network_text, overlay_server_route_problems, parse_deploy_environment,
     parse_deployed_service_states, parse_deployment_artifacts, parse_managed_local_port_owner,
     parse_runtime_environment, pause_deployment_path_after_deploy_error,
     pause_public_route_inspection, pilot_can_resume_existing_artifacts,
     prepare_deployment_path_retry_inner, provider_check_failure, readable_version_title,
     remember_cnb_account, remote_dependency_error, replace_managed_runtime_dependencies,
-    repository_identity, required_runtime_variables, resolve_cnb_token_sources, rollback_script,
-    run_git_command, run_local_build_with_recovery, runnable_local_service_ids, runtime_config_key,
+    repository_identity, required_runtime_variables, resolve_cnb_token_sources, run_git_command,
+    run_local_build_with_recovery, runnable_local_service_ids, runtime_config_key,
     runtime_config_template, runtime_defaults, runtime_secret_key, safe_postgres_identifier,
     same_artifact_digests, save_cnb_connection_metadata_best_effort, serialize_manifest,
     server_route_activation_script, services_use_public_generated_dockerfiles,
@@ -387,23 +382,6 @@ fn keeps_a_short_single_line_title_for_people_to_recognize_versions() {
             .count(),
         120
     );
-}
-
-#[test]
-fn adds_the_cnb_change_summary_to_an_existing_version_record() {
-    let mut deployment = run();
-    deployment.source_title = None;
-    let record = CnbBuildRecord {
-        serial: "42".to_string(),
-        event: "push".to_string(),
-        status: "success".to_string(),
-        revision: deployment.commit_sha.clone(),
-        source_ref: Some("main".to_string()),
-        title: "fix(home): 修复首页加载问题".to_string(),
-        created_at: None,
-    };
-    apply_version_title(&mut deployment, &record, Path::new("/not-needed"));
-    assert_eq!(deployment.source_title.as_deref(), Some("修复首页加载问题"));
 }
 
 #[test]
@@ -1518,105 +1496,6 @@ fn classifies_main_pushes_as_independent_deployment_path_builds() {
         assert_eq!(build_environment_for_event(event), Some("production"));
     }
     assert_eq!(build_environment_for_event("pull_request"), None);
-    assert!(is_production_approval_build(&CnbBuildRecord {
-        serial: "approval-1".to_string(),
-        event: "push".to_string(),
-        status: "success".to_string(),
-        revision: Some("0123456789abcdef0123456789abcdef01234567".to_string()),
-        source_ref: Some("deploydesk-production".to_string()),
-        title: "production approval".to_string(),
-        created_at: None,
-    }));
-    assert!(!is_production_approval_build(&CnbBuildRecord {
-        serial: "staging-1".to_string(),
-        event: "push".to_string(),
-        status: "success".to_string(),
-        revision: Some("0123456789abcdef0123456789abcdef01234567".to_string()),
-        source_ref: Some("main".to_string()),
-        title: "staging".to_string(),
-        created_at: None,
-    }));
-}
-
-#[test]
-fn legacy_history_sync_never_overwrites_a_bound_deployment_path_run() {
-    assert!(deployment_path_owns_history_reconciliation(
-        "deployment",
-        true
-    ));
-    assert!(!deployment_path_owns_history_reconciliation(
-        "deployment",
-        false
-    ));
-    assert!(!deployment_path_owns_history_reconciliation(
-        "staging", true
-    ));
-    assert!(!deployment_path_owns_history_reconciliation(
-        "production",
-        true
-    ));
-}
-
-#[test]
-fn imports_cnb_history_oldest_first_and_keeps_latest_result_per_line_kind() {
-    let payload = json!({
-        "data": [
-            {
-                "sn": "approval",
-                "event": "push",
-                "status": "success",
-                "sourceRef": "deploydesk-production",
-                "createTime": "2026-07-04T00:00:00Z"
-            },
-            {
-                "sn": "production-new",
-                "event": "api_trigger_production",
-                "status": "success",
-                "createTime": "2026-07-03T00:00:00Z"
-            },
-            {
-                "sn": "staging-new",
-                "event": "push",
-                "status": "success",
-                "sourceRef": "main",
-                "createTime": "2026-07-02T00:00:00Z"
-            },
-            {
-                "sn": "production-old",
-                "event": "api_trigger_production",
-                "status": "success",
-                "createTime": "2026-07-01T00:00:00Z"
-            },
-            {
-                "sn": "staging-old",
-                "event": "push",
-                "status": "success",
-                "sourceRef": "main",
-                "createTime": "2026-07-01T00:00:00Z"
-            }
-        ]
-    });
-    let records = ordered_build_records(&payload);
-    assert_eq!(
-        records
-            .iter()
-            .map(|record| record.serial.as_str())
-            .collect::<Vec<_>>(),
-        vec![
-            "staging-old",
-            "production-old",
-            "staging-new",
-            "production-new",
-            "approval"
-        ]
-    );
-    assert_eq!(
-        latest_success_serials_by_environment(&records),
-        BTreeMap::from([
-            ("deployment", "staging-new".to_string()),
-            ("production", "production-new".to_string()),
-        ])
-    );
 }
 
 #[test]
@@ -1655,53 +1534,6 @@ fn recovers_only_staging_builds_for_the_pushed_revision() {
         )
         .is_none()
     );
-}
-
-#[test]
-fn cloud_setup_is_required_until_both_secret_imports_are_real() {
-    let raw = r#"
-version: 1
-project:
-  name: sample
-source:
-  provider: local
-  repository: ""
-  release_branch: main
-services: []
-environments:
-  development:
-    target: { kind: local, namespace: sample-development }
-  staging:
-    target: { kind: server, server: default, namespace: sample-staging }
-    secrets_ref: https://cnb.cool/team/sample-secrets/-/blob/main/env.staging.yml
-  production:
-    target: { kind: server, server: default, namespace: sample-production }
-    approval_required: true
-    secrets_ref: https://cnb.cool/team/sample-secrets/-/blob/main/env.production.yml
-providers:
-  build: { kind: cnb, repository: team/sample }
-  registry: { kind: cnb, repository: team/sample }
-"#;
-    let mut manifest =
-        deploy_core::parse_manifest(raw, Path::new("deploy.yaml")).expect("valid manifest fixture");
-    assert!(!cloud_setup_required(&manifest));
-
-    manifest.environments.production.secrets_ref = None;
-    assert!(cloud_setup_required(&manifest));
-    manifest.environments.production.secrets_ref =
-        Some("https://cnb.cool/replace-me/secret/-/blob/main/env.production.yml".to_string());
-    assert!(cloud_setup_required(&manifest));
-}
-
-#[test]
-fn rollback_changes_only_release_images_and_restores_on_failure() {
-    let script = rollback_script("sample", "production");
-    assert!(script.contains("$HOME/.deploydesk/apps/sample/production"));
-    assert!(script.contains("cp \"$previous_file\" .release.env"));
-    assert!(script.contains("cp .release.env.before-rollback .release.env"));
-    assert!(script.contains("docker compose --env-file .release.env"));
-    assert!(!script.contains("cp \"$previous_file\" .runtime.env"));
-    assert!(!script.contains("Caddyfile"));
 }
 
 #[test]
@@ -1859,57 +1691,6 @@ fn interrupted_first_route_check_preserves_the_deployed_version() {
     assert_eq!(deployment.artifacts.len(), 1);
     assert!(deployment.message.contains("服务已经部署"));
     assert!(deployment.message.contains("网络恢复后会自动继续"));
-}
-
-#[test]
-fn certificate_retry_requires_dns_ready_https_only_failures() {
-    let status = |host: &str, phase: &str, reachable: bool| PublicRouteStatus {
-        host: host.to_string(),
-        url: format!("https://{host}/"),
-        phase: phase.to_string(),
-        reachable,
-        http_status: reachable.then_some(200),
-        message: String::new(),
-    };
-    assert!(certificate_retry_allowed(&[
-        status("app.example.com", "ready", true),
-        status("api.example.com", "https", false),
-    ]));
-    assert!(!certificate_retry_allowed(&[status(
-        "app.example.com",
-        "dns",
-        false,
-    )]));
-    assert!(!certificate_retry_allowed(&[status(
-        "app.example.com",
-        "application",
-        false,
-    )]));
-    assert!(!certificate_retry_allowed(&[status(
-        "app.example.com",
-        "ready",
-        true,
-    )]));
-}
-
-#[test]
-fn certificate_retry_validates_and_force_reloads_without_redeploying_services() {
-    let encoded_hosts = BASE64.encode(b"app.example.com\napi.example.com\n");
-    let script =
-        caddy_certificate_reload_script("sample-production.caddy", &encoded_hosts, "203.0.113.10");
-    assert!(script.contains("server-deploy.lock"));
-    assert!(script.contains("getent ahosts"));
-    assert!(script.contains("不再指向绑定服务器"));
-    assert!(script.contains("caddy validate"));
-    assert!(script.contains("caddy reload --force"));
-    assert!(script.contains("sample-production.caddy"));
-    assert!(!script.contains("docker restart"));
-    assert!(!script.contains("docker compose"));
-    assert!(!script.contains("certificates/acme"));
-    let lock = script.find("flock -w 60").expect("server lock");
-    let dns = script.find("getent ahosts").expect("locked DNS recheck");
-    let reload = script.find("caddy reload --force").expect("forced reload");
-    assert!(lock < dns && dns < reload);
 }
 
 #[test]

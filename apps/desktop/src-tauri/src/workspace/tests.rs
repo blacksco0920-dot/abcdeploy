@@ -2893,15 +2893,6 @@ fn restart_backfills_production_history_and_preserves_a_newer_rollback() {
         production.current_run_id.as_deref(),
         Some(rollback_id.as_str())
     );
-    assert_eq!(
-        reopened
-            .production_rollback_source_run(&project_path)
-            .expect("find next rollback source")
-            .expect("previous healthy production version")
-            .id,
-        second_source_id
-    );
-
     let connection = reopened.connection.lock().expect("database lock");
     let (first_source_version, second_source_version): (String, String) = connection
         .query_row(
@@ -3630,40 +3621,6 @@ fn pending_and_fresh_draft_hide_legacy_state_until_continue_backfills_it() {
         database
             .server_for_project(&project_path, "staging")
             .expect("fresh draft server")
-            .is_none()
-    );
-}
-
-#[test]
-fn deployment_serial_lookup_is_scoped_to_project_path() {
-    let directory = tempfile::tempdir().expect("temp dir");
-    let first = directory.path().join("first");
-    let second = directory.path().join("second");
-    fs::create_dir_all(&first).expect("create first project");
-    fs::create_dir_all(&second).expect("create second project");
-    let database = WorkspaceState::open(&directory.path().join("workspace.db")).expect("workspace");
-    database
-        .remember_project(&first, "first", true, 1)
-        .expect("remember first");
-    database
-        .remember_project(&second, "second", true, 1)
-        .expect("remember second");
-    let mut run = database
-        .create_deployment_run(&first, "first", "staging", "owner/shared", "main")
-        .expect("create run");
-    run.build_serial = Some("42".to_string());
-    database.save_deployment_run(&run).expect("save serial");
-
-    assert!(
-        database
-            .deployment_run_by_serial_for_project(&first, "owner/shared", "42")
-            .expect("first lookup")
-            .is_some()
-    );
-    assert!(
-        database
-            .deployment_run_by_serial_for_project(&second, "owner/shared", "42")
-            .expect("second lookup")
             .is_none()
     );
 }

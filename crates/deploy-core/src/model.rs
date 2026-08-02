@@ -661,15 +661,6 @@ pub struct PublicRouteStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct DnsProviderHint {
-    pub zone: String,
-    pub provider: String,
-    pub management_url: Option<String>,
-    pub name_servers: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct ProviderCheck {
     pub provider: String,
     pub ok: bool,

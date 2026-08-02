@@ -598,12 +598,6 @@ export interface RouteConflictCheck {
   takeoverAvailable: boolean;
 }
 
-export interface DnsProviderHint {
-  zone: string;
-  provider: string;
-  managementUrl: string | null;
-  nameServers: string[];
-}
 
 export type PublicRoutePhase =
   | "dns"

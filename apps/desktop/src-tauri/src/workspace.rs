@@ -667,6 +667,10 @@ impl WorkspaceState {
         })
     }
 
+    #[allow(
+        dead_code,
+        reason = "retained as the internal audit read for deployment attempt history"
+    )]
     pub fn list_deployment_attempts(
         &self,
         task_id: &str,
@@ -2133,105 +2137,6 @@ impl WorkspaceState {
             return Err("AD-ADOPT-101：请先选择继续管理已有部署或重新设置部署".to_string());
         }
         Ok(run)
-    }
-
-    pub fn deployment_run_by_serial_for_project(
-        &self,
-        path: &Path,
-        repository: &str,
-        serial: &str,
-    ) -> Result<Option<DeploymentRun>, String> {
-        let normalized = normalize_path(path);
-        let connection = self.connection.lock().map_err(lock_error)?;
-        if project_deployment_state_hidden(&connection, &normalized)? {
-            return Ok(None);
-        }
-        let mut run = connection
-            .query_row(
-                "SELECT id, project_path, project_name, environment, status,
-                        current_stage, build_serial, commit_sha, source_title, source_run_id,
-                        candidate_tag, artifacts, action_kind, action_url,
-                        issue_code, repository, branch, message, completed_steps,
-                        started_at, updated_at
-                 FROM deployment_runs
-                 WHERE project_path = ?1 AND repository = ?2 AND build_serial = ?3
-                 LIMIT 1",
-                params![normalized, repository, serial],
-                deployment_run_from_row,
-            )
-            .optional()
-            .map_err(public_storage_error)?;
-        if let Some(run) = run.as_mut() {
-            hydrate_deployment_route_checks(&connection, run)?;
-        }
-        Ok(run)
-    }
-
-    pub fn successful_staging_run_by_revision(
-        &self,
-        path: &Path,
-        revision: &str,
-    ) -> Result<Option<DeploymentRun>, String> {
-        let normalized = normalize_path(path);
-        let connection = self.connection.lock().map_err(lock_error)?;
-        if project_deployment_state_hidden(&connection, &normalized)? {
-            return Ok(None);
-        }
-        let mut run = connection
-            .query_row(
-                "SELECT id, project_path, project_name, environment, status,
-                        current_stage, build_serial, commit_sha, source_title, source_run_id,
-                        candidate_tag, artifacts, action_kind, action_url,
-                        issue_code, repository, branch, message, completed_steps,
-                        started_at, updated_at
-                 FROM deployment_runs
-                 WHERE project_path = ?1 AND environment = 'staging'
-                   AND status = 'success' AND commit_sha = ?2
-                 ORDER BY started_at DESC
-                 LIMIT 1",
-                params![normalized, revision],
-                deployment_run_from_row,
-            )
-            .optional()
-            .map_err(public_storage_error)?;
-        if let Some(run) = run.as_mut() {
-            hydrate_deployment_route_checks(&connection, run)?;
-        }
-        Ok(run)
-    }
-
-    pub fn production_rollback_source_run(
-        &self,
-        path: &Path,
-    ) -> Result<Option<DeploymentRun>, String> {
-        let normalized = normalize_path(path);
-        let source_run_id = {
-            let connection = self.connection.lock().map_err(lock_error)?;
-            connection
-                .query_row(
-                    "SELECT previous.source_run_id
-                     FROM environments environment
-                     JOIN projects project ON project.id = environment.project_id
-                     JOIN deployment_runs previous
-                       ON previous.environment_id = environment.id
-                     WHERE project.path = ?1
-                       AND environment.name = 'production'
-                       AND environment.current_deployment_run_id IS NOT NULL
-                       AND previous.id <> environment.current_deployment_run_id
-                       AND previous.status = 'success'
-                       AND previous.version_id IS NOT NULL
-                       AND previous.source_run_id IS NOT NULL
-                     ORDER BY previous.started_at DESC, previous.id DESC
-                     LIMIT 1",
-                    [normalized],
-                    |row| row.get::<_, String>(0),
-                )
-                .optional()
-                .map_err(public_storage_error)?
-        };
-        source_run_id
-            .map(|run_id| self.deployment_run(&run_id))
-            .transpose()
     }
 
     pub fn list_deployment_runs(&self, path: &Path) -> Result<Vec<DeploymentRun>, String> {
