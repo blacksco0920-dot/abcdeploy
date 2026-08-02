@@ -39,12 +39,14 @@
 
 ## 4. 桌面生产命令面与保留边界
 
-2026-08-02 的最终自动审计从 `apps/desktop/src-tauri/src/lib.rs` 的 `tauri::generate_handler!`、`apps/desktop/src/api.ts` 与 `apps/desktop/src/api/` 的生产静态调用，以及 Vite 产物中实际保留的调用得到 `registered=45`、`source=45`、`bundled=45`。`dynamicInvocations`、`missingRegistrations`、`registeredOnly`、`bundleOnly` 和 `sourceNotBundled` 均为 0。该结论是静态与构建证据，不是用户验收。
+2026-08-02 的最终自动审计从 `apps/desktop/src-tauri/src/lib.rs` 的 `tauri::generate_handler!`、`apps/desktop/src/api.ts` 与 `apps/desktop/src/api/` 的生产静态调用，以及 Vite 产物中实际保留的调用得到 `registered=45`、`source=45`、`bundled=45`。`dynamicInvocations`、`unsupportedInvocations`、`missingRegistrations`、`registeredOnly`、`bundleOnly` 和 `sourceNotBundled` 均为 0。该结论是静态与构建证据，不是用户验收。
+
+命令提取器由 `scripts/lib/desktop-command-surface.mjs` 与 `scripts/lib/typescript-invoke-bindings.mjs` 共同实现：后者建立 TypeScript Program/TypeChecker 并按编译器符号区分导入绑定、遮蔽值与普通同名属性；前者只接受从 `@tauri-apps/api/core` 具名导入的 `invoke` 运行时绑定（包含具名导入别名）作为非可选直接调用，且命令参数必须是字符串字面量。命名空间导入、core 的值再导出，以及把绑定保存、转发、重赋值、传给回调、放入条件调用或其他非直接值用途都会产生带位置和原因的 `unsupportedInvocations`；type-only 导入/导出与纯类型位置会被忽略，不制造命令或失败。这个保守策略防止门禁把无法静态证明的值流误写成生产消费者。
 
 | 门禁 | 稳定入口 | 保护事实 |
 | --- | --- | --- |
-| 独立 source 审计 | 根脚本 `pnpm check:desktop-command-surface` | 直接校验生产 TypeScript 静态调用、Rust 注册集合和动态 `invoke` 禁止项。 |
-| 项目治理 | `pnpm check:project` 内的 `auditDesktopCommandSurface({ mode: "source" })` | 与项目文档、前端边界和恢复路径检查在同一 Node 进程内失败收口。 |
+| 独立 source 审计 | 根脚本 `pnpm check:desktop-command-surface`；共享实现 `scripts/lib/desktop-command-surface.mjs` + `scripts/lib/typescript-invoke-bindings.mjs` | 通过 TypeScript 编译器符号直接校验生产具名 `invoke` 非可选直接调用、字符串字面量命令、Rust 注册集合，并拒绝所有无法证明的运行时值用法。 |
+| 项目治理 | `pnpm check:project` 内的 `auditDesktopCommandSurface({ mode: "source" })` | 复用同一解析器和诊断适配器，与项目文档、前端边界和恢复路径检查在同一 Node 进程内失败收口。 |
 | 生产 bundle 审计 | `apps/desktop/package.json` 的 `build` 在 `tsc --noEmit && vite build` 之后运行 `--mode bundle` | 拒绝只存在源码回退分支、但被 tree-shaking 移出实际桌面产物的包装作为生产消费证据。 |
 
 命令数量、逐项去留和实施期回归证据保存在 [桌面命令面证据矩阵](../../openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md)；本稳定索引不复制逐命令矩阵。公开 IPC 收缩后仍保留的内部边界为：
