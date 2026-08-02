@@ -498,7 +498,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 8: 用编译器和调用图删除退役入口的专属实现
 
-- [ ] Task 8 完成：退役入口的专属实现与测试残留完成清理
+- [x] Task 8 完成：退役入口的专属实现与测试残留完成清理
 
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
@@ -512,7 +512,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: Tasks 3–7 已移除 endpoint 后的 Rust/TypeScript 编译器诊断和矩阵 `decision`。
 - Produces: 没有只服务 `delete` 命令的类型、常量、helper、测试或依赖；所有 `internalize` 函数仍有真实调用者或数据测试。
 
-- [ ] **Step 1: 建立孤儿符号失败清单**
+- [x] **Step 1: 建立孤儿符号失败清单**
 
   Run: `cargo clippy --workspace --all-targets -- -D warnings`
 
@@ -520,17 +520,17 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   对矩阵中每个 `delete` 命令执行 CodeGraph impact 和 `rg -n '<symbol>' apps/desktop`；任何只剩定义/测试的专属符号写入同一矩阵行的删除清单。Expected: 删除前至少命中旧类型或测试，形成 Red 清单。
 
-- [ ] **Step 2: 删除专属实现，迁移有效断言**
+- [x] **Step 2: 删除专属实现，迁移有效断言**
 
   删除只服务退役入口的类型和 helper。若命令测试仍保护内部行为，将同一输入/输出断言迁到现有内部函数或 Workspace 方法测试；只删除“handler 中必须出现该命令”或“旧 endpoint 能被调用”的断言。
 
-- [ ] **Step 3: 证明没有伪造缩小**
+- [x] **Step 3: 证明没有伪造缩小**
 
   Run: `git diff --stat 24e0fc79f9bda0401362b4e93cb570774b4abfa8 -- apps/desktop/src/api.ts apps/desktop/src-tauri/src/lib.rs apps/desktop/src-tauri/src/workspace.rs apps/desktop/src-tauri/src/tests.rs`
 
   Expected: 生产代码总删除行数大于新增行数；没有新建承载旧实现的大型业务文件。
 
-- [ ] **Step 4: Green 与矩阵终审**
+- [x] **Step 4: Green 与矩阵终审**
 
   Run: `cargo test -p abcdeploy-desktop`
 
@@ -540,7 +540,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；矩阵 111 行全部有最终 decision、rationale 和验证证据。
 
-- [ ] **Step 5: 提交专属实现清理**
+- [x] **Step 5: 提交专属实现清理**
 
   ```bash
   git add apps/desktop/src-tauri/src/lib.rs apps/desktop/src-tauri/src/tests.rs apps/desktop/src-tauri/src/workspace.rs apps/desktop/src-tauri/src/workspace/tests.rs apps/desktop/src/types.ts openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md

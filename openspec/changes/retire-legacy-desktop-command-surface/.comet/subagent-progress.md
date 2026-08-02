@@ -4,18 +4,20 @@
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
 - Current task: `Task 8 完成：退役入口的专属实现与测试残留完成清理`
 - OpenSpec mapping: `3.5 根据编译器和调用图继续删除只服务退役命令的类型、辅助函数与测试，不删除仍覆盖当前数据兼容行为的断言`
-- Stage: `preflight`
+- Stage: `done`
 - Review mode: `thorough`
-- Review/fix round: `0/2`
-- Implementer: pending dispatch
-- Implementation commit: pending
-- Changed files: pending
-- RED evidence: pending
-- GREEN evidence: pending
-- Task review: pending
-- Reviewer: pending
-- Open findings: none
-- Risk signals: matrix-wide orphan scan, intentional implementation/test deletion, compatibility/security/recovery regressions, likely cross-module.
+- Review/fix round: `1/2`
+- Implementer: `/root/task_8_debris_audit` (complete)
+- Fix implementer: `/root/fix_task_8_profile_delete_debris`
+- Implementation commit: `48b6a24`
+- Fix commit: `9ffd785`
+- Changed files: desktop `types.ts`; command-surface evidence matrix.
+- RED evidence: 45 delete rows audited; 22 endpoint-only TypeScript DTO/model exports remained with no consumers. 21 internalize rows mapped to production callers or exact compatibility tests.
+- GREEN evidence: 22 TS types / 168 production lines removed; 44 delete commands not found and `generate_runtime_secret` only matches a valid production helper chain; full `pnpm check`, locked Rust, strict TS, 12 command tests, 45/45/45 exit-0 CLI, project/secrets/OpenSpec/diff/CodeGraph all pass.
+- Task review: clean after fix round 1/2; profile-delete debris finding addressed, no new Critical/Important; matrix wording Minor deferred.
+- Reviewer: `/root/rereview_task_8_profile_delete_debris` (scoped fix re-review)
+- Open findings: none blocking. Deferred Minor — stale `save_config_profile` caller wording in matrix.
+- Risk signals: matrix-wide symbol audit and intentional type deletion; compatibility/security/recovery protected; no handler/schema/runtime implementation change.
 - Context: Task 7 clean and complete; command surface is 45/45/45 with every difference zero and all modes exit0. Task8 must not change handler counts.
 - Deferred minors: fixed lexical sorting rule; actionable missing-bundle-directory error; direct `open_project_preview` write-safety regression test; precise `apply_plan` caller wording. Final review will triage.
-- Checkoff: pending
+- Checkoff: Task 8 plan checkbox checked; OpenSpec 3.5 was already checked by Task 7 and remains satisfied; exact runtime validation pending coordination commit.
