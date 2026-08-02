@@ -155,7 +155,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 2: 建立仓库 CLI、111/56/46 初始失败证据与逐命令矩阵
 
-- [ ] Task 2 完成：仓库 CLI 与逐命令证据矩阵通过审查
+- [x] Task 2 完成：仓库 CLI 与逐命令证据矩阵通过审查
 
 **Files:**
 - Create: `scripts/check-desktop-command-surface.mjs`
@@ -167,21 +167,21 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: Task 1 的 `extractSourceCommands(...)`、`extractRegisteredCommands(...)`、`extractBundledCommands(...)` 与 `compareCommandSets(...)`。
 - Produces: `auditDesktopCommandSurface({ root, mode })`、CLI `node scripts/check-desktop-command-surface.mjs --mode source|bundle|all [--json]`；矩阵字段固定为 `command | feature consumer | TypeScript wrapper | production bundle | Rust internal callers | data/migration duty | tests | decision | rationale`。
 
-- [ ] **Step 1: 写 CLI 诊断失败测试**
+- [x] **Step 1: 写 CLI 诊断失败测试**
 
   使用临时目录夹具断言 `--mode all --json` 输出稳定字段和排序；人为设置 `registered=[alpha,beta]`、`source=[alpha,gamma]`、`bundle=[alpha]` 时，按共享接口顺序断言四类差异分别为 `gamma/beta/[]/gamma`，退出码为 `1`。
 
-- [ ] **Step 2: 运行测试并确认 Red**
+- [x] **Step 2: 运行测试并确认 Red**
 
   Run: `node --test scripts/desktop-command-surface.test.mjs`
 
   Expected: FAIL，提示 CLI 或仓库审计函数尚不存在。
 
-- [ ] **Step 3: 实现仓库 CLI**
+- [x] **Step 3: 实现仓库 CLI**
 
   CLI 用 `import.meta.url` 定位仓库根目录，不依赖调用者的 `process.cwd()`。生产源码范围固定为 `apps/desktop/src/**/*.{ts,tsx}`，排除 `*.test.*`、`*.spec.*`、`src/test/**` 和 `vite-env.d.ts`；Rust 固定读取 `apps/desktop/src-tauri/src/lib.rs`；bundle 固定读取 `apps/desktop/dist/assets/*.js`。文本输出必须包含三集合数量与逐类差异，JSON 输出复用同一结果对象。
 
-- [ ] **Step 4: 生成最新 Vite 基线并确认预期失败**
+- [x] **Step 4: 生成最新 Vite 基线并确认预期失败**
 
   Run: `pnpm --filter @abcdeploy/desktop build`
 
@@ -189,11 +189,11 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: FAIL，明确报告 `registered=111`、`source=56`、`bundled=46`；若数量与 base-ref 不同，先检查工作树是否混入别的业务改动，不修改期望值迎合未知状态。
 
-- [ ] **Step 5: 写入基线与 111 条证据矩阵**
+- [x] **Step 5: 写入基线与 111 条证据矩阵**
 
   在矩阵头记录 base-ref、审计命令、111/56/46 与“当前前端是唯一受支持消费者”。每个 handler 命令建立一行；先填源码包装、bundle、CodeGraph/`rg` 调用者、数据职责和测试。65 个未进入 bundle 的候选必须全部落行；`check_registry_credentials` 单列为“bundle 中存在但只由浏览器回退保活”的复核项。只有三类最终值可写入 `decision`：`keep-ipc`、`internalize`、`delete`，不得留下空单元格。
 
-- [ ] **Step 6: 用矩阵反查保护线**
+- [x] **Step 6: 用矩阵反查保护线**
 
   对每个 `internalize` 行执行 `pnpm codegraph:status`、CodeGraph callers/impact 与 `rg -n '<symbol>' apps/desktop/src-tauri/src`；把具体内部调用者或迁移测试名写入 `rationale`。以下保护测试必须作为矩阵证据保留：
 
@@ -206,7 +206,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   - `production_digest_mismatch_is_atomic_and_does_not_switch_pointer`
   - `current_run_query_keeps_the_online_version_after_a_failed_update`
 
-- [ ] **Step 7: 运行测试与文档检查**
+- [x] **Step 7: 运行测试与文档检查**
 
   Run: `node --test scripts/desktop-command-surface.test.mjs`
 
@@ -214,7 +214,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；仓库审计仍按设计失败并保留 111/56/46 证据。
 
-- [ ] **Step 8: 提交 CLI 与证据基线**
+- [x] **Step 8: 提交 CLI 与证据基线**
 
   ```bash
   git add scripts/check-desktop-command-surface.mjs scripts/desktop-command-surface.test.mjs openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md
