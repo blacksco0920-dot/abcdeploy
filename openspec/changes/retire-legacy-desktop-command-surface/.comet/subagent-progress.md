@@ -4,18 +4,18 @@
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
 - Current task: `Task 12 完成：完整门禁、签名 .app 与最终证据通过验收`
 - OpenSpec mapping: `4.4 运行 pnpm check:project、pnpm check:secrets、受影响测试与完整 pnpm check，记录命令数量、删除规模和验证结果`; `4.5 运行 pnpm tauri:build:app 生成签名的 macOS Apple Silicon .app，完成启动与当前主线基本烟测且不触发正式发布`
-- Stage: `preflight`
+- Stage: `done`
 - Review mode: `thorough`
-- Review/fix round: `0/2`
-- Implementer: pending dispatch
-- Implementation commit: pending
-- Changed files: pending
+- Review/fix round: `1/2`
+- Implementer: `/root/task_12_final_verification`
+- Implementation commits: `7c22e27`, `4ccf434`, `28b07af`
+- Changed files: `docs/current-state.md`; `openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md`; ignored `.superpowers/sdd/2026-08-02-retire-legacy-desktop-command-surface/task-12-report.md`
 - RED evidence: not applicable; final verification task consumes completed code and records failures if any.
-- GREEN evidence: pending
-- Task review: pending
-- Reviewer: pending
+- GREEN evidence: project/secrets/OpenSpec strict/Node 23/23/full `pnpm check` all pass; command surface 45/45/45; CodeGraph 216/3,006/8,936 up to date; signed thin-arm64 `.app` passes strict codesign; exact-path smoke reaches launch/list/detail/folder cancel/local/server ready states without final run/deploy/update actions.
+- Task review: thorough review clean after one evidence-count fix round; external-link target observation and Provider-flow copy remain explicitly `NOT_TESTED` under the no-side-effect boundary.
+- Reviewers: `/root/review_task_12_final_verification`, `/root/review_task_12_smoke_fix`, `/root/review_task_12_count_fix`
 - Open findings: none
 - Risk signals: full regression, signed app build and UI smoke; no release or production mutation authorized.
 - Context: Tasks1-11 complete; command surface 45/45/45, gates and docs integrated. Task12 owns final build/sign/smoke evidence, not product fixes unless a real regression is found and routed through the fix loop.
 - Deferred minors for final whole-branch review: fixed lexical sorting rule; direct `open_project_preview` write-safety regression test.
-- Checkoff: pending
+- Checkoff: Task 12 and OpenSpec 4.4/4.5 complete; all three `comet state task-checkoff` validations PASS.

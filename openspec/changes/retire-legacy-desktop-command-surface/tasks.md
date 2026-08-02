@@ -23,5 +23,5 @@
 - [x] 4.1 把桌面命令面一致性检查接入 `pnpm check:project`，并要求所有保留例外具有逐项原因
 - [x] 4.2 更新 `docs/internal/implementation-inventory.md`、相关架构债务和当前状态证据，不把自动测试升级为用户验收
 - [x] 4.3 重建并同步 CodeGraph，确认文档中的稳定入口和调用关系指向清理后的主线
-- [ ] 4.4 运行 `pnpm check:project`、`pnpm check:secrets`、受影响测试与完整 `pnpm check`，记录命令数量、删除规模和验证结果
-- [ ] 4.5 运行 `pnpm tauri:build:app` 生成签名的 macOS Apple Silicon `.app`，完成启动与当前主线基本烟测且不触发正式发布
+- [x] 4.4 运行 `pnpm check:project`、`pnpm check:secrets`、受影响测试与完整 `pnpm check`，记录命令数量、删除规模和验证结果
+- [x] 4.5 运行 `pnpm tauri:build:app` 生成签名的 macOS Apple Silicon `.app`，完成启动与当前主线基本烟测且不触发正式发布

@@ -694,7 +694,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 12: 完整门禁、签名 macOS `.app` 与最终证据
 
-- [ ] Task 12 完成：完整门禁、签名 `.app` 与最终证据通过验收
+- [x] Task 12 完成：完整门禁、签名 `.app` 与最终证据通过验收
 
 **Files:**
 - Modify: `openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md`
@@ -705,7 +705,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: Tasks 1–11 的最终代码、矩阵、门禁和文档。
 - Produces: 全量验证记录、签名 Apple Silicon `.app` 路径、启动/基本烟测结果；不执行正式发布。
 
-- [ ] **Step 1: 运行最终静态与安全门禁**
+- [x] **Step 1: 运行最终静态与安全门禁**
 
   Run: `pnpm check:project`
 
@@ -717,13 +717,13 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: 全部 PASS。
 
-- [ ] **Step 2: 运行完整工程回归**
+- [x] **Step 2: 运行完整工程回归**
 
   Run: `pnpm check`
 
   Expected: Rust、TypeScript、Workspace、Vitest、Vite、站点构建、格式和 clippy 全部 PASS；桌面 build 内部再次证明三集合相等。
 
-- [ ] **Step 3: 复核 CodeGraph 与工作树质量**
+- [x] **Step 3: 复核 CodeGraph 与工作树质量**
 
   Run: `pnpm codegraph:index && pnpm codegraph:sync && pnpm codegraph:status`
 
@@ -733,13 +733,13 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: CodeGraph 最新；除本 change 的预期修改外没有无关文件。
 
-- [ ] **Step 4: 构建签名 `.app`**
+- [x] **Step 4: 构建签名 `.app`**
 
   Run: `pnpm tauri:build:app`
 
   Expected: 生成当前 macOS Apple Silicon `.app`，使用稳定 Apple Development 身份签名；不生成 DMG、不改版本号。
 
-- [ ] **Step 5: 验证签名、启动和主线基本能力**
+- [x] **Step 5: 验证签名、启动和主线基本能力**
 
   对构建脚本输出的精确 `.app` 路径运行：
 
@@ -750,17 +750,17 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   在应用中完成无副作用烟测：启动“我的部署”；系统文件夹选择器能打开并取消；外部准备链接能打开；复制按钮写入剪贴板；已有部署列表和详情能恢复；本机/服务器当前主线入口不报“command not found”。不连接新 Provider、不修改服务器资源。
 
-- [ ] **Step 6: 回写最终验证证据**
+- [x] **Step 6: 回写最终验证证据**
 
   将实际最终命令数、删除 endpoint/依赖数量、全量门禁时间、CodeGraph 状态、`.app` 绝对路径、codesign 和烟测结果写入矩阵与 `docs/current-state.md`；向主协调会话提供勾选 OpenSpec tasks 4.4、4.5 所需证据，不由实现者修改复选框。只记录自动证据与本次烟测，不新增 `VERIFIED` 能力。
 
-- [ ] **Step 7: 最终再验证文档改动**
+- [x] **Step 7: 最终再验证文档改动**
 
   Run: `pnpm check:project && pnpm check:secrets && openspec validate retire-legacy-desktop-command-surface --strict && git diff --check`
 
   Expected: PASS。
 
-- [ ] **Step 8: 提交最终证据**
+- [x] **Step 8: 提交最终证据**
 
   ```bash
   git add openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md openspec/changes/retire-legacy-desktop-command-surface/tasks.md docs/current-state.md
@@ -769,9 +769,9 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ## 完成检查
 
-- [ ] 三集合严格相等，动态调用为零，矩阵无空 decision/rationale。
-- [ ] 旧 endpoint 的专属实现、测试、依赖和权限已删除；共享内核、迁移和恢复能力有明确调用/测试证据。
-- [ ] `lib.rs`、`api.ts` 和相关迁移文件相对 base-ref 净缩小，没有用新大型文件转移旧代码。
-- [ ] 本机、服务器、更新、恢复、失败保留在线版本和重启恢复回归通过。
-- [ ] 实现索引、当前状态、OpenSpec 任务和 CodeGraph 与最终代码一致。
-- [ ] 完整门禁、签名 `.app`、启动与基本烟测通过，且没有版本、标签、Release、DMG 或官网分发副作用。
+- [x] 三集合严格相等，动态调用为零，矩阵无空 decision/rationale。
+- [x] 旧 endpoint 的专属实现、测试、依赖和权限已删除；共享内核、迁移和恢复能力有明确调用/测试证据。
+- [x] `lib.rs`、`api.ts` 和相关迁移文件相对 base-ref 净缩小，没有用新大型文件转移旧代码。
+- [x] 本机、服务器、更新、恢复、失败保留在线版本和重启恢复回归通过。
+- [x] 实现索引、当前状态、OpenSpec 任务和 CodeGraph 与最终代码一致。
+- [x] 完整门禁、签名 `.app`、启动与基本烟测通过，且没有版本、标签、Release、DMG 或官网分发副作用。
