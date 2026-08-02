@@ -44,6 +44,20 @@ test("extractSourceCommands 为动态 invoke 保留文件和起始行号", async
   );
 });
 
+test("extractSourceCommands 忽略遮蔽导入绑定的函数参数调用", () => {
+  const result = extractSourceCommands(
+    `import { invoke } from "@tauri-apps/api/core";
+invoke("alpha");
+function invokeLocally(invoke) {
+  invoke("not-tauri");
+}`,
+    "/virtual/shadowed-invoke.ts",
+  );
+
+  assert.deepEqual(result.commands, ["alpha"]);
+  assert.deepEqual(result.dynamicInvocations, []);
+});
+
 test("extractRegisteredCommands 提取唯一 generate_handler 中的标识符", async () => {
   const result = extractRegisteredCommands(await fixture("handler-valid.rs"));
 
