@@ -4,18 +4,21 @@
 - Plan: `docs/superpowers/plans/2026-08-02-retire-legacy-desktop-command-surface.md`
 - Current task: `Task 5 完成：旧本机准备与服务控制命令完成退役`
 - OpenSpec mapping: `3.2 删除无当前消费者的旧本机准备/服务控制命令簇，同时保留受管运行工作区、当前启动与连续验证主线`
-- Stage: `preflight`
+- Stage: `done`
 - Review mode: `thorough`
-- Review/fix round: `0/2`
-- Implementer: pending dispatch
-- Implementation commit: pending
-- Changed files: pending
-- RED evidence: pending
-- GREEN evidence: pending
-- Task review: pending
-- Reviewer: pending
-- Open findings: none
-- Risk signals: local process lifecycle/concurrency; public command surface; diff likely >200 lines.
+- Review/fix round: `2/2`
+- Implementer: `/root/task_5_local_runtime_cleanup` (complete)
+- Fix implementer: `/root/fix_task_5_cross_platform_cfg` (round 2/2)
+- Implementation commit: `510c35d18902363f585b9ebd724d2134f0bc5aa2`
+- Fix commit: `205b3cc8b743e7fd6069b52f7dc8354b951d7437`
+- Fix round 2 commit: `444f97d36bcb0c039aa52c0af2a5883727c43bf8`
+- Changed files: `lib.rs`, `local_process.rs`, `local_runtime.rs`, `tests.rs`, command-surface evidence matrix.
+- RED evidence: command audit 104/45 with all 14 targets among 59 registered-only; migrated cancellation test failed to compile before internal seam existed.
+- GREEN evidence: audit 90/45/45 with only 45 registered-only and all other differences zero; synchronized real-child cancellation test 10/10, 143 desktop + 109 core + 3 integration tests, locked Clippy/build, project/secrets/diff/CodeGraph pass.
+- Task review: clean after fix round 2/2; original cancellation synchronization and cross-platform cfg findings addressed; no new Critical/Important breakage.
+- Reviewer: `/root/rereview_task_5_cross_platform_cfg` (round 2/2 scoped final re-review)
+- Open findings: none.
+- Risk signals: local process lifecycle/concurrency; intentional public command removal; >200-line diff; four endpoint-only tests removed and one effective cancellation test migrated; no schema/migration change.
 - Context: Task 4 is clean and complete; current audit is 104/45/45 with 59 registered-only commands. Task 5 removes 14 handlers and expects 90/45/45 with 45 registered-only commands.
 - Deferred minors: fixed lexical sorting rule; actionable missing-bundle-directory error; direct `open_project_preview` write-safety regression test; precise `apply_plan` caller wording. Final review will triage.
-- Checkoff: pending
+- Checkoff: Task 5 plan checkbox and OpenSpec 3.2 checked; exact runtime validation pending coordination commit.

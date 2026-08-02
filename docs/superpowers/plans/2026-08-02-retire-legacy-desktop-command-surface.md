@@ -336,7 +336,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
 ### Task 5: 退役旧本机准备与服务控制命令
 
-- [ ] Task 5 完成：旧本机准备与服务控制命令完成退役
+- [x] Task 5 完成：旧本机准备与服务控制命令完成退役
 
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/lib.rs`
@@ -349,13 +349,13 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 - Consumes: `recommend_runtime_config/write_local_env/get_local_infrastructure_status/prepare_local_infrastructure/set_local_infrastructure_service/prepare_local_preview/get_local_development_support/prepare_local_development/start_local_preview_service/cancel_local_preview_start/stop_managed_local_port_owner/get_local_preview_status/stop_local_preview/stop_local_preview_service`。
 - Produces: 当前 `start_local_preview`、`create_managed_local_run_workspace`、`verify_managed_local_run` 及其内部运行/停止清理能力不变。
 
-- [ ] **Step 1: 记录命令面 Red，并确认本机主线保护线**
+- [x] **Step 1: 记录命令面 Red，并确认本机主线保护线**
 
   Run: `node scripts/check-desktop-command-surface.mjs --mode source`
 
   Expected: FAIL，`registeredOnly` 包含本任务列出的旧本机命令。随后检查现有本机测试已断言受管工作区从固定快照启动、公开地址为 loopback、进程取消终止子进程、连续验证读取同一 run/snapshot 身份；只对缺失不变量先补一个会失败的内部测试，复用匿名化临时目录和假进程，不连接真实服务。
 
-- [ ] **Step 2: 运行目标测试并确认 Red/保护能力**
+- [x] **Step 2: 运行目标测试并确认 Red/保护能力**
 
   Run: `cargo test -p abcdeploy-desktop managed_local -- --nocapture`
 
@@ -363,11 +363,11 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: 当前特征测试全部 PASS；若 Step 1 发现缺口，则新增断言先因该具体缺口 FAIL，再以最小测试接缝修复到 PASS。
 
-- [ ] **Step 3: 删除旧本机 IPC 并保留共享内部函数**
+- [x] **Step 3: 删除旧本机 IPC 并保留共享内部函数**
 
   从 handler 删除列出的旧命令。当前启动、退出清理或验证仍调用的 `*_inner`、进程表、端口探测、Compose/运行时辅助函数取消 command 暴露但保留内部可见性；只服务旧单服务按钮的状态类型和命令级测试删除。
 
-- [ ] **Step 4: Green 与 Refactor**
+- [x] **Step 4: Green 与 Refactor**
 
   Run: `cargo fmt --all`
 
@@ -379,7 +379,7 @@ export async function auditDesktopCommandSurface({ root, mode }) {
 
   Expected: PASS；`start_local_preview`、受管快照与连续验证命令仍在三个生产集合中。
 
-- [ ] **Step 5: 提交本机命令清理**
+- [x] **Step 5: 提交本机命令清理**
 
   ```bash
   git add apps/desktop/src-tauri/src/lib.rs apps/desktop/src-tauri/src/local_process.rs apps/desktop/src-tauri/src/local_runtime.rs apps/desktop/src-tauri/src/tests.rs openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md
