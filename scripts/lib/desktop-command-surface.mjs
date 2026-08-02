@@ -148,20 +148,27 @@ export async function auditDesktopCommandSurface({ root, mode }) {
   );
   const { commands: registeredCommands } =
     extractRegisteredCommands(registeredSource);
-  const sourceFiles = await productionSourceFiles(
-    join(root, "apps", "desktop", "src"),
-  );
-  const sourceCommands = [];
-  const dynamicInvocations = [];
+  let sourceCommands;
+  let dynamicInvocations;
+  let bundledCommands;
 
-  for (const file of sourceFiles) {
-    const extracted = extractSourceCommands(await readFile(file, "utf8"), file);
-    sourceCommands.push(...extracted.commands);
-    dynamicInvocations.push(...extracted.dynamicInvocations);
+  if (mode !== "bundle") {
+    const sourceFiles = await productionSourceFiles(
+      join(root, "apps", "desktop", "src"),
+    );
+    const extractedCommands = [];
+    dynamicInvocations = [];
+
+    for (const file of sourceFiles) {
+      const extracted = extractSourceCommands(
+        await readFile(file, "utf8"),
+        file,
+      );
+      extractedCommands.push(...extracted.commands);
+      dynamicInvocations.push(...extracted.dynamicInvocations);
+    }
+    sourceCommands = sortedUnique(extractedCommands);
   }
-
-  const sortedSourceCommands = sortedUnique(sourceCommands);
-  let bundledCommands = [];
 
   if (mode !== "source") {
     const bundleDirectory = join(root, "apps", "desktop", "dist", "assets");
@@ -175,28 +182,58 @@ export async function auditDesktopCommandSurface({ root, mode }) {
       throw new Error("生产 bundle 不存在，请先运行桌面 Vite build");
     }
 
+    const extractedCommands = [];
     for (const file of bundleFiles) {
-      bundledCommands.push(
+      extractedCommands.push(
         ...extractBundledCommands(
           await readFile(file, "utf8"),
           registeredCommands,
         ).commands,
       );
     }
-    bundledCommands = sortedUnique(bundledCommands);
+    bundledCommands = sortedUnique(extractedCommands);
+  }
+
+  if (mode === "source") {
+    return {
+      mode,
+      registeredCommands,
+      sourceCommands,
+      dynamicInvocations,
+      differences: compareRegistrationSet(sourceCommands, registeredCommands),
+    };
+  }
+
+  if (mode === "bundle") {
+    return {
+      mode,
+      registeredCommands,
+      bundledCommands,
+      differences: compareRegistrationSet(bundledCommands, registeredCommands),
+    };
   }
 
   return {
+    mode,
     registeredCommands,
-    sourceCommands: sortedSourceCommands,
+    sourceCommands,
     bundledCommands,
     dynamicInvocations,
     differences: compareCommandSets({
       registeredCommands,
-      sourceCommands: sortedSourceCommands,
-      bundledCommands:
-        mode === "source" ? sortedSourceCommands : bundledCommands,
+      sourceCommands,
+      bundledCommands,
     }),
+  };
+}
+
+function compareRegistrationSet(commands, registeredCommands) {
+  const checked = new Set(commands);
+  const registered = new Set(registeredCommands);
+
+  return {
+    missingRegistrations: difference(checked, registered),
+    registeredOnly: difference(registered, checked),
   };
 }
 

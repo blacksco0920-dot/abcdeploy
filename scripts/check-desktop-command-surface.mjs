@@ -50,7 +50,7 @@ function parseArguments(args) {
 
 function hasFailures(result) {
   return (
-    result.dynamicInvocations.length > 0 ||
+    (result.dynamicInvocations?.length ?? 0) > 0 ||
     Object.values(result.differences).some((commands) => commands.length > 0)
   );
 }
@@ -58,11 +58,19 @@ function hasFailures(result) {
 function formatResult(result) {
   const lines = [
     "桌面命令面审计",
+    `mode=${result.mode}`,
     `registered=${result.registeredCommands.length}`,
-    `source=${result.sourceCommands.length}`,
-    `bundled=${result.bundledCommands.length}`,
-    formatList("dynamicInvocations", result.dynamicInvocations),
   ];
+
+  if (result.sourceCommands) {
+    lines.push(`source=${result.sourceCommands.length}`);
+  }
+  if (result.bundledCommands) {
+    lines.push(`bundled=${result.bundledCommands.length}`);
+  }
+  if (result.dynamicInvocations) {
+    lines.push(formatList("dynamicInvocations", result.dynamicInvocations));
+  }
 
   for (const [name, commands] of Object.entries(result.differences)) {
     lines.push(formatList(name, commands));

@@ -49,6 +49,75 @@ async function run(command, args, options) {
   });
 }
 
+async function createAuditFixture({ source = true, bundle = true } = {}) {
+  const root = await mkdtemp(join(tmpdir(), "desktop-command-surface-"));
+
+  await mkdir(join(root, "scripts", "lib"), { recursive: true });
+  await mkdir(join(root, "apps", "desktop", "src-tauri", "src"), {
+    recursive: true,
+  });
+  if (source) {
+    await mkdir(join(root, "apps", "desktop", "src"), { recursive: true });
+  }
+  if (bundle) {
+    await mkdir(join(root, "apps", "desktop", "dist", "assets"), {
+      recursive: true,
+    });
+  }
+  const cliSource = await readFile(
+    new URL("./check-desktop-command-surface.mjs", import.meta.url),
+    "utf8",
+  ).catch(() => assert.fail("CLI 尚不存在"));
+  await writeFile(
+    join(root, "scripts", "check-desktop-command-surface.mjs"),
+    cliSource,
+  );
+  await copyFile(
+    new URL("./lib/desktop-command-surface.mjs", import.meta.url),
+    join(root, "scripts", "lib", "desktop-command-surface.mjs"),
+  );
+  await symlink(
+    fileURLToPath(new URL("../apps/desktop/node_modules", import.meta.url)),
+    join(root, "apps", "desktop", "node_modules"),
+    "dir",
+  );
+  await writeFile(
+    join(root, "apps", "desktop", "src-tauri", "src", "lib.rs"),
+    "tauri::generate_handler![beta, alpha, beta]",
+  );
+  if (source) {
+    await writeFile(
+      join(root, "apps", "desktop", "src", "commands.ts"),
+      `import { invoke } from "@tauri-apps/api/core";
+invoke("gamma");
+invoke("alpha");
+invoke("gamma");
+`,
+    );
+  }
+  if (bundle) {
+    await writeFile(
+      join(root, "apps", "desktop", "dist", "assets", "index.js"),
+      'const command = "alpha";',
+    );
+  }
+
+  return root;
+}
+
+async function runAudit(root, mode) {
+  return run(
+    process.execPath,
+    [
+      join(root, "scripts", "check-desktop-command-surface.mjs"),
+      "--mode",
+      mode,
+      "--json",
+    ],
+    { cwd: tmpdir(), stdio: ["ignore", "pipe", "pipe"] },
+  );
+}
+
 test("extractSourceCommands 收集 invoke 的泛型、多行与别名静态命令", async () => {
   const filePath = fileURLToPath(new URL("source-valid.ts", fixtures));
   const result = extractSourceCommands(
@@ -140,66 +209,61 @@ test("compareCommandSets 报告四类去重且排序的命令面差集", () => {
   });
 });
 
-test("CLI 从脚本位置审计仓库并以稳定 JSON 报告四类差异", async () => {
-  const root = await mkdtemp(join(tmpdir(), "desktop-command-surface-"));
+test("CLI source 模式只以注册表和生产源码计算快速门禁", async () => {
+  const root = await createAuditFixture({ bundle: false });
 
   try {
-    await mkdir(join(root, "scripts", "lib"), { recursive: true });
-    await mkdir(join(root, "apps", "desktop", "src-tauri", "src"), {
-      recursive: true,
-    });
-    await mkdir(join(root, "apps", "desktop", "src"), { recursive: true });
-    await mkdir(join(root, "apps", "desktop", "dist", "assets"), {
-      recursive: true,
-    });
-    const cliSource = await readFile(
-      new URL("./check-desktop-command-surface.mjs", import.meta.url),
-      "utf8",
-    ).catch(() => assert.fail("CLI 尚不存在"));
-    await writeFile(
-      join(root, "scripts", "check-desktop-command-surface.mjs"),
-      cliSource,
-    );
-    await copyFile(
-      new URL("./lib/desktop-command-surface.mjs", import.meta.url),
-      join(root, "scripts", "lib", "desktop-command-surface.mjs"),
-    );
-    await symlink(
-      fileURLToPath(new URL("../apps/desktop/node_modules", import.meta.url)),
-      join(root, "apps", "desktop", "node_modules"),
-      "dir",
-    );
-    await writeFile(
-      join(root, "apps", "desktop", "src", "commands.ts"),
-      `import { invoke } from "@tauri-apps/api/core";
-invoke("gamma");
-invoke("alpha");
-invoke("gamma");
-`,
-    );
-    await writeFile(
-      join(root, "apps", "desktop", "src-tauri", "src", "lib.rs"),
-      "tauri::generate_handler![beta, alpha, beta]",
-    );
-    await writeFile(
-      join(root, "apps", "desktop", "dist", "assets", "index.js"),
-      'const command = "alpha";',
-    );
-
-    const result = await run(
-      process.execPath,
-      [
-        join(root, "scripts", "check-desktop-command-surface.mjs"),
-        "--mode",
-        "all",
-        "--json",
-      ],
-      { cwd: tmpdir(), stdio: ["ignore", "pipe", "pipe"] },
-    );
+    const result = await runAudit(root, "source");
 
     assert.equal(result.code, 1);
     assert.equal(result.stderr, "");
     assert.deepEqual(JSON.parse(result.stdout), {
+      mode: "source",
+      registeredCommands: ["alpha", "beta"],
+      sourceCommands: ["alpha", "gamma"],
+      dynamicInvocations: [],
+      differences: {
+        missingRegistrations: ["gamma"],
+        registeredOnly: ["beta"],
+      },
+    });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("CLI bundle 模式只以注册表和生产 bundle 计算构建后门禁", async () => {
+  const root = await createAuditFixture({ source: false });
+
+  try {
+    const result = await runAudit(root, "bundle");
+
+    assert.equal(result.code, 1);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(JSON.parse(result.stdout), {
+      mode: "bundle",
+      registeredCommands: ["alpha", "beta"],
+      bundledCommands: ["alpha"],
+      differences: {
+        missingRegistrations: [],
+        registeredOnly: ["beta"],
+      },
+    });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("CLI all 模式从脚本位置完整审计三集合并报告四类差异", async () => {
+  const root = await createAuditFixture();
+
+  try {
+    const result = await runAudit(root, "all");
+
+    assert.equal(result.code, 1);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(JSON.parse(result.stdout), {
+      mode: "all",
       registeredCommands: ["alpha", "beta"],
       sourceCommands: ["alpha", "gamma"],
       bundledCommands: ["alpha"],
@@ -213,5 +277,42 @@ invoke("gamma");
     });
   } finally {
     await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("矩阵每个 internalize 理由具名引用该行 caller、职责或保护测试", async () => {
+  const matrix = await readFile(
+    new URL(
+      "../openspec/changes/retire-legacy-desktop-command-surface/evidence/command-surface-matrix.md",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const rows = matrix
+    .split("\n")
+    .map((line) =>
+      line
+        .split("|")
+        .slice(1, -1)
+        .map((cell) => cell.trim()),
+    )
+    .filter((cells) => cells[7] === "`internalize`");
+
+  assert.equal(rows.length, 21);
+  for (const cells of rows) {
+    const command = cells[0];
+    const rationale = cells[8];
+    const namedEvidence = [
+      ...`${cells[4]} ${cells[5]} ${cells[6]}`.matchAll(/`([^`]+)`/g),
+    ].map((match) => match[1]);
+
+    assert.ok(
+      namedEvidence.length > 0,
+      `${command} 缺少可供理由引用的具名证据`,
+    );
+    assert.ok(
+      namedEvidence.some((identifier) => rationale.includes(identifier)),
+      `${command} 的 rationale 未具名引用该行 caller、职责或保护测试`,
+    );
   }
 });
