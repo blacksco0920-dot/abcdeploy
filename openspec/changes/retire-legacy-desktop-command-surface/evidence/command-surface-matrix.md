@@ -59,7 +59,7 @@
 | `delete_deployment_path` | `internalize` | 删除 IPC；保留 `delete_deployment_path` 为 `#[cfg(test)]` 事务接缝。 | `deployment_paths_are_project_scoped_reusable_connection_bindings` 验证活动任务期间拒绝删除线路。 |
 | `list_config_profiles` | `internalize` | 删除 IPC；保留 Profile 读取与 model 为 `#[cfg(test)]` 兼容查询接缝。 | `stores_reusable_profiles_and_project_bindings_without_secret_values` 验证返回值不含秘密正文。 |
 | `save_config_profile` | `internalize` | 删除 IPC 及 endpoint Keychain 写入；保留 Profile 写入为 `#[cfg(test)]` 迁移夹具接缝。 | Profile/绑定迁移测试以非秘密字段构造旧数据；当前生产无 Profile CRUD caller。 |
-| `delete_config_profile` | `delete` | 删除 IPC、DTO、Profile secret-key helper；`remove_config_profile` 仅作为 `#[cfg(test)]` 迁移行为接缝保留。 | 删除后 CodeGraph/`rg` 无 endpoint；Profile fallback/绑定清理测试继续通过。 |
+| `delete_config_profile` | `delete` | 删除 IPC、DTO、Profile secret-key helper 及 test-only `remove_config_profile`。 | CodeGraph/`rg` 无 endpoint、helper 或专属删除测试残留；Profile secret isolation、binding schema 升级与项目 relink 测试继续通过。 |
 | `bind_config_profile` | `internalize` | 删除 IPC；保留绑定写入为 `#[cfg(test)]`。 | Profile 绑定增量 schema、项目移动重连测试。 |
 | `list_config_profile_bindings` | `internalize` | 删除 IPC；保留绑定读取为 `#[cfg(test)]`。 | 旧 binding schema 升级后重启读取测试。 |
 | `set_environment_config_bindings` | `internalize` | 删除 IPC；保留批量绑定写入为 `#[cfg(test)]`。 | `upgrades_profile_bindings_and_supports_multiple_profiles_per_environment`。 |

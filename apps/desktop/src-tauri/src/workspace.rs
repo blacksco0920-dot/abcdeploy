@@ -1686,44 +1686,6 @@ impl WorkspaceState {
     }
 
     #[cfg(test)]
-    pub fn remove_config_profile(&self, id: &str) -> Result<bool, String> {
-        let mut connection = self.connection.lock().map_err(lock_error)?;
-        let transaction = connection.transaction().map_err(public_storage_error)?;
-        let removed: Option<(String, String, bool)> = transaction
-            .query_row(
-                "SELECT kind, scope, is_default FROM config_profiles WHERE id = ?1",
-                [id],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-            )
-            .optional()
-            .map_err(public_storage_error)?;
-        transaction
-            .execute(
-                "DELETE FROM project_profile_bindings WHERE profile_id = ?1",
-                [id],
-            )
-            .map_err(public_storage_error)?;
-        let changed = transaction
-            .execute("DELETE FROM config_profiles WHERE id = ?1", [id])
-            .map_err(public_storage_error)?;
-        if let Some((kind, scope, true)) = removed {
-            transaction
-                .execute(
-                    "UPDATE config_profiles SET is_default = 1
-                     WHERE id = (
-                       SELECT id FROM config_profiles
-                       WHERE kind = ?1 AND scope = ?2
-                       ORDER BY updated_at DESC LIMIT 1
-                     )",
-                    params![kind, scope],
-                )
-                .map_err(public_storage_error)?;
-        }
-        transaction.commit().map_err(public_storage_error)?;
-        Ok(changed > 0)
-    }
-
-    #[cfg(test)]
     pub fn bind_config_profile(
         &self,
         path: &Path,

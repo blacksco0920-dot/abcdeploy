@@ -1436,16 +1436,6 @@ fn stores_reusable_profiles_and_project_bindings_without_secret_values() {
     assert_eq!(profiles[0].values["model"], "MiniMax-M2.5");
     assert!(profiles[0].configured_secret_fields.is_empty());
 
-    let fallback = ConfigProfile {
-        id: "minimax-backup".to_string(),
-        name: "备用 MiniMax".to_string(),
-        is_default: false,
-        ..profile.clone()
-    };
-    database
-        .save_config_profile(&fallback)
-        .expect("save fallback profile");
-
     database
         .bind_config_profile(directory.path(), "development", "ai", &profile.id)
         .expect("bind profile");
@@ -1453,25 +1443,6 @@ fn stores_reusable_profiles_and_project_bindings_without_secret_values() {
         .config_profile_bindings(directory.path(), "development")
         .expect("list bindings");
     assert_eq!(bindings[0].profile_id, profile.id);
-
-    assert!(
-        database
-            .remove_config_profile(&profile.id)
-            .expect("remove profile")
-    );
-    assert!(
-        database
-            .config_profile(&fallback.id)
-            .expect("fallback profile")
-            .expect("fallback exists")
-            .is_default
-    );
-    assert!(
-        database
-            .config_profile_bindings(directory.path(), "development")
-            .expect("bindings removed")
-            .is_empty()
-    );
 }
 
 #[test]
