@@ -2,5 +2,5 @@
   "schema": "comet.selection.v2",
   "workflow": "classic",
   "change": "retire-legacy-desktop-command-surface",
-  "branch": "main"
+  "branch": "codex/retire-legacy-desktop-command-surface"
 }
